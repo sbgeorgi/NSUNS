@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#000000">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>nSuns ULTIMATE</title>
+    <title>LIFT ULTIMATE</title>
     
     <!-- Libraries -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -21,7 +21,7 @@
         :root {
             --bg-deep: #000000;
             --bg-card: #121214;
-            --primary: #6366f1; /* Indigo */
+            --primary: #6366f1;
             --glass-border: rgba(255, 255, 255, 0.08);
             --glass-highlight: rgba(255, 255, 255, 0.03);
         }
@@ -36,7 +36,6 @@
 
         .mono { font-family: 'JetBrains Mono', monospace; }
 
-        /* Premium Glassmorphism */
         .glass {
             background: #18181b;
             border: 1px solid var(--glass-border);
@@ -54,7 +53,6 @@
             border-top: 1px solid var(--glass-border);
         }
 
-        /* Calendar Grid */
         .calendar-grid {
             display: grid;
             grid-template-columns: repeat(7, 1fr);
@@ -78,63 +76,358 @@
             content: ''; position: absolute; bottom: 4px; width: 4px; height: 4px; background: #818cf8; border-radius: 50%;
         }
 
-        /* Utilities */
         .no-scrollbar::-webkit-scrollbar { display: none; }
         [x-cloak] { display: none !important; }
         
-        /* Animations */
         @keyframes pulse-ring {
             0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.7); }
             70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(99, 102, 241, 0); }
             100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(99, 102, 241, 0); }
         }
         .animate-pulse-ring { animation: pulse-ring 2s infinite; }
+
+        @keyframes shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+        .shimmer {
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+            background-size: 200% 100%;
+            animation: shimmer 2s infinite;
+        }
+
+        .program-card {
+            transition: all 0.3s ease;
+        }
+        .program-card:hover {
+            transform: translateY(-2px);
+        }
+        .program-card.selected {
+            border-color: #6366f1;
+            background: rgba(99, 102, 241, 0.1);
+        }
+
+        .failed-set {
+            border-color: rgba(239, 68, 68, 0.5) !important;
+            background: rgba(239, 68, 68, 0.1) !important;
+        }
     </style>
 </head>
 
 <body x-data="app()" x-init="init()" class="antialiased h-screen overflow-hidden text-slate-200">
 
-    <!-- ================= SETUP ================= -->
-    <div x-show="view === 'setup'" x-transition.opacity class="fixed inset-0 z-[100] bg-black flex flex-col justify-center p-8 space-y-8">
-        <div class="text-center">
-            <h1 class="text-4xl font-extrabold text-white tracking-tighter mb-2">nSuns <span class="text-indigo-500">ULTIMATE</span></h1>
-            <p class="text-slate-500">Enter your 1 Rep Maxes</p>
+    <!-- ================= RESUME WORKOUT MODAL ================= -->
+    <div x-show="showResumeModal" class="fixed inset-0 z-[200] flex items-center justify-center p-6" x-cloak>
+        <div class="absolute inset-0 bg-black/90 backdrop-blur-md" @click="dismissResume()"></div>
+        <div class="relative bg-[#1A1A1E] border border-white/10 rounded-3xl p-6 w-full max-w-sm shadow-2xl" x-transition>
+            <div class="text-center mb-6">
+                <div class="w-16 h-16 bg-indigo-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg class="w-8 h-8 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                </div>
+                <h3 class="text-xl font-bold text-white mb-2">Workout In Progress</h3>
+                <p class="text-sm text-slate-400">You have an unfinished workout from earlier.</p>
+                <p class="text-xs text-slate-500 mt-2" x-text="'Session: ' + (savedSession?.title || '')"></p>
+            </div>
+            <div class="space-y-3">
+                <button @click="resumeWorkout()" class="w-full bg-indigo-600 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-indigo-600/20 active:scale-95 transition-transform">
+                    Resume Workout
+                </button>
+                <button @click="finishSavedSession()" class="w-full bg-green-600/20 text-green-400 font-bold py-3.5 rounded-xl border border-green-500/30 active:scale-95 transition-transform">
+                    Finish & Save
+                </button>
+                <button @click="discardWorkout()" class="w-full bg-red-600/10 text-red-400 font-bold py-3.5 rounded-xl border border-red-500/20 active:scale-95 transition-transform">
+                    Discard Workout
+                </button>
+            </div>
         </div>
-        <div class="space-y-4">
-            <template x-for="lift in ['Bench', 'Squat', 'Deadlift', 'OHP']">
+    </div>
+
+    <!-- ================= BODY WEIGHT PROMPT ================= -->
+    <div x-show="showWeightPrompt" class="fixed inset-0 z-[150] flex items-center justify-center p-6" x-cloak>
+        <div class="absolute inset-0 bg-black/90 backdrop-blur-md" @click="skipWeightPrompt()"></div>
+        <div class="relative bg-[#1A1A1E] border border-white/10 rounded-3xl p-6 w-full max-w-sm shadow-2xl" x-transition>
+            <div class="text-center mb-6">
+                <div class="w-16 h-16 bg-blue-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg class="w-8 h-8 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3"/>
+                    </svg>
+                </div>
+                <h3 class="text-xl font-bold text-white mb-2">Log Your Weight</h3>
+                <p class="text-sm text-slate-400">Track your body weight for progress insights</p>
+            </div>
+            <div class="mb-6">
+                <div class="relative">
+                    <input type="number" x-model.number="tempBodyWeight" step="0.1" 
+                        class="w-full bg-black border border-white/20 rounded-2xl p-4 text-2xl font-bold text-white text-center focus:border-blue-500 outline-none mono" 
+                        :placeholder="preferences.weightUnit === 'kg' ? '75.0' : '165.0'">
+                    <span class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 font-bold" x-text="preferences.weightUnit"></span>
+                </div>
+            </div>
+            <div class="flex gap-3">
+                <button @click="skipWeightPrompt()" class="flex-1 bg-[#333] text-white font-bold py-3.5 rounded-xl active:scale-95 transition-transform">
+                    Skip
+                </button>
+                <button @click="logBodyWeight()" class="flex-1 bg-blue-600 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-blue-600/20 active:scale-95 transition-transform">
+                    Log Weight
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= PREFERENCES / SETTINGS ================= -->
+    <div x-show="view === 'preferences'" class="h-full overflow-y-auto pb-32 no-scrollbar" x-cloak>
+        <header class="pt-14 pb-6 px-6 bg-gradient-to-b from-black to-transparent sticky top-0 z-20">
+            <h2 class="text-3xl font-extrabold text-white">Settings</h2>
+        </header>
+
+        <div class="px-6 space-y-8">
+            <!-- Weight Unit Toggle -->
+            <div class="glass p-5 rounded-2xl">
+                <h3 class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4">Weight Unit</h3>
+                <div class="flex gap-3">
+                    <button @click="preferences.weightUnit = 'lbs'; savePreferences()" 
+                        class="flex-1 py-3 rounded-xl font-bold text-sm transition-all"
+                        :class="preferences.weightUnit === 'lbs' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20' : 'bg-[#222] text-slate-400 border border-white/10'">
+                        Pounds (lbs)
+                    </button>
+                    <button @click="preferences.weightUnit = 'kg'; savePreferences()" 
+                        class="flex-1 py-3 rounded-xl font-bold text-sm transition-all"
+                        :class="preferences.weightUnit === 'kg' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20' : 'bg-[#222] text-slate-400 border border-white/10'">
+                        Kilograms (kg)
+                    </button>
+                </div>
+            </div>
+
+            <!-- Program Selection -->
+            <div class="glass p-5 rounded-2xl">
+                <h3 class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4">Training Program</h3>
+                <div class="space-y-3">
+                    <template x-for="(prog, key) in PROGRAMS">
+                        <div @click="selectProgram(key)" 
+                            class="program-card p-4 rounded-xl border border-white/10 cursor-pointer"
+                            :class="preferences.program === key ? 'selected' : 'bg-[#121214]'">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <h4 class="font-bold text-white" x-text="prog.name"></h4>
+                                    <p class="text-xs text-slate-400 mt-1" x-text="prog.description"></p>
+                                    <div class="flex gap-2 mt-2">
+                                        <span class="text-[10px] px-2 py-1 rounded bg-white/5 text-slate-300" x-text="prog.daysPerWeek + ' days/week'"></span>
+                                        <span class="text-[10px] px-2 py-1 rounded bg-white/5 text-slate-300" x-text="prog.focus"></span>
+                                    </div>
+                                </div>
+                                <div x-show="preferences.program === key" class="w-6 h-6 bg-indigo-600 rounded-full flex items-center justify-center">
+                                    <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
+                                    </svg>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+
+            <!-- Rest Timer Defaults -->
+            <div class="glass p-5 rounded-2xl">
+                <h3 class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4">Default Rest Timers</h3>
+                <div class="space-y-4">
+                    <div>
+                        <label class="text-sm text-slate-300 mb-2 block">Main Lifts (T1)</label>
+                        <div class="flex items-center gap-3">
+                            <input type="range" x-model="preferences.restT1" min="60" max="300" step="15" class="flex-1 accent-indigo-500">
+                            <span class="mono text-white font-bold w-16 text-right" x-text="formatTime(preferences.restT1)"></span>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="text-sm text-slate-300 mb-2 block">Secondary Lifts (T2)</label>
+                        <div class="flex items-center gap-3">
+                            <input type="range" x-model="preferences.restT2" min="30" max="180" step="15" class="flex-1 accent-indigo-500">
+                            <span class="mono text-white font-bold w-16 text-right" x-text="formatTime(preferences.restT2)"></span>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="text-sm text-slate-300 mb-2 block">Accessories (T3)</label>
+                        <div class="flex items-center gap-3">
+                            <input type="range" x-model="preferences.restT3" min="30" max="120" step="15" class="flex-1 accent-indigo-500">
+                            <span class="mono text-white font-bold w-16 text-right" x-text="formatTime(preferences.restT3)"></span>
+                        </div>
+                    </div>
+                </div>
+                <button @click="savePreferences()" class="w-full mt-4 bg-indigo-600/20 text-indigo-400 font-bold py-3 rounded-xl border border-indigo-500/30">
+                    Save Timer Settings
+                </button>
+            </div>
+
+            <!-- Sound & Vibration -->
+            <div class="glass p-5 rounded-2xl">
+                <h3 class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4">Notifications</h3>
+                <div class="space-y-3">
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm text-white">Timer Sound</span>
+                        <button @click="preferences.timerSound = !preferences.timerSound; savePreferences()" 
+                            class="w-12 h-7 rounded-full transition-colors relative"
+                            :class="preferences.timerSound ? 'bg-indigo-600' : 'bg-[#333]'">
+                            <div class="absolute top-1 left-1 w-5 h-5 bg-white rounded-full transition-transform"
+                                :class="preferences.timerSound ? 'translate-x-5' : ''"></div>
+                        </button>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm text-white">Vibration</span>
+                        <button @click="preferences.vibration = !preferences.vibration; savePreferences()" 
+                            class="w-12 h-7 rounded-full transition-colors relative"
+                            :class="preferences.vibration ? 'bg-indigo-600' : 'bg-[#333]'">
+                            <div class="absolute top-1 left-1 w-5 h-5 bg-white rounded-full transition-transform"
+                                :class="preferences.vibration ? 'translate-x-5' : ''"></div>
+                        </button>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm text-white">Auto-start Rest Timer</span>
+                        <button @click="preferences.autoStartTimer = !preferences.autoStartTimer; savePreferences()" 
+                            class="w-12 h-7 rounded-full transition-colors relative"
+                            :class="preferences.autoStartTimer ? 'bg-indigo-600' : 'bg-[#333]'">
+                            <div class="absolute top-1 left-1 w-5 h-5 bg-white rounded-full transition-transform"
+                                :class="preferences.autoStartTimer ? 'translate-x-5' : ''"></div>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Body Weight Chart -->
+            <div class="glass p-5 rounded-2xl">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xs font-bold text-slate-500 uppercase tracking-widest">Body Weight History</h3>
+                    <span class="text-xs text-slate-400" x-text="bodyWeightLog.length + ' entries'"></span>
+                </div>
+                <div class="h-40 relative" x-show="bodyWeightLog.length > 0">
+                    <canvas id="bodyWeightChart"></canvas>
+                </div>
+                <div x-show="bodyWeightLog.length === 0" class="h-40 flex items-center justify-center text-slate-500 text-sm">
+                    No weight entries yet
+                </div>
+                <div x-show="bodyWeightLog.length > 0" class="mt-4 grid grid-cols-3 gap-3 text-center">
+                    <div class="bg-black/30 rounded-lg p-3">
+                        <div class="text-[10px] text-slate-500 uppercase">Current</div>
+                        <div class="text-lg font-bold text-white mono" x-text="getLatestWeight()"></div>
+                    </div>
+                    <div class="bg-black/30 rounded-lg p-3">
+                        <div class="text-[10px] text-slate-500 uppercase">Lowest</div>
+                        <div class="text-lg font-bold text-green-400 mono" x-text="getLowestWeight()"></div>
+                    </div>
+                    <div class="bg-black/30 rounded-lg p-3">
+                        <div class="text-[10px] text-slate-500 uppercase">Highest</div>
+                        <div class="text-lg font-bold text-red-400 mono" x-text="getHighestWeight()"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Update TMs -->
+            <div class="glass p-5 rounded-2xl">
+                <h3 class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4">Training Maxes</h3>
+                <div class="space-y-3">
+                    <template x-for="lift in getCurrentProgramLifts()">
+                        <div class="flex items-center gap-3">
+                            <label class="text-sm text-slate-300 w-24" x-text="lift"></label>
+                            <input type="number" x-model.number="tms[lift]" 
+                                class="flex-1 bg-black border border-white/20 rounded-lg p-2 text-white font-bold mono text-center focus:border-indigo-500 outline-none">
+                            <span class="text-xs text-slate-500 w-8" x-text="preferences.weightUnit"></span>
+                        </div>
+                    </template>
+                </div>
+                <button @click="save()" class="w-full mt-4 bg-green-600/20 text-green-400 font-bold py-3 rounded-xl border border-green-500/30">
+                    Save Training Maxes
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= SETUP ================= -->
+    <div x-show="view === 'setup'" x-transition.opacity class="fixed inset-0 z-[100] bg-black flex flex-col justify-center p-8 space-y-6 overflow-y-auto">
+        <div class="text-center pt-8">
+            <h1 class="text-4xl font-extrabold text-white tracking-tighter mb-2">LIFT <span class="text-indigo-500">ULTIMATE</span></h1>
+            <p class="text-slate-500">Configure your training</p>
+        </div>
+
+        <!-- Unit Selection -->
+        <div class="bg-[#1A1A1E] border border-white/10 rounded-2xl p-4">
+            <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3 block">Weight Unit</label>
+            <div class="flex gap-3">
+                <button @click="preferences.weightUnit = 'lbs'" 
+                    class="flex-1 py-3 rounded-xl font-bold text-sm transition-all"
+                    :class="preferences.weightUnit === 'lbs' ? 'bg-indigo-600 text-white' : 'bg-[#333] text-slate-400'">
+                    lbs
+                </button>
+                <button @click="preferences.weightUnit = 'kg'" 
+                    class="flex-1 py-3 rounded-xl font-bold text-sm transition-all"
+                    :class="preferences.weightUnit === 'kg' ? 'bg-indigo-600 text-white' : 'bg-[#333] text-slate-400'">
+                    kg
+                </button>
+            </div>
+        </div>
+
+        <!-- Program Selection -->
+        <div class="bg-[#1A1A1E] border border-white/10 rounded-2xl p-4">
+            <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3 block">Select Program</label>
+            <div class="space-y-2 max-h-48 overflow-y-auto no-scrollbar">
+                <template x-for="(prog, key) in PROGRAMS">
+                    <button @click="preferences.program = key" 
+                        class="w-full text-left p-3 rounded-xl border transition-all"
+                        :class="preferences.program === key ? 'border-indigo-500 bg-indigo-500/10' : 'border-white/10 bg-black/30'">
+                        <div class="font-bold text-white text-sm" x-text="prog.name"></div>
+                        <div class="text-xs text-slate-400" x-text="prog.daysPerWeek + ' days • ' + prog.focus"></div>
+                    </button>
+                </template>
+            </div>
+        </div>
+
+        <!-- 1RM Inputs -->
+        <div class="space-y-3">
+            <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Enter your 1 Rep Maxes</label>
+            <template x-for="lift in getSetupLifts()">
                 <div>
                     <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest pl-1" x-text="lift"></label>
-                    <input type="number" x-model.number="setup[lift]" class="w-full bg-[#1A1A1E] border border-white/10 rounded-2xl p-4 text-xl font-bold text-white focus:border-indigo-500 outline-none transition-colors mt-1 mono" placeholder="0">
+                    <div class="relative">
+                        <input type="number" x-model.number="setup[lift]" 
+                            class="w-full bg-[#1A1A1E] border border-white/10 rounded-2xl p-4 text-xl font-bold text-white focus:border-indigo-500 outline-none transition-colors mt-1 mono" 
+                            placeholder="0">
+                        <span class="absolute right-4 top-1/2 translate-y-0.5 text-slate-500 text-sm" x-text="preferences.weightUnit"></span>
+                    </div>
                 </div>
             </template>
         </div>
-        <button @click="finishSetup()" class="w-full bg-indigo-600 text-white font-bold py-4 rounded-2xl shadow-lg shadow-indigo-600/20 active:scale-95 transition-transform">Start Program</button>
+
+        <button @click="finishSetup()" class="w-full bg-indigo-600 text-white font-bold py-4 rounded-2xl shadow-lg shadow-indigo-600/20 active:scale-95 transition-transform">
+            Start Program
+        </button>
     </div>
 
     <!-- ================= DASHBOARD ================= -->
     <div x-show="view === 'dashboard'" class="h-full overflow-y-auto pb-32 no-scrollbar animate-fade">
         <header class="pt-14 pb-4 px-6 flex justify-between items-center bg-gradient-to-b from-black to-transparent sticky top-0 z-20">
             <div>
-                <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-0.5">Current Cycle</p>
+                <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-0.5" x-text="getCurrentProgramName()"></p>
                 <h2 class="text-2xl font-extrabold text-white">Week <span class="text-indigo-500" x-text="currentWeek"></span></h2>
             </div>
-            <div class="flex items-center gap-2 bg-[#1A1A1E] px-3 py-1.5 rounded-full border border-white/5">
-                <span class="text-lg">🔥</span>
-                <span class="text-sm font-bold text-white mono" x-text="streak">0</span>
+            <div class="flex items-center gap-3">
+                <div class="flex items-center gap-2 bg-[#1A1A1E] px-3 py-1.5 rounded-full border border-white/5">
+                    <span class="text-lg">🔥</span>
+                    <span class="text-sm font-bold text-white mono" x-text="streak">0</span>
+                </div>
             </div>
         </header>
 
         <div class="px-6 space-y-6">
             <!-- Next Workout Hero -->
-            <div @click="startSession()" class="relative overflow-hidden rounded-[2rem] bg-[#121214] border border-white/10 p-6 active:scale-[0.98] transition-transform cursor-pointer group shadow-2xl shadow-black">
-                <!-- Background Accent -->
+            <div @click="initiateSession()" class="relative overflow-hidden rounded-[2rem] bg-[#121214] border border-white/10 p-6 active:scale-[0.98] transition-transform cursor-pointer group shadow-2xl shadow-black">
                 <div class="absolute -right-10 -top-10 w-40 h-40 bg-indigo-500/10 blur-[50px] rounded-full"></div>
                 
                 <div class="absolute top-0 right-0 p-6 opacity-10 grayscale group-hover:grayscale-0 transition duration-500">
                     <svg class="w-32 h-32 text-indigo-500" fill="currentColor" viewBox="0 0 24 24"><path d="M20.57 14.86L22 13.43 20.57 12 17 15.57 8.43 7 12 3.43 10.57 2 9.14 3.43 7.71 2 5.57 4.14 4.14 2.71 2.71 4.14l1.43 1.43L2 7.71l1.43 1.43L2 10.57 3.43 12 7 8.43 15.57 17 12 20.57 13.43 22 14.86 20.57 16.29 22 18.43 19.86 19.86 21.29 21.29 19.86l-1.43-1.43 2.14-2.14 1.43 1.43L22 16.29l-1.43-1.43z"/></svg>
                 </div>
                 <div class="relative z-10">
-                    <div class="inline-block px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-[10px] font-bold uppercase tracking-widest mb-4">Up Next</div>
+                    <div class="inline-block px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-[10px] font-bold uppercase tracking-widest mb-4">
+                        Day <span x-text="currentDayIndex + 1"></span> of <span x-text="getCurrentProgramDays()"></span>
+                    </div>
                     <h3 class="text-3xl font-extrabold text-white mb-1" x-text="getWorkout().title"></h3>
                     <p class="text-slate-400 text-sm font-medium" x-text="getWorkout().focus"></p>
                     <div class="mt-6 flex items-center gap-2 text-sm font-bold text-white">
@@ -148,15 +441,29 @@
 
             <!-- Stats Grid -->
             <div class="grid grid-cols-2 gap-3">
-                <template x-for="(val, lift) in tms">
+                <template x-for="lift in getCurrentProgramLifts()">
                     <div class="glass p-4 rounded-2xl">
                         <div class="text-[10px] font-bold text-slate-500 uppercase tracking-widest" x-text="lift"></div>
                         <div class="flex items-end gap-1 mt-1">
-                            <span class="text-2xl font-bold text-white mono" x-text="val"></span>
+                            <span class="text-2xl font-bold text-white mono" x-text="displayWeight(tms[lift])"></span>
                             <span class="text-[10px] font-bold text-slate-600 mb-1.5">TM</span>
                         </div>
                     </div>
                 </template>
+            </div>
+
+            <!-- Personal Records -->
+            <div class="glass p-5 rounded-2xl">
+                <h3 class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4">Estimated 1RM Records</h3>
+                <div class="flex gap-3 overflow-x-auto no-scrollbar pb-2">
+                    <template x-for="lift in getCurrentProgramLifts()">
+                        <div class="min-w-[100px] bg-gradient-to-br from-[#1A1A1E] to-[#121214] border border-white/5 p-3 rounded-2xl flex flex-col items-center justify-center">
+                            <span class="text-[10px] font-bold text-slate-500 uppercase" x-text="lift"></span>
+                            <span class="text-xl font-bold text-indigo-400 mono mt-1" x-text="displayWeight(getBest1RM(lift))"></span>
+                            <span class="text-[8px] text-slate-600">Best 1RM</span>
+                        </div>
+                    </template>
+                </div>
             </div>
 
             <!-- Chart -->
@@ -164,14 +471,29 @@
                 <div class="flex justify-between items-center mb-4">
                     <h3 class="text-xs font-bold text-slate-500 uppercase tracking-widest">Est. 1RM History</h3>
                     <select x-model="chartLift" @change="renderChart()" class="bg-black/50 border border-white/10 text-[10px] font-bold text-white rounded px-2 py-1 outline-none">
-                        <option value="Bench">Bench</option>
-                        <option value="Squat">Squat</option>
-                        <option value="Deadlift">Deadlift</option>
-                        <option value="OHP">OHP</option>
+                        <template x-for="lift in getCurrentProgramLifts()">
+                            <option :value="lift" x-text="lift"></option>
+                        </template>
                     </select>
                 </div>
                 <div class="h-40 relative">
                     <canvas id="mainChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Quick Stats -->
+            <div class="grid grid-cols-3 gap-3">
+                <div class="glass p-4 rounded-2xl text-center">
+                    <div class="text-2xl font-bold text-white mono" x-text="history.length"></div>
+                    <div class="text-[10px] text-slate-500 uppercase">Workouts</div>
+                </div>
+                <div class="glass p-4 rounded-2xl text-center">
+                    <div class="text-2xl font-bold text-white mono" x-text="getTotalVolume()"></div>
+                    <div class="text-[10px] text-slate-500 uppercase">Total <span x-text="preferences.weightUnit"></span></div>
+                </div>
+                <div class="glass p-4 rounded-2xl text-center">
+                    <div class="text-2xl font-bold text-white mono" x-text="getAvgDuration()"></div>
+                    <div class="text-[10px] text-slate-500 uppercase">Avg Min</div>
                 </div>
             </div>
         </div>
@@ -185,12 +507,12 @@
 
         <div class="px-6 space-y-8">
             
-            <!-- Trophy Room (New Premium Feature) -->
+            <!-- Trophy Room -->
             <div class="flex gap-3 overflow-x-auto no-scrollbar pb-2">
-                <template x-for="lift in ['Bench','Squat','Deadlift','OHP']">
+                <template x-for="lift in getCurrentProgramLifts()">
                     <div class="min-w-[100px] bg-gradient-to-br from-[#1A1A1E] to-[#121214] border border-white/5 p-3 rounded-2xl flex flex-col items-center justify-center">
                         <span class="text-[10px] font-bold text-slate-500 uppercase" x-text="lift"></span>
-                        <span class="text-xl font-bold text-indigo-400 mono mt-1" x-text="getBest1RM(lift)"></span>
+                        <span class="text-xl font-bold text-indigo-400 mono mt-1" x-text="displayWeight(getBest1RM(lift))"></span>
                         <span class="text-[8px] text-slate-600">Best 1RM</span>
                     </div>
                 </template>
@@ -221,7 +543,7 @@
             <div>
                 <h3 class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4">Recent Sessions</h3>
                 <div class="space-y-3">
-                    <template x-for="(log, idx) in history.slice().reverse().slice(0, 10)">
+                    <template x-for="(log, idx) in history.slice().reverse().slice(0, 15)">
                         <div class="glass p-4 rounded-2xl flex flex-col gap-2 active:bg-white/5 transition cursor-pointer">
                             <div class="flex justify-between items-center">
                                 <div>
@@ -230,10 +552,15 @@
                                 </div>
                                 <div class="text-right">
                                     <div x-show="log.pr" class="inline-block px-1.5 py-0.5 bg-yellow-500/10 border border-yellow-500/20 text-yellow-500 text-[9px] font-bold rounded mb-1">TM INCREASE</div>
+                                    <div x-show="log.failedSets > 0" class="inline-block px-1.5 py-0.5 bg-red-500/10 border border-red-500/20 text-red-500 text-[9px] font-bold rounded mb-1">
+                                        <span x-text="log.failedSets"></span> FAILED
+                                    </div>
                                     <div class="text-xs font-bold text-slate-300">TM +<span x-text="log.increase || 0"></span></div>
                                 </div>
                             </div>
-                            <!-- Show Notes if present -->
+                            <div x-show="log.duration" class="text-[10px] text-slate-500">
+                                Duration: <span x-text="log.duration"></span> min
+                            </div>
                             <div x-show="log.notes" class="text-[11px] text-slate-400 bg-black/30 p-2 rounded-lg border border-white/5 italic">
                                 "<span x-text="log.notes"></span>"
                             </div>
@@ -260,7 +587,7 @@
     <div x-show="view === 'workout'" class="fixed inset-0 z-50 bg-black overflow-y-auto" x-cloak>
         <!-- Sticky Header -->
         <div class="sticky top-0 bg-black/90 backdrop-blur-md border-b border-white/5 p-4 flex justify-between items-center z-30">
-            <button @click="view='dashboard'; stopTimer()" class="text-slate-400 text-sm font-bold">Cancel</button>
+            <button @click="cancelWorkout()" class="text-slate-400 text-sm font-bold">Cancel</button>
             <div class="text-center">
                 <div class="text-white font-bold text-sm" x-text="activeSession.title"></div>
                 <div class="text-[10px] text-indigo-500 font-bold uppercase tracking-widest">In Progress</div>
@@ -268,16 +595,24 @@
             <button @click="finishSession()" class="bg-indigo-600 px-4 py-1.5 rounded-full text-xs font-bold text-white shadow-lg shadow-indigo-600/20">Finish</button>
         </div>
 
-        <!-- Dynamic Timer Island -->
-        <div x-show="timer.active" x-transition class="sticky top-16 z-20 mx-auto max-w-[220px] bg-[#1A1A1E] border border-white/10 rounded-full shadow-2xl flex items-center justify-between p-1 pr-4 overflow-hidden mt-2">
-            <div class="absolute inset-0 bg-indigo-600/20 origin-left transition-transform duration-1000 linear" :style="`transform: scaleX(${timer.rem / timer.total})`"></div>
-            <div class="flex items-center gap-2 relative z-10">
-                <button @click="adjustTimer(-30)" class="w-8 h-8 flex items-center justify-center hover:bg-white/5 rounded-full text-slate-400">-</button>
-                <span class="text-white font-bold mono w-12 text-center" x-text="formatTime(timer.rem)"></span>
-                <button @click="adjustTimer(30)" class="w-8 h-8 flex items-center justify-center hover:bg-white/5 rounded-full text-slate-400">+</button>
-            </div>
-            <button @click="stopTimer()" class="relative z-10 text-[10px] font-bold text-red-400 hover:text-red-300">STOP</button>
+        <!-- Session Duration -->
+        <div class="bg-[#0A0A0A] border-b border-white/5 py-2 px-4 flex justify-center items-center gap-2 text-xs">
+            <svg class="w-4 h-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            <span class="text-slate-400 mono" x-text="getSessionDuration()"></span>
         </div>
+
+        <!-- Dynamic Timer Island -->
+        <div x-show="timer.active" x-transition class="sticky top-24 z-20 mx-auto max-w-[280px] bg-[#1A1A1E] border border-white/10 rounded-full shadow-2xl flex items-center justify-between p-1 pr-4 overflow-hidden mt-2">
+    <div class="absolute inset-0 bg-indigo-600/20 origin-left transition-transform duration-1000 linear" :style="`transform: scaleX(${(tick, getTimerProgress())})`"></div>
+    <div class="flex items-center gap-2 relative z-10">
+        <button @click="adjustTimer(-15)" class="w-8 h-8 flex items-center justify-center hover:bg-white/5 rounded-full text-slate-400 text-lg font-bold">-</button>
+        <span class="text-white font-bold mono w-14 text-center text-lg" x-text="(tick, formatTime(getTimerRemaining()))"></span>
+        <button @click="adjustTimer(15)" class="w-8 h-8 flex items-center justify-center hover:bg-white/5 rounded-full text-slate-400 text-lg font-bold">+</button>
+    </div>
+    <button @click="stopTimer()" class="relative z-10 text-[10px] font-bold text-red-400 hover:text-red-300 px-2">SKIP</button>
+</div>
 
         <div class="p-4 space-y-8 pb-40">
             <!-- Smart Warmups -->
@@ -292,7 +627,7 @@
                 <div x-show="showWarmups" x-collapse class="px-3 pb-3 grid grid-cols-4 gap-2">
                     <template x-for="wu in generateWarmups()">
                         <div class="bg-black/40 rounded-lg p-2 text-center border border-white/5">
-                            <div class="text-sm font-bold text-white mono" x-text="wu.weight"></div>
+                            <div class="text-sm font-bold text-white mono" x-text="displayWeight(wu.weight)"></div>
                             <div class="text-[9px] text-slate-400">x<span x-text="wu.reps"></span></div>
                         </div>
                     </template>
@@ -300,32 +635,37 @@
             </div>
 
             <!-- T1 -->
-            <div>
+            <div x-show="activeSession.t1 && activeSession.t1.sets">
                 <h3 class="text-2xl font-extrabold text-white mb-4 flex items-center justify-between">
-                    <span x-text="activeSession.t1.name"></span>
+                    <span x-text="activeSession.t1?.name"></span>
                     <span class="text-[10px] px-2 py-1 rounded bg-white/5 border border-white/10 text-slate-400 uppercase tracking-widest font-bold">Tier 1</span>
                 </h3>
                 <div class="space-y-2">
-                    <template x-for="(set, i) in activeSession.t1.sets">
-                        <div class="glass p-3 rounded-xl flex items-center justify-between transition-all" :class="set.completed ? 'border-green-500/30 bg-green-500/5' : ''">
+                    <template x-for="(set, i) in activeSession.t1?.sets || []">
+                        <div class="glass p-3 rounded-xl flex items-center justify-between transition-all" 
+                            :class="[set.completed ? (set.failed ? 'failed-set' : 'border-green-500/30 bg-green-500/5') : '']">
                             <div class="flex items-center gap-3">
                                 <span class="text-xs font-bold text-slate-600 w-4" x-text="i+1"></span>
                                 <div @click="openPlateCalc(set.weight)">
-                                    <div class="text-xl font-bold text-white mono"><span x-text="set.weight"></span><span class="text-xs text-slate-500 ml-1 font-sans">lbs</span></div>
-                                    <div class="text-[10px] font-bold" :class="set.amrap ? 'text-yellow-500' : 'text-slate-500'" x-text="set.amrap ? '1+ AMRAP' : set.reps + ' reps'"></div>
+                                    <div class="text-xl font-bold text-white mono">
+                                        <span x-text="displayWeight(set.weight)"></span>
+                                        <span class="text-xs text-slate-500 ml-1 font-sans" x-text="preferences.weightUnit"></span>
+                                    </div>
+                                    <div class="text-[10px] font-bold" :class="set.amrap ? 'text-yellow-500' : 'text-slate-500'" x-text="set.amrap ? set.reps + '+ AMRAP' : set.reps + ' reps'"></div>
                                 </div>
                             </div>
                             
-                            <!-- Enhanced AMRAP Input with RPE -->
+                            <!-- AMRAP Input -->
                             <template x-if="set.amrap">
                                 <div class="flex items-center gap-2">
                                     <div class="flex flex-col items-end">
                                         <label class="text-[8px] text-slate-500 font-bold uppercase">Reps</label>
-                                        <input type="number" x-model="set.performed" @input="completeSet(set, true)" class="w-12 h-8 bg-black border border-white/20 rounded-lg text-center text-white font-bold focus:border-yellow-500 outline-none mono">
+                                        <input type="number" x-model="set.performed" @input="completeSet(set, true, 't1')" 
+                                            class="w-12 h-8 bg-black border border-white/20 rounded-lg text-center text-white font-bold focus:border-yellow-500 outline-none mono">
                                     </div>
                                     <div class="flex flex-col items-end">
                                         <label class="text-[8px] text-slate-500 font-bold uppercase">RPE</label>
-                                        <select x-model="set.rpe" class="w-12 h-8 bg-black border border-white/20 rounded-lg text-center text-xs text-white font-bold focus:border-indigo-500 outline-none appearance-none">
+                                        <select x-model="set.rpe" @change="saveActiveSession()" class="w-12 h-8 bg-black border border-white/20 rounded-lg text-center text-xs text-white font-bold focus:border-indigo-500 outline-none appearance-none">
                                             <option value="">-</option>
                                             <option value="6">6</option>
                                             <option value="7">7</option>
@@ -336,10 +676,29 @@
                                     </div>
                                 </div>
                             </template>
+
+                            <!-- Regular Set with Fail Option -->
                             <template x-if="!set.amrap">
-                                <button @click="completeSet(set)" class="w-10 h-10 rounded-lg border flex items-center justify-center transition" :class="set.completed ? 'bg-green-500 border-green-500 text-black shadow-[0_0_15px_rgba(34,197,94,0.4)]' : 'border-white/10 hover:border-white/30'">
-                                    <svg x-show="set.completed" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
-                                </button>
+                                <div class="flex items-center gap-2">
+                                    <!-- Fail button -->
+                                    <button @click="toggleFail(set, 't1')" 
+                                        class="w-8 h-8 rounded-lg border flex items-center justify-center transition text-xs font-bold"
+                                        :class="set.failed ? 'bg-red-500 border-red-500 text-white' : 'border-white/10 text-slate-500 hover:border-red-500/50 hover:text-red-400'">
+                                        ✕
+                                    </button>
+                                    <!-- Fail reps input -->
+                                    <template x-if="set.failed">
+                                        <input type="number" x-model="set.actualReps" @input="saveActiveSession()" 
+                                            placeholder="?" 
+                                            class="w-10 h-8 bg-black border border-red-500/50 rounded-lg text-center text-red-400 font-bold focus:border-red-500 outline-none mono text-sm">
+                                    </template>
+                                    <!-- Complete button -->
+                                    <button @click="completeSet(set, false, 't1')" 
+                                        class="w-10 h-10 rounded-lg border flex items-center justify-center transition" 
+                                        :class="set.completed && !set.failed ? 'bg-green-500 border-green-500 text-black shadow-[0_0_15px_rgba(34,197,94,0.4)]' : 'border-white/10 hover:border-white/30'">
+                                        <svg x-show="set.completed && !set.failed" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+                                    </button>
+                                </div>
                             </template>
                         </div>
                     </template>
@@ -347,26 +706,36 @@
             </div>
 
             <!-- T2 -->
-            <div>
+            <div x-show="activeSession.t2 && activeSession.t2.sets">
                 <h3 class="text-lg font-bold text-slate-300 mb-3 flex items-center justify-between">
-                    <span x-text="activeSession.t2.name"></span>
+                    <span x-text="activeSession.t2?.name"></span>
                     <span class="text-[10px] px-2 py-1 rounded bg-white/5 border border-white/10 text-slate-400 uppercase tracking-widest font-bold">Tier 2</span>
                 </h3>
                 <div class="grid grid-cols-4 gap-2">
-                    <template x-for="set in activeSession.t2.sets">
-                        <button @click="completeSet(set)" class="glass aspect-square rounded-xl flex flex-col items-center justify-center relative overflow-hidden active:scale-95 transition duration-200"
-                            :class="set.completed ? 'border-indigo-500/50 bg-indigo-500/10 shadow-[0_0_10px_rgba(99,102,241,0.2)]' : ''">
-                            <span class="text-sm font-bold text-white mono" x-text="set.weight"></span>
-                            <span class="text-[9px] text-slate-500 mt-1">x<span x-text="set.reps"></span></span>
-                        </button>
+                    <template x-for="(set, i) in activeSession.t2?.sets || []">
+                        <div class="relative">
+                            <button @click="completeSet(set, false, 't2')" 
+                                class="glass w-full aspect-square rounded-xl flex flex-col items-center justify-center relative overflow-hidden active:scale-95 transition duration-200"
+                                :class="[set.completed ? (set.failed ? 'failed-set' : 'border-indigo-500/50 bg-indigo-500/10 shadow-[0_0_10px_rgba(99,102,241,0.2)]') : '']">
+                                <span class="text-sm font-bold text-white mono" x-text="displayWeight(set.weight)"></span>
+                                <span class="text-[9px] text-slate-500 mt-1">x<span x-text="set.reps"></span></span>
+                            </button>
+                            <!-- Small fail indicator -->
+                            <button @click.stop="toggleFail(set, 't2')" 
+                                class="absolute -top-1 -right-1 w-5 h-5 rounded-full text-[8px] font-bold flex items-center justify-center transition"
+                                :class="set.failed ? 'bg-red-500 text-white' : 'bg-[#333] text-slate-400 hover:bg-red-500/50'">
+                                ✕
+                            </button>
+                        </div>
                     </template>
                 </div>
             </div>
 
-            <!-- Acc -->
-            <div class="pt-6 border-t border-white/5">
+            <!-- T3 / Accessories -->
+            <div class="pt-6 border-t border-white/5" x-show="activeSession.accessories && activeSession.accessories.length > 0">
+                <h3 class="text-sm font-bold text-slate-400 mb-4 uppercase tracking-widest">Accessories</h3>
                 <div class="space-y-4">
-                    <template x-for="acc in activeSession.accessories">
+                    <template x-for="acc in activeSession.accessories || []">
                         <div class="glass p-4 rounded-xl">
                             <div class="flex justify-between items-center mb-2">
                                 <span class="text-sm font-bold text-white" x-text="acc.name"></span>
@@ -374,7 +743,8 @@
                             </div>
                             <div class="flex gap-2">
                                 <template x-for="n in acc.sets">
-                                    <button @click="toggleAcc(acc.name, n)" class="h-8 flex-1 rounded border text-xs font-bold transition"
+                                    <button @click="toggleAcc(acc.name, n)" 
+                                        class="h-8 flex-1 rounded border text-xs font-bold transition"
                                         :class="isAccDone(acc.name, n) ? 'bg-slate-200 text-black border-slate-200 shadow-sm' : 'border-white/10 text-slate-500 hover:bg-white/5'">
                                         <span x-show="!isAccDone(acc.name, n)" x-text="n"></span>
                                         <span x-show="isAccDone(acc.name, n)">✓</span>
@@ -389,8 +759,52 @@
             <!-- Session Notes -->
             <div class="pt-4">
                 <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest pl-1">Session Notes</label>
-                <textarea x-model="activeSession.notes" class="w-full h-24 bg-[#121214] border border-white/10 rounded-xl p-3 text-sm text-white mt-2 focus:border-indigo-500 outline-none resize-none" placeholder="How did it feel? Any pain?"></textarea>
+                <textarea x-model="activeSession.notes" @input="saveActiveSession()" 
+                    class="w-full h-24 bg-[#121214] border border-white/10 rounded-xl p-3 text-sm text-white mt-2 focus:border-indigo-500 outline-none resize-none" 
+                    placeholder="How did it feel? Any pain? Energy levels?"></textarea>
             </div>
+
+            <!-- Quick Actions -->
+            <div class="flex gap-3">
+                <button @click="addExtraSet()" class="flex-1 bg-[#1A1A1E] border border-white/10 text-white font-bold py-3 rounded-xl text-sm active:scale-95 transition">
+                    + Add Set
+                </button>
+                <button @click="openRestCalculator()" class="flex-1 bg-[#1A1A1E] border border-white/10 text-white font-bold py-3 rounded-xl text-sm active:scale-95 transition">
+                    🧮 1RM Calc
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= 1RM CALCULATOR MODAL ================= -->
+    <div x-show="showOneRMCalc" class="fixed inset-0 z-[60]" x-cloak>
+        <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" @click="showOneRMCalc = false" x-transition.opacity></div>
+        <div class="absolute bottom-0 inset-x-0 bg-[#1A1A1E] rounded-t-3xl p-6 border-t border-white/10" 
+             x-transition:enter="transition ease-out duration-300" x-transition:enter-start="translate-y-full" x-transition:enter-end="translate-y-0"
+             x-transition:leave="transition ease-in duration-200" x-transition:leave-start="translate-y-0" x-transition:leave-end="translate-y-full">
+            
+            <h3 class="text-lg font-bold text-white mb-4 text-center">1RM Calculator</h3>
+            
+            <div class="grid grid-cols-2 gap-4 mb-6">
+                <div>
+                    <label class="text-[10px] font-bold text-slate-500 uppercase block mb-2">Weight</label>
+                    <input type="number" x-model.number="oneRMCalc.weight" 
+                        class="w-full bg-black border border-white/20 rounded-xl p-3 text-xl font-bold text-white text-center mono focus:border-indigo-500 outline-none">
+                </div>
+                <div>
+                    <label class="text-[10px] font-bold text-slate-500 uppercase block mb-2">Reps</label>
+                    <input type="number" x-model.number="oneRMCalc.reps" 
+                        class="w-full bg-black border border-white/20 rounded-xl p-3 text-xl font-bold text-white text-center mono focus:border-indigo-500 outline-none">
+                </div>
+            </div>
+            
+            <div class="bg-indigo-500/10 border border-indigo-500/20 rounded-2xl p-6 text-center mb-6">
+                <div class="text-[10px] font-bold text-indigo-400 uppercase tracking-widest mb-2">Estimated 1RM</div>
+                <div class="text-5xl font-extrabold text-white mono" x-text="displayWeight(calculateOneRM())"></div>
+                <div class="text-xs text-slate-400 mt-2" x-text="preferences.weightUnit"></div>
+            </div>
+            
+            <button @click="showOneRMCalc = false" class="w-full bg-[#333] text-white font-bold py-4 rounded-xl hover:bg-[#444] transition">Close</button>
         </div>
     </div>
 
@@ -402,8 +816,8 @@
              x-transition:leave="transition ease-in duration-200" x-transition:leave-start="translate-y-0" x-transition:leave-end="translate-y-full">
             
             <div class="text-center mb-8">
-                <div class="text-6xl font-extrabold text-white mono tracking-tighter" x-text="plateCalc.weight"></div>
-                <div class="text-xs font-bold text-slate-500 uppercase tracking-widest mt-2">Target Load</div>
+                <div class="text-6xl font-extrabold text-white mono tracking-tighter" x-text="displayWeight(plateCalc.weight)"></div>
+                <div class="text-xs font-bold text-slate-500 uppercase tracking-widest mt-2">Target Load (<span x-text="preferences.weightUnit"></span>)</div>
             </div>
             
             <div class="flex justify-center items-center gap-1 mb-10 scale-90 sm:scale-100">
@@ -413,6 +827,10 @@
                          :class="getPlateColor(p)" x-text="p"></div>
                 </template>
             </div>
+
+            <div class="text-center text-sm text-slate-400 mb-6">
+                Per side: <span x-text="plateCalc.plates.join(' + ') || 'Empty bar'"></span>
+            </div>
             
             <button @click="plateCalc.open = false" class="w-full bg-[#333] text-white font-bold py-4 rounded-xl hover:bg-[#444] transition">Close</button>
         </div>
@@ -420,18 +838,21 @@
 
     <!-- ================= NAV ================= -->
     <nav x-show="view !== 'setup' && view !== 'workout'" class="fixed bottom-0 w-full nav-glass pb-safe pt-2 px-6 z-40 flex justify-between items-center h-20">
-        <button @click="view='dashboard'" class="flex-1 flex flex-col items-center gap-1 transition" :class="view==='dashboard'?'text-indigo-400':'text-slate-500'">
+        <button @click="view='dashboard'; $nextTick(() => renderChart())" class="flex-1 flex flex-col items-center gap-1 transition" :class="view==='dashboard'?'text-indigo-400':'text-slate-500'">
             <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
             <span class="text-[10px] font-bold">Train</span>
         </button>
-        <button @click="view='calendar'" class="flex-1 flex flex-col items-center gap-1 transition" :class="view==='calendar'?'text-indigo-400':'text-slate-500'">
+        <button @click="view='calendar'; buildCalendar()" class="flex-1 flex flex-col items-center gap-1 transition" :class="view==='calendar'?'text-indigo-400':'text-slate-500'">
             <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
             <span class="text-[10px] font-bold">History</span>
+        </button>
+        <button @click="view='preferences'; $nextTick(() => renderBodyWeightChart())" class="flex-1 flex flex-col items-center gap-1 transition" :class="view==='preferences'?'text-indigo-400':'text-slate-500'">
+            <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+            <span class="text-[10px] font-bold">Settings</span>
         </button>
     </nav>
 
     <script>
-        // Audio Context for beeps
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         function playBeep() {
             if(audioCtx.state === 'suspended') audioCtx.resume();
@@ -446,188 +867,747 @@
             osc.stop(audioCtx.currentTime + 0.5);
         }
 
+        const PROGRAMS = {
+            nsuns: {
+                name: 'nSuns 5-Day LP',
+                description: 'High volume linear progression with AMRAPs for autoregulation',
+                daysPerWeek: 5,
+                focus: 'Strength + Volume',
+                lifts: ['Bench', 'Squat', 'Deadlift', 'OHP'],
+                days: [
+                    { title: 'Volume Bench', focus: 'Chest & Triceps', t1: 'Bench', t2: 'OHP', t1Type: 'volume', acc: [{name:'Row',sets:4,reps:'8-12'},{name:'Dips',sets:3,reps:'10-15'}] },
+                    { title: 'Heavy Squat', focus: 'Legs & Core', t1: 'Squat', t2: 'Deadlift', t1Type: 'heavy', acc: [{name:'Leg Press',sets:4,reps:'10-12'},{name:'Leg Curl',sets:4,reps:'12-15'}] },
+                    { title: 'Heavy OHP', focus: 'Shoulders & Upper', t1: 'OHP', t2: 'Bench', t1Type: 'heavy', acc: [{name:'Pullups',sets:4,reps:'6-10'},{name:'Face Pull',sets:4,reps:'15-20'}] },
+                    { title: 'Heavy Deadlift', focus: 'Posterior Chain', t1: 'Deadlift', t2: 'Squat', t1Type: 'deadlift', acc: [{name:'RDL',sets:3,reps:'8-10'},{name:'Abs',sets:4,reps:'15-20'}] },
+                    { title: 'Heavy Bench', focus: 'Max Pressing', t1: 'Bench', t2: 'Bench', t1Type: 'heavy', acc: [{name:'Tri Ext',sets:4,reps:'10-15'},{name:'Curls',sets:4,reps:'10-15'}] }
+                ]
+            },
+            stronglifts: {
+                name: 'StrongLifts 5x5',
+                description: 'Classic beginner program. Simple and effective compound lifts',
+                daysPerWeek: 3,
+                focus: 'Beginner Strength',
+                lifts: ['Bench', 'Squat', 'Deadlift', 'OHP', 'Row'],
+                days: [
+                    { title: 'Workout A', focus: 'Squat, Bench, Row', t1: 'Squat', t2: 'Bench', t3: 'Row', t1Type: '5x5', acc: [] },
+                    { title: 'Workout B', focus: 'Squat, OHP, Deadlift', t1: 'Squat', t2: 'OHP', t3: 'Deadlift', t1Type: '5x5', acc: [] },
+                    { title: 'Workout A', focus: 'Squat, Bench, Row', t1: 'Squat', t2: 'Bench', t3: 'Row', t1Type: '5x5', acc: [] }
+                ]
+            },
+            gzclp: {
+                name: 'GZCLP',
+                description: 'Tiered approach with progression scheme. Great for intermediates',
+                daysPerWeek: 4,
+                focus: 'Intermediate LP',
+                lifts: ['Bench', 'Squat', 'Deadlift', 'OHP'],
+                days: [
+                    { title: 'Day 1', focus: 'Squat + Bench', t1: 'Squat', t2: 'Bench', t1Type: 'gzcl', acc: [{name:'Lat Pulldown',sets:3,reps:'15+'},{name:'Curls',sets:3,reps:'15+'}] },
+                    { title: 'Day 2', focus: 'OHP + Deadlift', t1: 'OHP', t2: 'Deadlift', t1Type: 'gzcl', acc: [{name:'Row',sets:3,reps:'15+'},{name:'Face Pull',sets:3,reps:'15+'}] },
+                    { title: 'Day 3', focus: 'Bench + Squat', t1: 'Bench', t2: 'Squat', t1Type: 'gzcl', acc: [{name:'Lat Pulldown',sets:3,reps:'15+'},{name:'Tricep',sets:3,reps:'15+'}] },
+                    { title: 'Day 4', focus: 'Deadlift + OHP', t1: 'Deadlift', t2: 'OHP', t1Type: 'gzcl', acc: [{name:'Row',sets:3,reps:'15+'},{name:'Curls',sets:3,reps:'15+'}] }
+                ]
+            },
+            '531bbb': {
+                name: '5/3/1 Boring But Big',
+                description: 'Wendler\'s proven program with high volume supplemental work',
+                daysPerWeek: 4,
+                focus: 'Strength + Hypertrophy',
+                lifts: ['Bench', 'Squat', 'Deadlift', 'OHP'],
+                days: [
+                    { title: 'OHP Day', focus: 'Overhead + Volume', t1: 'OHP', t2: 'OHP', t1Type: '531', acc: [{name:'Chinups',sets:5,reps:'10'},{name:'Face Pull',sets:5,reps:'15'}] },
+                    { title: 'Deadlift Day', focus: 'Pulls + Core', t1: 'Deadlift', t2: 'Deadlift', t1Type: '531', acc: [{name:'Leg Curl',sets:5,reps:'10'},{name:'Ab Wheel',sets:5,reps:'10'}] },
+                    { title: 'Bench Day', focus: 'Pressing + Back', t1: 'Bench', t2: 'Bench', t1Type: '531', acc: [{name:'Row',sets:5,reps:'10'},{name:'Curls',sets:5,reps:'10'}] },
+                    { title: 'Squat Day', focus: 'Legs + Core', t1: 'Squat', t2: 'Squat', t1Type: '531', acc: [{name:'Leg Press',sets:5,reps:'10'},{name:'Leg Curl',sets:5,reps:'10'}] }
+                ]
+            }
+        };
+
         function app() {
             return {
+                PROGRAMS: PROGRAMS,
                 view: 'dashboard',
-                setup: { Bench:'', Squat:'', Deadlift:'', OHP:'' },
-                tms: { Bench:0, Squat:0, Deadlift:0, OHP:0 },
+                setup: { Bench:'', Squat:'', Deadlift:'', OHP:'', Row:'' },
+                tms: { Bench:0, Squat:0, Deadlift:0, OHP:0, Row:0 },
                 currentDayIndex: 0,
                 currentWeek: 1,
                 streak: 0,
                 history: [],
                 chartLift: 'Bench',
+                bodyWeightLog: [],
                 
-                // Session
-                activeSession: { title:'', t1:{}, t2:{}, accessories:[], completedAcc:{}, notes:'' },
+                preferences: {
+                    weightUnit: 'lbs',
+                    program: 'nsuns',
+                    restT1: 180,
+                    restT2: 120,
+                    restT3: 60,
+                    timerSound: true,
+                    vibration: true,
+                    autoStartTimer: true
+                },
+                
+                activeSession: { title:'', t1:{}, t2:{}, accessories:[], completedAcc:{}, notes:'', startTime: null },
+                savedSession: null,
+                showResumeModal: false,
+                showWeightPrompt: false,
+                tempBodyWeight: null,
                 showWarmups: false,
-                timer: { active:false, total:0, rem:0, interval:null },
-                plateCalc: { open:false, weight:0, plates:[] },
-                
-                // Calendar State
+                showOneRMCalc: false,
+                oneRMCalc: { weight: 0, reps: 0 },
+                tick: 0,
+                timer: { active: false, startTime: null, duration: 0, interval: null },
+                plateCalc: { open: false, weight: 0, plates: [] },
                 calendar: { monthName: '', days: [], offset: 0 },
 
                 init() {
                     const data = JSON.parse(localStorage.getItem('nsuns_ultimate'));
+                    const prefs = JSON.parse(localStorage.getItem('lift_preferences'));
+                    const saved = JSON.parse(localStorage.getItem('lift_active_session'));
+                    const bwLog = JSON.parse(localStorage.getItem('lift_bodyweight'));
+                    
+                    if(prefs) {
+                        this.preferences = {...this.preferences, ...prefs};
+                    }
+                    
+                    if(bwLog) {
+                        this.bodyWeightLog = bwLog;
+                    }
+                    
                     if(data) {
-                        this.tms = data.tms;
+                        this.tms = {...this.tms, ...data.tms};
                         this.currentDayIndex = data.currentDayIndex || 0;
                         this.currentWeek = data.currentWeek || 1;
                         this.history = data.history || [];
                         this.streak = data.streak || 0;
-                        this.$nextTick(() => { this.renderChart(); this.buildCalendar(); });
+                        
+                        if(this.currentDayIndex >= this.getCurrentProgramDays()) {
+                            this.currentDayIndex = 0;
+                        }
+                        
+                        this.$nextTick(() => { 
+                            this.renderChart(); 
+                            this.buildCalendar(); 
+                        });
+                        
+                        if(saved && saved.startTime) {
+                            this.savedSession = saved;
+                            this.showResumeModal = true;
+                        }
                     } else {
                         this.view = 'setup';
                     }
+                    
+                    this.startTimerCheck();
+                    
+                    document.addEventListener('visibilitychange', () => {
+                        if(!document.hidden && this.timer.active) {
+                            this.checkTimerStatus();
+                        }
+                    });
+                },
+
+                startTimerCheck() {
+    setInterval(() => {
+        if(this.timer.active) {
+            this.tick++; // This forces Alpine to re-render
+            this.checkTimerStatus();
+        }
+    }, 1000);
+},
+
+                checkTimerStatus() {
+                    if(this.timer.active && this.timer.startTime) {
+                        const remaining = this.getTimerRemaining();
+                        if(remaining <= 0) {
+                            this.timerComplete();
+                        }
+                    }
+                },
+
+                getTimerRemaining() {
+                    if(!this.timer.startTime) return 0;
+                    const elapsed = Math.floor((Date.now() - this.timer.startTime) / 1000);
+                    return Math.max(0, this.timer.duration - elapsed);
+                },
+
+                getTimerProgress() {
+                    if(!this.timer.duration) return 0;
+                    return this.getTimerRemaining() / this.timer.duration;
+                },
+
+                timerComplete() {
+                    this.stopTimer();
+                    if(this.preferences.timerSound) playBeep();
+                    if(this.preferences.vibration && navigator.vibrate) navigator.vibrate([200,100,200,100,200]);
                 },
 
                 finishSetup() {
-                    if(!this.setup.Bench) return;
-                    for(let k in this.setup) this.tms[k] = this.round(this.setup[k] * 0.9);
+                    const lifts = this.getSetupLifts();
+                    const hasAtLeastOne = lifts.some(l => this.setup[l] > 0);
+                    if(!hasAtLeastOne) return;
+                    
+                    for(let k of lifts) {
+                        if(this.setup[k]) {
+                            this.tms[k] = this.round(this.setup[k] * 0.9);
+                        }
+                    }
+                    
+                    this.savePreferences();
                     this.save();
                     this.view = 'dashboard';
                     this.$nextTick(() => { this.renderChart(); this.buildCalendar(); });
                 },
 
+                getSetupLifts() {
+                    return PROGRAMS[this.preferences.program]?.lifts || ['Bench', 'Squat', 'Deadlift', 'OHP'];
+                },
+
+                getCurrentProgramLifts() {
+                    return PROGRAMS[this.preferences.program]?.lifts || ['Bench', 'Squat', 'Deadlift', 'OHP'];
+                },
+
+                getCurrentProgramName() {
+                    return PROGRAMS[this.preferences.program]?.name || 'nSuns';
+                },
+
+                getCurrentProgramDays() {
+                    return PROGRAMS[this.preferences.program]?.daysPerWeek || 5;
+                },
+
+                selectProgram(key) {
+                    const oldLifts = this.getCurrentProgramLifts();
+                    this.preferences.program = key;
+                    const newLifts = this.getCurrentProgramLifts();
+                    
+                    for(let lift of newLifts) {
+                        if(!this.tms[lift]) {
+                            this.tms[lift] = 0;
+                        }
+                    }
+                    
+                    if(this.currentDayIndex >= this.getCurrentProgramDays()) {
+                        this.currentDayIndex = 0;
+                    }
+                    
+                    this.chartLift = newLifts[0];
+                    this.savePreferences();
+                    this.save();
+                },
+
                 getWorkout() {
-                    const w = [
-                        { t:'Volume Bench', f:'Upper Pump', t1:'Bench', t2:'OHP' },
-                        { t:'Heavy Squat', f:'Lower Strength', t1:'Squat', t2:'Deadlift' },
-                        { t:'Heavy OHP', f:'Shoulders', t1:'OHP', t2:'Bench' },
-                        { t:'Heavy Deadlift', f:'Posterior Chain', t1:'Deadlift', t2:'Squat' },
-                        { t:'Heavy Bench', f:'Max Press', t1:'Bench', t2:'Bench' }
-                    ];
-                    return w[this.currentDayIndex];
+                    const program = PROGRAMS[this.preferences.program];
+                    if(!program) return { title: 'Workout', focus: 'Training' };
+                    
+                    const dayIndex = this.currentDayIndex % program.days.length;
+                    return program.days[dayIndex] || { title: 'Workout', focus: 'Training' };
+                },
+
+                initiateSession() {
+                    this.showWeightPrompt = true;
+                    this.tempBodyWeight = null;
+                },
+
+                skipWeightPrompt() {
+                    this.showWeightPrompt = false;
+                    this.startSession();
+                },
+
+                logBodyWeight() {
+                    if(this.tempBodyWeight && this.tempBodyWeight > 0) {
+                        this.bodyWeightLog.push({
+                            date: new Date().toISOString(),
+                            weight: this.tempBodyWeight
+                        });
+                        localStorage.setItem('lift_bodyweight', JSON.stringify(this.bodyWeightLog));
+                    }
+                    this.showWeightPrompt = false;
+                    this.startSession();
+                },
+
+                getLatestWeight() {
+                    if(this.bodyWeightLog.length === 0) return '-';
+                    return this.bodyWeightLog[this.bodyWeightLog.length - 1].weight;
+                },
+
+                getLowestWeight() {
+                    if(this.bodyWeightLog.length === 0) return '-';
+                    return Math.min(...this.bodyWeightLog.map(e => e.weight));
+                },
+
+                getHighestWeight() {
+                    if(this.bodyWeightLog.length === 0) return '-';
+                    return Math.max(...this.bodyWeightLog.map(e => e.weight));
                 },
 
                 startSession() {
                     const d = this.getWorkout();
-                    this.activeSession.title = d.t;
-                    this.activeSession.completedAcc = {};
-                    this.activeSession.notes = '';
+                    const program = PROGRAMS[this.preferences.program];
+                    
+                    this.activeSession = {
+                        title: d.title,
+                        completedAcc: {},
+                        notes: '',
+                        startTime: Date.now(),
+                        program: this.preferences.program
+                    };
                     this.showWarmups = false;
                     
-                    const sets = { vol:[8,6,4,4,4,5,6,7,8], hvy:[5,3,1,3,3,3,5,5,5], dl:[5,3,1,3,3,3,3,3,3], t2:[6,5,3,5,7,4,6,8] };
-                    const pct = { vol:[.65,.75,.85,.85,.85,.80,.75,.70,.65], hvy:[.75,.85,.95,.90,.85,.80,.75,.70,.65], t2:[.50,.60,.70,.70,.70,.70,.70,.70] };
+                    this.activeSession.t1 = this.generateT1Sets(d, program);
+                    this.activeSession.t2 = this.generateT2Sets(d, program);
+                    this.activeSession.accessories = d.acc ? [...d.acc] : [];
                     
-                    let s = sets.hvy, p = pct.hvy;
-                    if(this.currentDayIndex===0) { s = sets.vol; p = pct.vol; }
-                    if(this.currentDayIndex===3) { s = sets.dl; }
-
-                    this.activeSession.t1 = {
-                        name: d.t1,
-                        sets: s.map((r,i) => {
-                            let amrap = (this.currentDayIndex!==0 && i===2) || (this.currentDayIndex===0 && i===8) || (i===8 && this.currentDayIndex!==3);
-                            if(this.currentDayIndex===3 && i===8) amrap=true;
-                            return { weight: this.round(this.tms[d.t1] * p[i]), reps: r, amrap, completed: false, performed: amrap?null:r, rpe: '' };
-                        })
-                    };
-
-                    let t2tm = this.tms[d.t2];
-                    if(d.t.includes('Squat') && d.t2==='Deadlift') t2tm = this.tms.Deadlift; // Sumo
-                    if(d.t.includes('OHP') && d.t2==='Bench') t2tm = this.tms.Bench; // Incline
-
-                    this.activeSession.t2 = {
-                        name: d.t2 + " Var",
-                        sets: sets.t2.map((r,i) => ({ weight: this.round(t2tm * pct.t2[i]), reps: r, completed: false }))
-                    };
-
-                    const acc = [
-                        [{name:'Row',sets:4,reps:10},{name:'Dips',sets:3,reps:12}],
-                        [{name:'Leg Press',sets:4,reps:12},{name:'Curls',sets:4,reps:15}],
-                        [{name:'Pullups',sets:4,reps:8},{name:'Face Pull',sets:4,reps:15}],
-                        [{name:'RDL',sets:3,reps:10},{name:'Abs',sets:4,reps:15}],
-                        [{name:'Tri Ext',sets:4,reps:12},{name:'Curls',sets:4,reps:12}]
-                    ];
-                    this.activeSession.accessories = acc[this.currentDayIndex];
+                    this.saveActiveSession();
                     this.view = 'workout';
                 },
 
+                generateT1Sets(day, program) {
+                    const lift = day.t1;
+                    const tm = this.tms[lift] || 100;
+                    const type = day.t1Type;
+                    
+                    let sets = [];
+                    
+                    if(this.preferences.program === 'nsuns') {
+                        if(type === 'volume') {
+                            const reps = [8,6,4,4,4,5,6,7,8];
+                            const pcts = [.65,.75,.85,.85,.85,.80,.75,.70,.65];
+                            sets = reps.map((r,i) => ({
+                                weight: this.round(tm * pcts[i]),
+                                reps: r,
+                                amrap: i === 8,
+                                completed: false,
+                                failed: false,
+                                performed: null,
+                                actualReps: null,
+                                rpe: ''
+                            }));
+                        } else if(type === 'heavy') {
+                            const reps = [5,3,1,3,3,3,5,5,5];
+                            const pcts = [.75,.85,.95,.90,.85,.80,.75,.70,.65];
+                            sets = reps.map((r,i) => ({
+                                weight: this.round(tm * pcts[i]),
+                                reps: r,
+                                amrap: i === 2,
+                                completed: false,
+                                failed: false,
+                                performed: null,
+                                actualReps: null,
+                                rpe: ''
+                            }));
+                        } else if(type === 'deadlift') {
+                            const reps = [5,3,1,3,3,3,3,3,3];
+                            const pcts = [.75,.85,.95,.90,.85,.80,.75,.70,.65];
+                            sets = reps.map((r,i) => ({
+                                weight: this.round(tm * pcts[i]),
+                                reps: r,
+                                amrap: i === 2,
+                                completed: false,
+                                failed: false,
+                                performed: null,
+                                actualReps: null,
+                                rpe: ''
+                            }));
+                        }
+                    } else if(this.preferences.program === 'stronglifts') {
+                        for(let i=0; i<5; i++) {
+                            sets.push({
+                                weight: tm,
+                                reps: 5,
+                                amrap: false,
+                                completed: false,
+                                failed: false,
+                                performed: null,
+                                actualReps: null,
+                                rpe: ''
+                            });
+                        }
+                    } else if(this.preferences.program === 'gzclp') {
+                        const reps = [5,5,5,5,5];
+                        const pct = 0.85;
+                        sets = reps.map((r,i) => ({
+                            weight: this.round(tm * pct),
+                            reps: r,
+                            amrap: i === 4,
+                            completed: false,
+                            failed: false,
+                            performed: null,
+                            actualReps: null,
+                            rpe: ''
+                        }));
+                    } else if(this.preferences.program === '531bbb') {
+                        const weekNum = ((this.currentWeek - 1) % 3) + 1;
+                        let reps, pcts;
+                        
+                        if(weekNum === 1) {
+                            reps = [5,5,5];
+                            pcts = [.65,.75,.85];
+                        } else if(weekNum === 2) {
+                            reps = [3,3,3];
+                            pcts = [.70,.80,.90];
+                        } else {
+                            reps = [5,3,1];
+                            pcts = [.75,.85,.95];
+                        }
+                        
+                        sets = reps.map((r,i) => ({
+                            weight: this.round(tm * pcts[i]),
+                            reps: r,
+                            amrap: i === 2,
+                            completed: false,
+                            failed: false,
+                            performed: null,
+                            actualReps: null,
+                            rpe: ''
+                        }));
+                    }
+                    
+                    return { name: lift, sets };
+                },
+
+                generateT2Sets(day, program) {
+                    const lift = day.t2;
+                    const tm = this.tms[lift] || 100;
+                    
+                    let sets = [];
+                    
+                    if(this.preferences.program === 'nsuns') {
+                        const reps = [6,5,3,5,7,4,6,8];
+                        const pcts = [.50,.60,.70,.70,.70,.70,.70,.70];
+                        sets = reps.map((r,i) => ({
+                            weight: this.round(tm * pcts[i]),
+                            reps: r,
+                            completed: false,
+                            failed: false,
+                            actualReps: null
+                        }));
+                    } else if(this.preferences.program === 'stronglifts') {
+                        if(day.t3) {
+                            const t3Lift = day.t3;
+                            const t3Tm = this.tms[t3Lift] || 100;
+                            const reps = t3Lift === 'Deadlift' ? 5 : 5;
+                            const numSets = t3Lift === 'Deadlift' ? 1 : 5;
+                            
+                            for(let i=0; i<5; i++) {
+                                sets.push({
+                                    weight: this.tms[lift] || tm,
+                                    reps: 5,
+                                    completed: false,
+                                    failed: false,
+                                    actualReps: null
+                                });
+                            }
+                            
+                            return { name: lift + ' / ' + t3Lift, sets, hasT3: true, t3Lift, t3Sets: numSets };
+                        }
+                        
+                        for(let i=0; i<5; i++) {
+                            sets.push({
+                                weight: tm,
+                                reps: 5,
+                                completed: false,
+                                failed: false,
+                                actualReps: null
+                            });
+                        }
+                    } else if(this.preferences.program === 'gzclp') {
+                        const reps = [10,10,10];
+                        const pct = 0.65;
+                        sets = reps.map((r,i) => ({
+                            weight: this.round(tm * pct),
+                            reps: r,
+                            completed: false,
+                            failed: false,
+                            actualReps: null
+                        }));
+                    } else if(this.preferences.program === '531bbb') {
+                        const pct = 0.50;
+                        for(let i=0; i<5; i++) {
+                            sets.push({
+                                weight: this.round(tm * pct),
+                                reps: 10,
+                                completed: false,
+                                failed: false,
+                                actualReps: null
+                            });
+                        }
+                    }
+                    
+                    return { name: lift + (this.preferences.program === 'nsuns' ? ' Var' : ''), sets };
+                },
+
                 generateWarmups() {
-                    // Logic: Empty bar, then 40%, 60%, 80% of first working set
+                    if(!this.activeSession.t1?.sets?.length) return [];
                     const workWeight = this.activeSession.t1.sets[0].weight;
+                    const barWeight = this.preferences.weightUnit === 'kg' ? 20 : 45;
+                    
                     const wu = [
-                        { weight: 45, reps: 10 },
+                        { weight: barWeight, reps: 10 },
                         { weight: this.round(workWeight * 0.4), reps: 5 },
                         { weight: this.round(workWeight * 0.6), reps: 3 },
                         { weight: this.round(workWeight * 0.8), reps: 2 }
                     ];
-                    return wu.filter((w, i) => i === 0 || w.weight > 45); // Dedupe if light
+                    return wu.filter((w, i) => i === 0 || w.weight > barWeight);
                 },
 
-                completeSet(set, isInput) {
-                    if(!isInput) set.completed = !set.completed;
-                    else if(set.performed) set.completed = true;
-                    if(set.completed) this.startTimer(this.activeSession.t1.sets.includes(set) ? 120 : 90);
+                toggleFail(set, tier) {
+                    set.failed = !set.failed;
+                    if(set.failed) {
+                        set.completed = true;
+                        set.actualReps = null;
+                    } else {
+                        set.actualReps = null;
+                    }
+                    this.saveActiveSession();
+                },
+
+                completeSet(set, isInput, tier) {
+                    if(!isInput) {
+                        if(!set.failed) {
+                            set.completed = !set.completed;
+                        }
+                    } else if(set.performed) {
+                        set.completed = true;
+                    }
+                    
+                    if(set.completed && this.preferences.autoStartTimer) {
+                        const restTime = tier === 't1' ? this.preferences.restT1 : 
+                                        tier === 't2' ? this.preferences.restT2 : this.preferences.restT3;
+                        this.startTimer(restTime);
+                    }
+                    
+                    this.saveActiveSession();
+                },
+
+                resumeWorkout() {
+                    this.showResumeModal = false;
+                    this.activeSession = {...this.savedSession};
+                    
+                    if(this.savedSession.timerState && this.savedSession.timerState.active) {
+                        this.timer = {...this.savedSession.timerState};
+                    }
+                    
+                    this.view = 'workout';
+                },
+
+                discardWorkout() {
+                    this.showResumeModal = false;
+                    this.savedSession = null;
+                    localStorage.removeItem('lift_active_session');
+                },
+
+                finishSavedSession() {
+                    this.showResumeModal = false;
+                    this.activeSession = {...this.savedSession};
+                    this.finishSession();
+                },
+
+                dismissResume() {
+                    this.showResumeModal = false;
+                },
+
+                cancelWorkout() {
+                    if(confirm('Cancel this workout? Progress will be saved for later.')) {
+                        this.saveActiveSession();
+                        this.stopTimer();
+                        this.view = 'dashboard';
+                    }
+                },
+
+                saveActiveSession() {
+                    const sessionData = {
+                        ...this.activeSession,
+                        timerState: this.timer.active ? {
+                            active: true,
+                            startTime: this.timer.startTime,
+                            duration: this.timer.duration
+                        } : null
+                    };
+                    localStorage.setItem('lift_active_session', JSON.stringify(sessionData));
                 },
 
                 finishSession() {
-                    const prSet = this.activeSession.t1.sets.find(s => s.amrap && s.weight === Math.max(...this.activeSession.t1.sets.map(x=>x.weight)));
+                    const prSet = this.activeSession.t1?.sets?.find(s => s.amrap && s.weight === Math.max(...(this.activeSession.t1?.sets?.map(x=>x.weight) || [0])));
                     let increase = 0;
                     let est1rm = 0;
 
                     if(prSet && prSet.performed) {
                         const r = parseInt(prSet.performed);
-                        if(r>1) increase=5; if(r>3) increase=10; if(r>5) increase=15;
-                        // Epley formula for 1RM
+                        if(this.preferences.program === 'nsuns') {
+                            if(r>1) increase=5; if(r>3) increase=10; if(r>5) increase=15;
+                        } else if(this.preferences.program === 'stronglifts') {
+                            increase = 5;
+                        } else if(this.preferences.program === 'gzclp') {
+                            if(r >= 5) increase = 5;
+                        } else if(this.preferences.program === '531bbb') {
+                            if(this.currentWeek % 4 === 0) increase = 5;
+                        }
+                        
+                        if(this.preferences.weightUnit === 'kg') {
+                            increase = this.round(increase / 2.2);
+                        }
+                        
                         est1rm = Math.round(prSet.weight * (1 + r/30));
                     }
+                    
+                    const failedSets = [
+                        ...(this.activeSession.t1?.sets || []),
+                        ...(this.activeSession.t2?.sets || [])
+                    ].filter(s => s.failed).length;
+                    
+                    if(failedSets >= 3) {
+                        increase = 0;
+                    }
 
-                    if(increase>0) {
+                    if(increase > 0 && this.activeSession.t1?.name) {
                         this.tms[this.activeSession.t1.name] += increase;
                         confetti({particleCount:100, spread:70, origin:{y:0.6}, colors: ['#6366f1', '#ffffff']});
                     }
+                    
+                    const duration = this.activeSession.startTime ? 
+                        Math.round((Date.now() - this.activeSession.startTime) / 60000) : 0;
 
                     this.history.push({
                         date: new Date().toLocaleDateString('en-US'),
+                        dateISO: new Date().toISOString(),
                         title: this.activeSession.title,
+                        program: this.preferences.program,
                         increase: increase,
                         pr: increase > 0,
+                        failedSets: failedSets,
+                        duration: duration,
                         notes: this.activeSession.notes,
                         details: { 
-                            t1: this.activeSession.t1.name, 
+                            t1: this.activeSession.t1?.name, 
                             weight: prSet ? prSet.weight : 0,
                             reps: prSet ? prSet.performed : 0,
-                            est1rm: est1rm
+                            est1rm: est1rm,
+                            allSets: this.activeSession.t1?.sets?.map(s => ({
+                                weight: s.weight,
+                                reps: s.reps,
+                                performed: s.performed || s.reps,
+                                failed: s.failed,
+                                actualReps: s.actualReps
+                            }))
                         }
                     });
 
                     this.currentDayIndex++;
-                    if(this.currentDayIndex > 4) { this.currentDayIndex=0; this.currentWeek++; }
+                    if(this.currentDayIndex >= this.getCurrentProgramDays()) { 
+                        this.currentDayIndex = 0; 
+                        this.currentWeek++; 
+                    }
                     this.streak++;
+                    
+                    localStorage.removeItem('lift_active_session');
+                    this.savedSession = null;
                     
                     this.save();
                     this.stopTimer();
                     this.view = 'dashboard';
                     this.buildCalendar();
-                    this.renderChart();
+                    this.$nextTick(() => this.renderChart());
+                },
+
+                addExtraSet() {
+                    if(this.activeSession.t1?.sets?.length > 0) {
+                        const lastSet = this.activeSession.t1.sets[this.activeSession.t1.sets.length - 1];
+                        this.activeSession.t1.sets.push({
+                            weight: lastSet.weight,
+                            reps: lastSet.reps,
+                            amrap: false,
+                            completed: false,
+                            failed: false,
+                            performed: null,
+                            actualReps: null,
+                            rpe: ''
+                        });
+                        this.saveActiveSession();
+                    }
+                },
+
+                openRestCalculator() {
+                    this.oneRMCalc = { weight: 0, reps: 0 };
+                    this.showOneRMCalc = true;
+                },
+
+                calculateOneRM() {
+                    if(!this.oneRMCalc.weight || !this.oneRMCalc.reps) return 0;
+                    return Math.round(this.oneRMCalc.weight * (1 + this.oneRMCalc.reps / 30));
+                },
+
+                getSessionDuration() {
+                    if(!this.activeSession.startTime) return '0:00';
+                    const elapsed = Math.floor((Date.now() - this.activeSession.startTime) / 1000);
+                    const mins = Math.floor(elapsed / 60);
+                    const secs = elapsed % 60;
+                    return `${mins}:${secs.toString().padStart(2, '0')}`;
                 },
 
                 getBest1RM(lift) {
                     const liftHist = this.history.filter(h => h.details && h.details.t1 === lift && h.details.est1rm);
-                    if(!liftHist.length) return this.round(this.tms[lift] / 0.9); // Fallback to TM calc
+                    if(!liftHist.length) return this.round(this.tms[lift] / 0.9);
                     return Math.max(...liftHist.map(h => h.details.est1rm));
                 },
 
-                // UTILS
-                round(n) { return 5 * Math.round(n / 5); },
-                
-                // TIMER
-                startTimer(s) {
-                    this.stopTimer(); this.timer.active=true; this.timer.total=s; this.timer.rem=s;
-                    this.timer.interval = setInterval(() => {
-                        this.timer.rem--; 
-                        if(this.timer.rem<=0) { 
-                            this.stopTimer(); 
-                            playBeep(); 
-                            if(navigator.vibrate) navigator.vibrate([200,100,200]); 
+                getTotalVolume() {
+                    let total = 0;
+                    this.history.forEach(h => {
+                        if(h.details?.allSets) {
+                            h.details.allSets.forEach(s => {
+                                const reps = s.failed ? (s.actualReps || 0) : (s.performed || s.reps);
+                                total += s.weight * reps;
+                            });
                         }
-                    }, 1000);
+                    });
+                    if(total >= 1000000) return (total/1000000).toFixed(1) + 'M';
+                    if(total >= 1000) return (total/1000).toFixed(0) + 'K';
+                    return total;
                 },
-                stopTimer() { this.timer.active=false; clearInterval(this.timer.interval); },
-                adjustTimer(s) { this.timer.rem += s; },
-                formatTime(s) { return `${Math.floor(s/60)}:${(s%60).toString().padStart(2,'0')}`; },
 
-                // CALENDAR
+                getAvgDuration() {
+                    const withDuration = this.history.filter(h => h.duration);
+                    if(!withDuration.length) return '-';
+                    const avg = withDuration.reduce((a,b) => a + b.duration, 0) / withDuration.length;
+                    return Math.round(avg);
+                },
+
+                displayWeight(w) {
+                    if(!w) return 0;
+                    return Math.round(w);
+                },
+
+                round(n) { 
+                    const increment = this.preferences.weightUnit === 'kg' ? 2.5 : 5;
+                    return increment * Math.round(n / increment); 
+                },
+                
+                startTimer(s) {
+                    this.stopTimer(); 
+                    this.timer.active = true; 
+                    this.timer.startTime = Date.now();
+                    this.timer.duration = s;
+                    this.saveActiveSession();
+                },
+
+                stopTimer() { 
+                    this.timer.active = false; 
+                    this.timer.startTime = null;
+                    this.timer.duration = 0;
+                    clearInterval(this.timer.interval); 
+                },
+
+                adjustTimer(s) { 
+                    if(this.timer.active) {
+                        this.timer.duration += s;
+                        if(this.timer.duration < 0) this.timer.duration = 0;
+                    }
+                },
+
+                formatTime(s) { 
+                    if(s < 0) s = 0;
+                    return `${Math.floor(s/60)}:${(s%60).toString().padStart(2,'0')}`; 
+                },
+
                 buildCalendar() {
                     const now = new Date();
                     now.setMonth(now.getMonth() + this.calendar.offset);
@@ -646,59 +1626,134 @@
                         this.calendar.days.push({ num:i, isToday, hasLog });
                     }
                 },
+
                 changeMonth(d) { this.calendar.offset += d; this.buildCalendar(); },
 
-                // PLATE MATH
                 openPlateCalc(w) {
-                    this.plateCalc.weight=w; this.plateCalc.plates=[]; let r=(w-45)/2;
-                    [45,25,10,5,2.5].forEach(p=>{ while(r>=p) { this.plateCalc.plates.push(p); r-=p; } });
-                    this.plateCalc.open=true;
+                    this.plateCalc.weight = w; 
+                    this.plateCalc.plates = []; 
+                    
+                    const barWeight = this.preferences.weightUnit === 'kg' ? 20 : 45;
+                    const plates = this.preferences.weightUnit === 'kg' ? [25, 20, 15, 10, 5, 2.5, 1.25] : [45, 25, 10, 5, 2.5];
+                    
+                    let remaining = (w - barWeight) / 2;
+                    
+                    plates.forEach(p => { 
+                        while(remaining >= p) { 
+                            this.plateCalc.plates.push(p); 
+                            remaining -= p; 
+                        } 
+                    });
+                    
+                    this.plateCalc.open = true;
                 },
+
                 getPlateColor(p) {
-                    if(p==45) return 'bg-blue-600 text-white';
-                    if(p==25) return 'bg-yellow-500 text-black';
-                    if(p==10) return 'bg-green-500 text-black';
+                    if(this.preferences.weightUnit === 'kg') {
+                        if(p >= 25) return 'bg-red-600 text-white';
+                        if(p >= 20) return 'bg-blue-600 text-white';
+                        if(p >= 15) return 'bg-yellow-500 text-black';
+                        if(p >= 10) return 'bg-green-500 text-black';
+                        if(p >= 5) return 'bg-white text-black';
+                        return 'bg-gray-400 text-black';
+                    }
+                    if(p == 45) return 'bg-blue-600 text-white';
+                    if(p == 25) return 'bg-yellow-500 text-black';
+                    if(p == 10) return 'bg-green-500 text-black';
                     return 'bg-white text-black';
                 },
 
-                // ACC
-                toggleAcc(n,i) { const k=`${n}-${i}`; this.activeSession.completedAcc[k]=!this.activeSession.completedAcc[k]; },
-                isAccDone(n,i) { return !!this.activeSession.completedAcc[`${n}-${i}`]; },
+                toggleAcc(n, i) { 
+                    const k = `${n}-${i}`; 
+                    this.activeSession.completedAcc[k] = !this.activeSession.completedAcc[k]; 
+                    
+                    if(this.activeSession.completedAcc[k] && this.preferences.autoStartTimer) {
+                        this.startTimer(this.preferences.restT3);
+                    }
+                    
+                    this.saveActiveSession();
+                },
 
-                // DATA
-                save() { localStorage.setItem('nsuns_ultimate', JSON.stringify({tms:this.tms, currentDayIndex:this.currentDayIndex, currentWeek:this.currentWeek, streak:this.streak, history:this.history})); },
+                isAccDone(n, i) { return !!this.activeSession.completedAcc[`${n}-${i}`]; },
+
+                savePreferences() {
+                    localStorage.setItem('lift_preferences', JSON.stringify(this.preferences));
+                },
+
+                save() { 
+                    localStorage.setItem('nsuns_ultimate', JSON.stringify({
+                        tms: this.tms, 
+                        currentDayIndex: this.currentDayIndex, 
+                        currentWeek: this.currentWeek, 
+                        streak: this.streak, 
+                        history: this.history
+                    })); 
+                },
+
                 exportData() {
-                    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(localStorage.getItem('nsuns_ultimate')));
+                    const exportObj = {
+                        nsuns_ultimate: JSON.parse(localStorage.getItem('nsuns_ultimate')),
+                        lift_preferences: JSON.parse(localStorage.getItem('lift_preferences')),
+                        lift_bodyweight: JSON.parse(localStorage.getItem('lift_bodyweight'))
+                    };
+                    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportObj));
                     const downloadAnchorNode = document.createElement('a');
-                    downloadAnchorNode.setAttribute("href",     dataStr);
-                    downloadAnchorNode.setAttribute("download", "nsuns_backup.json");
+                    downloadAnchorNode.setAttribute("href", dataStr);
+                    downloadAnchorNode.setAttribute("download", "lift_ultimate_backup_" + new Date().toISOString().split('T')[0] + ".json");
                     document.body.appendChild(downloadAnchorNode); 
                     downloadAnchorNode.click();
                     downloadAnchorNode.remove();
                 },
+
                 triggerImport() { document.getElementById('importFile').click(); },
+
                 importData(e) {
                     const reader = new FileReader();
                     reader.onload = (event) => {
                         try {
-                            // Fix: Handle potentially single or double stringified JSON
                             let raw = event.target.result;
                             let data;
-                            try { data = JSON.parse(JSON.parse(raw)); } catch(e) { data = JSON.parse(raw); }
-                            
-                            if(data && data.tms) {
-                                localStorage.setItem('nsuns_ultimate', JSON.stringify(data));
-                                location.reload();
-                            } else {
-                                alert("Invalid file format");
+                            try { 
+                                data = JSON.parse(raw);
+                            } catch(e) { 
+                                try {
+                                    data = JSON.parse(JSON.parse(raw));
+                                } catch(e2) {
+                                    throw new Error("Invalid JSON");
+                                }
                             }
+                            
+                            if(data.nsuns_ultimate) {
+                                localStorage.setItem('nsuns_ultimate', JSON.stringify(data.nsuns_ultimate));
+                            } else if(data.tms) {
+                                localStorage.setItem('nsuns_ultimate', JSON.stringify(data));
+                            }
+                            
+                            if(data.lift_preferences) {
+                                localStorage.setItem('lift_preferences', JSON.stringify(data.lift_preferences));
+                            }
+                            
+                            if(data.lift_bodyweight) {
+                                localStorage.setItem('lift_bodyweight', JSON.stringify(data.lift_bodyweight));
+                            }
+                            
+                            location.reload();
                         } catch(err) {
-                            alert("Error importing data");
+                            alert("Error importing data: " + err.message);
                         }
                     };
                     reader.readAsText(e.target.files[0]);
                 },
-                resetAll() { if(confirm("Delete all progress?")) { localStorage.removeItem('nsuns_ultimate'); location.reload(); } },
+
+                resetAll() { 
+                    if(confirm("Delete all progress? This cannot be undone.")) { 
+                        localStorage.removeItem('nsuns_ultimate'); 
+                        localStorage.removeItem('lift_preferences');
+                        localStorage.removeItem('lift_bodyweight');
+                        localStorage.removeItem('lift_active_session');
+                        location.reload(); 
+                    } 
+                },
 
                 renderChart() {
                     const ctx = document.getElementById('mainChart');
@@ -717,8 +1772,11 @@
                             labels: liftData.length ? liftData.map(d => d.x) : ['Start'],
                             datasets: [{
                                 label: 'Est. 1RM',
-                                data: liftData.length ? liftData.map(d => d.y) : [this.tms[lift]],
-                                borderColor: '#6366f1', borderWidth: 2, tension: 0.3, pointBackgroundColor: '#fff',
+                                data: liftData.length ? liftData.map(d => d.y) : [this.tms[lift] || 0],
+                                borderColor: '#6366f1', 
+                                borderWidth: 2, 
+                                tension: 0.3, 
+                                pointBackgroundColor: '#fff',
                                 backgroundColor: (ctx) => {
                                     const grad = ctx.chart.ctx.createLinearGradient(0,0,0,160);
                                     grad.addColorStop(0, 'rgba(99,102,241,0.5)');
@@ -729,12 +1787,58 @@
                             }]
                         },
                         options: { 
-                            responsive:true, 
-                            maintainAspectRatio:false, 
-                            plugins:{legend:{display:false}}, 
-                            scales:{
-                                x:{display:false}, 
-                                y:{grid:{color:'rgba(255,255,255,0.05)'}, ticks:{color:'#666'}}
+                            responsive: true, 
+                            maintainAspectRatio: false, 
+                            plugins: { legend: { display: false } }, 
+                            scales: {
+                                x: { display: false }, 
+                                y: { 
+                                    grid: { color: 'rgba(255,255,255,0.05)' }, 
+                                    ticks: { color: '#666' }
+                                }
+                            } 
+                        }
+                    });
+                },
+
+                renderBodyWeightChart() {
+                    const ctx = document.getElementById('bodyWeightChart');
+                    if(!ctx || this.bodyWeightLog.length === 0) return;
+                    
+                    if(window.bwChart) window.bwChart.destroy();
+                    
+                    const data = this.bodyWeightLog.slice(-30);
+                    
+                    window.bwChart = new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: data.map(d => new Date(d.date).toLocaleDateString('en-US', {month:'short', day:'numeric'})),
+                            datasets: [{
+                                label: 'Body Weight',
+                                data: data.map(d => d.weight),
+                                borderColor: '#3b82f6', 
+                                borderWidth: 2, 
+                                tension: 0.3, 
+                                pointBackgroundColor: '#fff',
+                                backgroundColor: (ctx) => {
+                                    const grad = ctx.chart.ctx.createLinearGradient(0,0,0,160);
+                                    grad.addColorStop(0, 'rgba(59,130,246,0.5)');
+                                    grad.addColorStop(1, 'rgba(59,130,246,0.0)');
+                                    return grad;
+                                },
+                                fill: true
+                            }]
+                        },
+                        options: { 
+                            responsive: true, 
+                            maintainAspectRatio: false, 
+                            plugins: { legend: { display: false } }, 
+                            scales: {
+                                x: { display: false }, 
+                                y: { 
+                                    grid: { color: 'rgba(255,255,255,0.05)' }, 
+                                    ticks: { color: '#666' }
+                                }
                             } 
                         }
                     });
