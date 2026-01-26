@@ -951,6 +951,18 @@
             standard: [[1.0, 5], [1.0, 5], [1.0, 5], [1.0, 5], [1.0, 5, '+']],
             deadlift: [[1.0, 5, '+']]
         },
+        // NEW SCHEMES FOR PHUL & PPL
+        phul: {
+            power: [[0.85, 5], [0.85, 5], [0.85, 5]], // 3x5 Heavy
+            hyper: [[0.65, 10], [0.65, 10], [0.65, 10]], // 3x10 Hypertrophy
+            volume: [[0.60, 12], [0.60, 12], [0.60, 12]] // 3x12 volume
+        },
+        ppl: {
+            main_5x5: [[0.85, 5], [0.85, 5], [0.85, 5], [0.85, 5], [0.85, 5, '+']], // Linear with AMRAP
+            main_1x5: [[0.90, 5, '+']], // Deadlift style
+            secondary: [[0.70, 10], [0.70, 10], [0.70, 10]] // 3x10 Supplemental
+        },
+        // END NEW SCHEMES
         gzclp: {
             t1: { stage1: {sets:5,reps:3,amrap:true,w:1}, stage2: {sets:6,reps:2,amrap:true,w:1}, stage3: {sets:10,reps:1,amrap:true,w:1} },
             t2: { stage1: {sets:3,reps:10,w:1}, stage2: {sets:3,reps:8,w:1}, stage3: {sets:3,reps:6,w:1} }
@@ -981,6 +993,24 @@
     
     const PROGRAMS = {
         nsuns: { name:'nSuns LP', daysPerWeek:5, description:'High volume, auto-regulated.', progressionDesc: 'AMRAP-based TM increase', progression: { type: 'amrap' }, days:[{title:'Bench Vol', t1:'Bench', t2:'OHP', s:'t1_volume', t2s:'t2_standard', focus:'Chest & Shoulders', acc:[{name:'Row',sets:4,reps:'8-12'}]},{title:'Squat Heavy', t1:'Squat', t2:'Deadlift', s:'t1_heavy', t2s:'t2_standard', focus:'Lower Body Power', acc:[{name:'Leg Acc',sets:4,reps:'10-12'}]},{title:'OHP Heavy', t1:'OHP', t2:'Bench', s:'t1_heavy', t2s:'t2_standard', focus:'Shoulder Strength', acc:[{name:'Pullups',sets:4,reps:'6-10'}]},{title:'Deadlift Heavy', t1:'Deadlift', t2:'Squat', s:'t1_deadlift', t2s:'t2_standard', focus:'Posterior Chain', acc:[{name:'Abs',sets:4,reps:'15'}]},{title:'Bench Heavy', t1:'Bench', t2:'Bench', s:'t1_heavy', t2s:'t2_standard', focus:'Bench Max Effort', acc:[{name:'Arms',sets:4,reps:'10-15'}]}]},
+        
+        // NEW PROGRAM: REDDIT PPL
+        ppl: { name:'Classic PPL', daysPerWeek:6, description:'Push Pull Legs. Aesthetics focus.', progressionDesc: 'Linear + AMRAP', progression: { type: 'linear' }, days:[
+            {title:'Push A', t1:'Bench', t2:'OHP', s:'main_5x5', t2s:'secondary', focus:'Chest/Shoulders/Tri', acc:[{name:'Triceps',sets:3,reps:'10-12'}, {name:'Lateral Raise',sets:3,reps:'15'}]},
+            {title:'Pull A', t1:'Deadlift', t2:'Row', s:'main_1x5', t2s:'secondary', focus:'Back/Biceps', acc:[{name:'Biceps',sets:3,reps:'10-12'}, {name:'Face Pulls',sets:3,reps:'15'}]},
+            {title:'Legs A', t1:'Squat', t2:'Deadlift', s:'main_5x5', t2s:'secondary', focus:'Quads/Hams', acc:[{name:'Calves',sets:3,reps:'15'}, {name:'Leg Curl',sets:3,reps:'12'}]},
+            {title:'Push B', t1:'OHP', t2:'Bench', s:'main_5x5', t2s:'secondary', focus:'Shoulders/Chest/Tri', acc:[{name:'Triceps',sets:3,reps:'10-12'}, {name:'Incline DB',sets:3,reps:'12'}]},
+            {title:'Pull B', t1:'Row', t2:'Deadlift', s:'main_5x5', t2s:'volume', focus:'Back/Biceps', acc:[{name:'Hammer Curl',sets:3,reps:'10-12'}, {name:'Lat PD',sets:3,reps:'12'}]},
+            {title:'Legs B', t1:'Squat', t2:'Deadlift', s:'main_5x5', t2s:'secondary', focus:'Quads/Hams', acc:[{name:'Lunges',sets:3,reps:'10'}, {name:'Leg Ext',sets:3,reps:'15'}]}
+        ]},
+        // NEW PROGRAM: PHUL
+        phul: { name:'PHUL', daysPerWeek:4, description:'Power Hypertrophy Upper Lower.', progressionDesc: 'Linear Periodization', progression: { type: 'linear' }, days:[
+            {title:'Upper Power', t1:'Bench', t2:'Row', s:'power', t2s:'power', focus:'Upper Body Str', acc:[{name:'OHP',sets:3,reps:'8'}, {name:'Skullcrushers',sets:3,reps:'8'}]},
+            {title:'Lower Power', t1:'Squat', t2:'Deadlift', s:'power', t2s:'power', focus:'Lower Body Str', acc:[{name:'Leg Press',sets:3,reps:'10'}, {name:'Calves',sets:4,reps:'10'}]},
+            {title:'Upper Hyper', t1:'OHP', t2:'Bench', s:'hyper', t2s:'hyper', focus:'Upper Body Size', acc:[{name:'Row',sets:3,reps:'10'}, {name:'Bicep Curl',sets:3,reps:'12'}]},
+            {title:'Lower Hyper', t1:'Deadlift', t2:'Squat', s:'hyper', t2s:'hyper', focus:'Lower Body Size', acc:[{name:'Lunges',sets:3,reps:'12'}, {name:'Leg Curl',sets:3,reps:'12'}]}
+        ]},
+        
         stronglifts: { name:'StrongLifts 5x5', daysPerWeek:3, description:'Classic beginner strength.', progressionDesc: '+5lbs/2.5kg per workout', progression: { type: 'linear', perWorkout: true }, days:[{title:'Workout A', t1:'Squat', t2:'Bench', s:'standard', t2s:'standard', focus:'Full Body A', acc:[{name:'Row',sets:5,reps:'5'}]},{title:'Workout B', t1:'Squat', t2:'OHP', s:'standard', t2s:'standard', focus:'Full Body B', acc:[{name:'Deadlift',sets:1,reps:'5'}]}]},
         gzclp: { name:'GZCLP', daysPerWeek:4, description:'Tiered intermediate LP.', progressionDesc: 'Stage progression on fail', progression: { type: 'gzclp' }, days:[{title:'Day 1', t1:'Squat', t2:'Bench', s:'gzclp_t1', t2s:'gzclp_t2', focus:'Squat Focus', acc:[{name:'Lat PD',sets:3,reps:'15+'}]},{title:'Day 2', t1:'OHP', t2:'Deadlift', s:'gzclp_t1', t2s:'gzclp_t2', focus:'Press Focus', acc:[{name:'Row',sets:3,reps:'15+'}]},{title:'Day 3', t1:'Bench', t2:'Squat', s:'gzclp_t1', t2s:'gzclp_t2', focus:'Bench Focus', acc:[{name:'Tri',sets:3,reps:'15+'}]},{title:'Day 4', t1:'Deadlift', t2:'OHP', s:'gzclp_t1', t2s:'gzclp_t2', focus:'Deadlift Focus', acc:[{name:'Bi',sets:3,reps:'15+'}]}]},
         '531': { name:'5/3/1 BBB', daysPerWeek:4, description:'3-week cycle + Deload.', progressionDesc: 'Weekly % variation', progression: { type: '531', perCycle: 4 }, days:[{title:'OHP Day', t1:'OHP', t2:'OHP', s:'531', t2s:'bbb', focus:'Overhead Press', acc:[{name:'Chins',sets:5,reps:'10'}]},{title:'Deadlift Day', t1:'Deadlift', t2:'Deadlift', s:'531', t2s:'bbb', focus:'Deadlift Volume', acc:[{name:'Abs',sets:5,reps:'10'}]},{title:'Bench Day', t1:'Bench', t2:'Bench', s:'531', t2s:'bbb', focus:'Bench Press', acc:[{name:'Row',sets:5,reps:'10'}]},{title:'Squat Day', t1:'Squat', t2:'Squat', s:'531', t2s:'bbb', focus:'Squat Volume', acc:[{name:'Legs',sets:5,reps:'10'}]}]}
