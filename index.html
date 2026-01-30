@@ -44,6 +44,327 @@
         .set-timeline::before { content: ''; position: absolute; left: 7px; top: 24px; bottom: 0; width: 2px; background: rgba(255,255,255,0.1); }
         .set-timeline:last-child::before { display: none; }
     </style>
+
+    <script>
+        // Database Helpers - Defined in HEAD to prevent async loading issues
+        const db = { 
+            get: (k, d) => {
+                try {
+                    const val = localStorage.getItem(k);
+                    return val ? JSON.parse(val) : d;
+                } catch(e) { return d; }
+            }, 
+            set: (k, v) => localStorage.setItem(k, JSON.stringify(v)), 
+            del: (k) => localStorage.removeItem(k) 
+        };
+
+        const utils = {
+            now: () => Date.now(),
+            fmtTime: (s) => `${Math.floor(s/60)}:${String(Math.floor(s%60)).padStart(2,'0')}`,
+            fmtSetTime: (ts) => new Date(ts).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}),
+            getWeekNum: (d) => { d=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())); d.setUTCDate(d.getUTCDate()+4-(d.getUTCDay()||7)); return Math.ceil((((d-new Date(Date.UTC(d.getUTCFullYear(),0,1)))/86400000)+1)/7); },
+            round: (n, u, micro) => { const inc = micro ? (u==='kg'?1.25:2.5) : (u==='kg'?2.5:5); return Math.round(n/inc)*inc; }
+        };
+    
+        const RECOVERY_SYSTEM = {
+            muscleRecovery: { 'Squat':{primary:'Legs',rec:72}, 'Deadlift':{primary:'Back',rec:96}, 'Bench':{primary:'Chest',rec:48}, 'OHP':{primary:'Shoulders',rec:48}, 'Row':{primary:'Back',rec:48} },
+            getStatus(hist, muscle) {
+                const mr = this.muscleRecovery, last = hist.slice().reverse().find(h => mr[h.details?.t1]?.primary === muscle);
+                if(!last) return { status:'Ready', recovery:100 };
+                const pct = Math.min(100, ((Date.now()-last.timestamp)/3600000) / (mr[last.details?.t1]?.rec || 48) * 100);
+                return { status: pct>=90?'Ready':pct>=50?'Recovering':'Fatigued', recovery:pct };
+            }
+        };
+    
+        const DELOAD_SYSTEM = {
+            levels: [[42,25,'6+ weeks off'],[28,20,'4 weeks off'],[14,10,'2 weeks off']],
+            evaluate(d) { const m = this.levels.find(l => d >= l[0]); return m ? {needed:true, percentage:m[1], reason:m[2], protocol:'volume_reduction'} : {needed:false}; }
+        };
+    
+        const SCHEMES = {
+            nsuns: {
+                t1_volume: [[0.65,8],[0.75,6],[0.85,4],[0.85,4],[0.85,4],[0.80,5],[0.75,6],[0.70,7],[0.65,8,'+']],
+                t1_heavy: [[0.75,5],[0.85,3],[0.95,1,'+'],[0.90,3],[0.85,3],[0.80,3],[0.75,5],[0.70,5],[0.65,5,'+']],
+                t1_deadlift: [[0.75,5],[0.85,3],[0.95,1,'+'],[0.90,3],[0.85,3],[0.80,3],[0.75,3],[0.70,3],[0.65,3]],
+                t2_standard: [[0.50,5],[0.60,6],[0.70,7],[0.70,4],[0.70,4],[0.70,4],[0.70,4],[0.70,4]]
+            },
+            stronglifts: { standard: [[1.0,5],[1.0,5],[1.0,5],[1.0,5],[1.0,5,'+']], deadlift: [[1.0,5,'+']] },
+            phul: { power: [[0.85,5],[0.85,5],[0.85,5]], hyper: [[0.65,10],[0.65,10],[0.65,10]], volume: [[0.60,12],[0.60,12],[0.60,12]] },
+            ppl: { main_5x5: [[0.85,5],[0.85,5],[0.85,5],[0.85,5],[0.85,5,'+']], main_1x5: [[0.90,5,'+']], secondary: [[0.70,10],[0.70,10],[0.70,10]] },
+            gzclp: { t1: {stage1:{sets:5,reps:3,amrap:true},stage2:{sets:6,reps:2,amrap:true},stage3:{sets:10,reps:1,amrap:true}}, t2: {stage1:{sets:3,reps:10},stage2:{sets:3,reps:8},stage3:{sets:3,reps:6}} },
+            '531': { week1:[[0.65,5],[0.75,5],[0.85,5,'+']], week2:[[0.70,3],[0.80,3],[0.90,3,'+']], week3:[[0.75,5],[0.85,3],[0.95,1,'+']], deload:[[0.40,5],[0.50,5],[0.60,5]], bbb:[[0.50,10],[0.50,10],[0.50,10],[0.50,10],[0.50,10]] }
+        };
+    
+        const PROGRESSION_ENGINE = {
+            evaluateAmrap(performed, target, unit) {
+                const diff = performed - target, base = unit==='kg' ? 2.5 : 5;
+                return diff >= 5 ? base*2 : diff >= 0 ? base : 0;
+            },
+            gzclpFail(currentStage) { return currentStage >= 3 ? {action:'reset',newStage:1} : {action:'advance',newStage:currentStage+1}; }
+        };
+        
+        const PROGRAMS = {
+            nsuns: { name:'nSuns LP', daysPerWeek:5, description:'High volume, auto-regulated.', progressionDesc:'AMRAP-based TM increase', progression:{type:'amrap'}, days:[{title:'Bench Vol',t1:'Bench',t2:'OHP',s:'t1_volume',t2s:'t2_standard',focus:'Chest & Shoulders',acc:[{name:'Row',sets:4,reps:'8-12'}]},{title:'Squat Heavy',t1:'Squat',t2:'Deadlift',s:'t1_heavy',t2s:'t2_standard',focus:'Lower Body Power',acc:[{name:'Leg Acc',sets:4,reps:'10-12'}]},{title:'OHP Heavy',t1:'OHP',t2:'Bench',s:'t1_heavy',t2s:'t2_standard',focus:'Shoulder Strength',acc:[{name:'Pullups',sets:4,reps:'6-10'}]},{title:'Deadlift Heavy',t1:'Deadlift',t2:'Squat',s:'t1_deadlift',t2s:'t2_standard',focus:'Posterior Chain',acc:[{name:'Abs',sets:4,reps:'15'}]},{title:'Bench Heavy',t1:'Bench',t2:'Bench',s:'t1_heavy',t2s:'t2_standard',focus:'Bench Max Effort',acc:[{name:'Arms',sets:4,reps:'10-15'}]}]},
+            ppl: { name:'Classic PPL', daysPerWeek:6, description:'Push Pull Legs. Aesthetics focus.', progressionDesc:'Linear + AMRAP', progression:{type:'linear'}, days:[{title:'Push A',t1:'Bench',t2:'OHP',s:'main_5x5',t2s:'secondary',focus:'Chest/Shoulders/Tri',acc:[{name:'Triceps',sets:3,reps:'10-12'},{name:'Lateral Raise',sets:3,reps:'15'}]},{title:'Pull A',t1:'Deadlift',t2:'Row',s:'main_1x5',t2s:'secondary',focus:'Back/Biceps',acc:[{name:'Biceps',sets:3,reps:'10-12'},{name:'Face Pulls',sets:3,reps:'15'}]},{title:'Legs A',t1:'Squat',t2:'Deadlift',s:'main_5x5',t2s:'secondary',focus:'Quads/Hams',acc:[{name:'Calves',sets:3,reps:'15'},{name:'Leg Curl',sets:3,reps:'12'}]},{title:'Push B',t1:'OHP',t2:'Bench',s:'main_5x5',t2s:'secondary',focus:'Shoulders/Chest/Tri',acc:[{name:'Triceps',sets:3,reps:'10-12'},{name:'Incline DB',sets:3,reps:'12'}]},{title:'Pull B',t1:'Row',t2:'Deadlift',s:'main_5x5',t2s:'volume',focus:'Back/Biceps',acc:[{name:'Hammer Curl',sets:3,reps:'10-12'},{name:'Lat PD',sets:3,reps:'12'}]},{title:'Legs B',t1:'Squat',t2:'Deadlift',s:'main_5x5',t2s:'secondary',focus:'Quads/Hams',acc:[{name:'Lunges',sets:3,reps:'10'},{name:'Leg Ext',sets:3,reps:'15'}]}]},
+            phul: { name:'PHUL', daysPerWeek:4, description:'Power Hypertrophy Upper Lower.', progressionDesc:'Linear Periodization', progression:{type:'linear'}, days:[{title:'Upper Power',t1:'Bench',t2:'Row',s:'power',t2s:'power',focus:'Upper Body Str',acc:[{name:'OHP',sets:3,reps:'8'},{name:'Skullcrushers',sets:3,reps:'8'}]},{title:'Lower Power',t1:'Squat',t2:'Deadlift',s:'power',t2s:'power',focus:'Lower Body Str',acc:[{name:'Leg Press',sets:3,reps:'10'},{name:'Calves',sets:4,reps:'10'}]},{title:'Upper Hyper',t1:'OHP',t2:'Bench',s:'hyper',t2s:'hyper',focus:'Upper Body Size',acc:[{name:'Row',sets:3,reps:'10'},{name:'Bicep Curl',sets:3,reps:'12'}]},{title:'Lower Hyper',t1:'Deadlift',t2:'Squat',s:'hyper',t2s:'hyper',focus:'Lower Body Size',acc:[{name:'Lunges',sets:3,reps:'12'},{name:'Leg Curl',sets:3,reps:'12'}]}]},
+            stronglifts: { name:'StrongLifts 5x5', daysPerWeek:3, description:'Classic beginner strength.', progressionDesc:'+5lbs/2.5kg per workout', progression:{type:'linear',perWorkout:true}, days:[{title:'Workout A',t1:'Squat',t2:'Bench',s:'standard',t2s:'standard',focus:'Full Body A',acc:[{name:'Row',sets:5,reps:'5'}]},{title:'Workout B',t1:'Squat',t2:'OHP',s:'standard',t2s:'standard',focus:'Full Body B',acc:[{name:'Deadlift',sets:1,reps:'5'}]}]},
+            gzclp: { name:'GZCLP', daysPerWeek:4, description:'Tiered intermediate LP.', progressionDesc:'Stage progression on fail', progression:{type:'gzclp'}, days:[{title:'Day 1',t1:'Squat',t2:'Bench',s:'gzclp_t1',t2s:'gzclp_t2',focus:'Squat Focus',acc:[{name:'Lat PD',sets:3,reps:'15+'}]},{title:'Day 2',t1:'OHP',t2:'Deadlift',s:'gzclp_t1',t2s:'gzclp_t2',focus:'Press Focus',acc:[{name:'Row',sets:3,reps:'15+'}]},{title:'Day 3',t1:'Bench',t2:'Squat',s:'gzclp_t1',t2s:'gzclp_t2',focus:'Bench Focus',acc:[{name:'Tri',sets:3,reps:'15+'}]},{title:'Day 4',t1:'Deadlift',t2:'OHP',s:'gzclp_t1',t2s:'gzclp_t2',focus:'Deadlift Focus',acc:[{name:'Bi',sets:3,reps:'15+'}]}]},
+            '531': { name:'5/3/1 BBB', daysPerWeek:4, description:'3-week cycle + Deload.', progressionDesc:'Weekly % variation', progression:{type:'531',perCycle:4}, days:[{title:'OHP Day',t1:'OHP',t2:'OHP',s:'531',t2s:'bbb',focus:'Overhead Press',acc:[{name:'Chins',sets:5,reps:'10'}]},{title:'Deadlift Day',t1:'Deadlift',t2:'Deadlift',s:'531',t2s:'bbb',focus:'Deadlift Volume',acc:[{name:'Abs',sets:5,reps:'10'}]},{title:'Bench Day',t1:'Bench',t2:'Bench',s:'531',t2s:'bbb',focus:'Bench Press',acc:[{name:'Row',sets:5,reps:'10'}]},{title:'Squat Day',t1:'Squat',t2:'Squat',s:'531',t2s:'bbb',focus:'Squat Volume',acc:[{name:'Legs',sets:5,reps:'10'}]}]}
+        };
+    
+        const ACHIEVEMENTS = [
+            {id:'first_workout',title:'First Steps',description:'Complete your first workout',icon:'🎯',check:h=>h.length>=1},
+            {id:'week_streak',title:'Week Warrior',description:'Complete 7 workouts',icon:'🔥',check:h=>h.length>=7},
+            {id:'month_streak',title:'Monthly Master',description:'Complete 30 workouts',icon:'💪',check:h=>h.length>=30},
+            {id:'century',title:'Century Club',description:'Complete 100 workouts',icon:'🏆',check:h=>h.length>=100},
+            {id:'first_pr',title:'PR Machine',description:'Get your first TM increase',icon:'📈',check:h=>h.some(w=>w.pr)},
+            {id:'five_prs',title:'Gains Train',description:'Achieve 5 TM increases',icon:'🚂',check:h=>h.filter(w=>w.pr).length>=5},
+            {id:'volume_king',title:'Volume King',description:'Log 100,000 lbs total volume',icon:'👑',check:h=>h.reduce((a,w)=>a+(w.totalVolume||0),0)>=100000},
+            {id:'comeback',title:'Comeback Kid',description:'Return after 14+ days off',icon:'💫',check:h=>h.length>=2},
+            {id:'five_star',title:'Five Star',description:'Rate a workout 5 stars',icon:'✨',check:h=>h.some(w=>w.rating===5)}
+        ];
+    
+        function app() {
+            return {
+                view:'dashboard', PROGRAMS, ACHIEVEMENTS,
+                tms:{Bench:0,Squat:0,Deadlift:0,OHP:0,Row:0},
+                programState:{}, prs:{}, history:[], bwLog:[], achievements:[],
+                prefs:{weightUnit:'lbs',program:'nsuns',restT1:180,restT2:120,restT3:60,timerSound:true,vibration:true,autoStartTimer:true,showPreviousWorkout:true,autoDeload:true,barWeight:45,microplates:false},
+                setup:{}, currentDayIdx:0, previewDayIdx:0, currentWeek:1, streak:0,
+                modals:{resume:false,weight:false,onerm:false,deload:false,rating:false,achievement:false,workoutDetail:false,info:false},
+                session:{t1:{},t2:{},acc:[],completedAcc:{},notes:''},
+                savedSession:null, tempBodyWeight:null, timer:{active:false,start:null,dur:0,rem:0,pct:0},
+                showWarmups:false, calc:{w:0,r:0}, plate:{open:false,w:0,plates:[]},
+                chartLift:'Bench', cal:{monthName:'',days:[],offset:0},
+                plateColors:{55:'bg-red-700 text-white',45:'bg-blue-600 text-white',35:'bg-yellow-500 text-black',25:'bg-green-500 text-black',20:'bg-blue-600 text-white',15:'bg-yellow-500 text-black',10:'bg-white text-black',5:'bg-white text-black',2.5:'bg-red-400 text-white',1.25:'bg-gray-400 text-black'},
+                sessionTimerStr:'0:00', deloadInfo:{reason:'',percentage:0,protocol:''}, sessionRating:0, sessionNotes:'', sessionRPE:7.0, currentAchievement:null, selectedLog:null, historyFilter:'all', previousWorkout:null,
+    
+                init() {
+                    // Safe get with default value
+                    const d = db.get('nsuns_ultimate', null);
+                    const p = db.get('lift_preferences', {});
+                    this.prefs = {...this.prefs, ...p};
+                    ['restT1','restT2','restT3'].forEach(k => this.prefs[k] = +this.prefs[k]);
+                    this.bwLog = db.get('lift_bodyweight', []);
+                    this.savedSession = db.get('lift_active_session', null);
+                    this.achievements = db.get('lift_achievements', []);
+                    this.prs = db.get('lift_prs', {});
+                    if(!this.prefs.barWeight) this.prefs.barWeight = this.prefs.weightUnit==='kg' ? 20 : 45;
+    
+                    if(d) {
+                        Object.assign(this, {tms:d.tms, history:d.history||[], currentDayIdx:d.idx||0, currentWeek:d.week||1, streak:d.streak||0, programState:d.programState||{}});
+                        this.previewDayIdx = this.currentDayIdx;
+                        this.getLifts().forEach(l => { if(!this.programState[l]) this.programState[l] = {stage:1}; });
+                        this.history.forEach(h => { if(!h.timestamp) h.timestamp = new Date(h.date).getTime(); });
+                        if(this.savedSession && this.savedSession.t1) this.modals.resume = true;
+                        this.$nextTick(() => { this.renderMainChart(); this.renderVolumeChart(); this.buildCalendar(); this.checkAchievements(); });
+                    } else this.view = 'setup';
+    
+                    setInterval(() => {
+                        const now = utils.now();
+                        if(this.session.start) this.sessionTimerStr = utils.fmtTime((now - this.session.start)/1000);
+                        if(this.timer.active && this.timer.start) {
+                            this.timer.rem = Math.max(0, this.timer.dur - Math.floor((now - this.timer.start)/1000));
+                            this.timer.pct = this.timer.rem / this.timer.dur;
+                            if(this.timer.rem <= 0) {
+                                this.stopTimer();
+                                if(this.prefs.timerSound) this.beep();
+                                if(this.prefs.vibration && navigator.vibrate) navigator.vibrate([200,100,200]);
+                            }
+                        }
+                    }, 1000);
+                },
+    
+                navigate(v) { 
+                    this.view = v; 
+                    if(v==='calendar') this.buildCalendar(); 
+                    else if(v==='preferences') this.$nextTick(()=>this.renderBWChart()); 
+                    else if(v==='dashboard') this.$nextTick(()=>{ this.renderMainChart(); this.renderVolumeChart(); }); 
+                },
+                getLifts: () => ['Bench','Squat','Deadlift','OHP','Row'],
+                getWorkout() { const p=PROGRAMS[this.prefs.program]; return p.days[this.previewDayIdx % p.days.length]; },
+                isDeloadWeek() { return this.prefs.program === '531' && this.currentWeek % 4 === 0; },
+                
+                changePreviewDay(dir) {
+                    const len = PROGRAMS[this.prefs.program].days.length;
+                    this.previewDayIdx = (this.previewDayIdx + dir + len) % len;
+                },
+                
+                getSets(schemeName, liftName, tm, tier) {
+                    const {program, weightUnit, microplates} = this.prefs, rnd = w => utils.round(w, weightUnit, microplates);
+                    
+                    if(program === 'gzclp') {
+                        const stage = this.programState[liftName]?.stage || 1, s = SCHEMES.gzclp[tier][`stage${stage}`], pct = tier==='t1' ? 0.85 : 0.65;
+                        return Array(s.sets).fill(0).map((_,i) => ({weight:rnd(tm*pct), reps:s.reps, amrap:i===s.sets-1&&s.amrap?'+':false, completed:false, failed:false}));
+                    }
+                    if(program === '531' && tier === 't1') {
+                        const wk = this.currentWeek % 4 || 4, s = SCHEMES['531'][wk===4?'deload':`week${wk}`];
+                        return s.map(x => ({weight:rnd(tm*x[0]), reps:x[1], amrap:x[2]==='+', completed:false, failed:false}));
+                    }
+                    const scheme = (SCHEMES[program] || SCHEMES.nsuns)[schemeName] || SCHEMES.nsuns.t1_volume;
+                    return scheme.map(x => ({weight:rnd(tm*x[0]), reps:x[1], amrap:x[2]==='+', completed:false, failed:false}));
+                },
+    
+                getBarOptions() { return this.prefs.weightUnit==='kg' ? [{weight:20,name:'Olympic'},{weight:15,name:'Women'},{weight:10,name:'Training'},{weight:7,name:'Curl'}] : [{weight:45,name:'Olympic'},{weight:35,name:'Women'},{weight:25,name:'Training'},{weight:15,name:'Curl'}]; },
+                getDaysOff() { const h = this.history; return h.length ? Math.floor((Date.now() - new Date(h[h.length-1].timestamp || h[h.length-1].date)) / 86400000) : 0; },
+                
+                checkDeloadAndStart() {
+                    const check = DELOAD_SYSTEM.evaluate(this.getDaysOff());
+                    if(this.prefs.autoDeload && check.needed) { this.deloadInfo = check; this.modals.deload = true; } 
+                    else this.modals.weight = true;
+                },
+                applyDeload() { Object.keys(this.tms).forEach(k => this.tms[k] = Math.round(this.tms[k] * (1 - this.deloadInfo.percentage/100))); this.saveData(); this.modals.deload=false; this.modals.weight=true; },
+                
+                startSession(custom) {
+                    const d = custom || this.getWorkout();
+                    this.session = { 
+                        title:d.title, start:utils.now(), acc:JSON.parse(JSON.stringify(d.acc||[])), completedAcc:{}, notes:'',
+                        dayIdx: custom ? null : this.previewDayIdx, 
+                        t1:{name:d.t1, sets:this.getSets(d.s, d.t1, this.tms[d.t1], 't1')}, 
+                        t2:{name:d.t2, sets:this.getSets(d.t2s, d.t2, this.tms[d.t2], 't2')} 
+                    };
+                    if(this.prefs.showPreviousWorkout) {
+                        const prev = this.history.slice().reverse().find(h => h.details?.t1 === d.t1);
+                        this.previousWorkout = prev ? {date:prev.date, duration:prev.duration, topSet:prev.details?.weight||'-', amrapResult:prev.setDetails?.t1?.find(s=>s.amrap)?.performed||'-'} : null;
+                    }
+                    this.saveSession(); this.view = 'workout';
+                },
+    
+                completeSet(set, tier, idx) {
+                    if(!set.performed && set.amrap) return;
+                    set.completed = set.failed || !set.completed;
+                    set.completedAt = set.completed ? utils.now() : null;
+                    if(set.completed && this.prefs.autoStartTimer) this.startTimer(+this.prefs[tier==='t1'?'restT1':'restT2'] + (set.failed?60:0));
+                    this.saveSession();
+                },
+    
+                finishSession() { this.sessionRating=0; this.sessionNotes=this.session.notes||''; this.sessionRPE=7; this.stopTimer(); this.modals.rating=true; },
+                
+                saveSessionRating() {
+                    const {t1, t2} = this.session, lift = t1.name, prSet = t1.sets.find(s=>s.amrap), prog = this.prefs.program, unit = this.prefs.weightUnit;
+                    let inc = 0, baseInc = unit==='kg' ? 2.5 : 5;
+                    
+                    if(prog === 'gzclp') {
+                        if(t1.sets.some(s => s.failed)) {
+                            const res = PROGRESSION_ENGINE.gzclpFail(this.programState[lift].stage);
+                            if(res.action === 'reset') { this.programState[lift].stage = 1; this.tms[lift] = Math.round(this.tms[lift] * 0.85); }
+                            else this.programState[lift].stage = res.newStage;
+                        } else { inc = baseInc; this.tms[lift] += inc; }
+                    } else if(prSet && prSet.performed > prSet.reps) {
+                        inc = PROGRESSION_ENGINE.evaluateAmrap(prSet.performed, prSet.reps, unit);
+                        this.tms[lift] += inc;
+                    } else if(PROGRAMS[prog].progression.type==='linear' && !t1.sets.some(s=>s.failed)) {
+                        inc = baseInc; this.tms[lift] += inc;
+                    }
+    
+                    if(inc > 0) confetti({particleCount:100, spread:70, origin:{y:0.6}});
+                    
+                    const e1rm = prSet ? Math.round(prSet.weight*(1+(prSet.performed||prSet.reps)/30)) : 0;
+                    if(e1rm > (this.prs[lift]?.weight || 0)) { this.prs[lift] = {weight:e1rm, date:new Date().toLocaleDateString()}; db.set('lift_prs', this.prs); }
+    
+                    const allSets = [...t1.sets, ...t2.sets];
+                    this.history.push({ 
+                        date: new Date().toLocaleDateString(), timestamp: utils.now(), title: this.session.title, increase: inc, pr: inc>0,
+                        duration: Math.round((utils.now()-this.session.start)/60000), rating: this.sessionRating, rpe: this.sessionRPE, notes: this.sessionNotes,
+                        totalVolume: allSets.reduce((a,s)=>s.completed?a+(s.weight*(s.performed||s.reps)):a, 0),
+                        totalSets: allSets.length, completedSets: allSets.filter(s=>s.completed).length,
+                        details: {t1:lift, weight:prSet?.weight, est1rm:e1rm},
+                        setDetails: {t1:t1.sets, t2Name:t2.name, t2:t2.sets, accessories:this.session.acc.map(a=>({name:a.name, total:a.sets, completed:Object.keys(this.session.completedAcc).filter(k=>k.startsWith(a.name)).length}))}
+                    });
+    
+                    if(this.session.dayIdx !== null) {
+                        const pLen = PROGRAMS[prog].days.length;
+                        this.currentDayIdx = (this.session.dayIdx + 1) % pLen;
+                        if(this.currentDayIdx === 0) this.currentWeek++;
+                        this.previewDayIdx = this.currentDayIdx;
+                    }
+    
+                    this.streak++;
+                    
+                    // CLEANUP TO FIX RESUME BUG
+                    this.savedSession = null; 
+                    db.del('lift_active_session'); 
+                    this.session = {}; // Wipe current session to trigger Guard Clause in saveSession()
+                    this.modals.rating = false;
+                    
+                    this.saveData(); this.checkAchievements(); this.view = 'dashboard'; this.buildCalendar();
+                    this.$nextTick(()=>{ this.renderMainChart(); this.renderVolumeChart(); });
+                },
+    
+                generateWarmups() { const w=this.session.t1.sets[0].weight; return [{w:20,r:10},{w:w*0.4,r:5},{w:w*0.6,r:3},{w:w*0.8,r:2}].filter(x=>x.w>20); },
+                renderMainChart() { const d=this.history.filter(h=>h.details?.t1===this.chartLift); this.renderChart('mainChart', d.map(h=>h.date), d.map(h=>h.details.est1rm), '#6366f1'); },
+                renderBWChart() { const d=this.bwLog.slice(-30); this.renderChart('bodyWeightChart', d.map(x=>new Date(x.date).toLocaleDateString()), d.map(x=>x.weight), '#3b82f6'); },
+                renderVolumeChart() { 
+                    const v={}; this.history.slice(-20).forEach(h=>{ const k=`W${utils.getWeekNum(new Date(h.timestamp))}`; v[k]=(v[k]||0)+(h.totalVolume||0); });
+                    this.renderChart('volumeChart', Object.keys(v), Object.values(v), '#10b981', 'bar'); 
+                },
+                renderChart(id, l, d, c, t='line') {
+                    const ctx=document.getElementById(id); if(!ctx)return; if(ctx.c)ctx.c.destroy();
+                    ctx.c = new Chart(ctx, {type:t, data:{labels:l, datasets:[{data:d, borderColor:c, backgroundColor:t==='line'?(x=>{const g=x.chart.ctx.createLinearGradient(0,0,0,160);g.addColorStop(0,c+'80');g.addColorStop(1,c+'00');return g}):c+'80', tension:0.3, fill:true}]}, options:{responsive:true,maintainAspectRatio:false,plugins:{legend:false},scales:{x:{display:false},y:{grid:{color:'#ffffff0d'},ticks:{color:'#666'}}}}});
+                },
+    
+                saveSession() { 
+                    // GUARD CLAUSE: Do not save if session has been wiped/finished
+                    if (!this.session || !this.session.start) return;
+                    db.set('lift_active_session', this.session); 
+                },
+                saveData() { db.set('nsuns_ultimate', {tms:this.tms, history:this.history, idx:this.currentDayIdx, week:this.currentWeek, streak:this.streak, programState:this.programState}); },
+                savePrefs() { db.set('lift_preferences', this.prefs); },
+                
+                openPlateCalc(w) {
+                    this.plate = {open:true, w, plates:[]}; let rem = (w - this.prefs.barWeight)/2; if(rem<=0) return;
+                    (this.prefs.weightUnit==='kg'?[25,20,15,10,5,2.5,1.25]:[45,35,25,10,5,2.5]).forEach(p => { while(rem>=p) { this.plate.plates.push(p); rem-=p; } });
+                },
+    
+                buildCalendar() {
+                    const now = new Date(); now.setMonth(now.getMonth() + this.cal.offset);
+                    this.cal.monthName = now.toLocaleString('default', {month:'long', year:'numeric'});
+                    const y = now.getFullYear(), m = now.getMonth(), days = new Date(y, m+1, 0).getDate(), first = new Date(y, m, 1).getDay();
+                    this.cal.days = [...Array(first).fill({}), ...[...Array(days).keys()].map(i => ({num:i+1, isToday:new Date().getDate()===i+1 && !this.cal.offset, hasLog:this.history.some(h => {const d=new Date(h.timestamp); return d.getDate()===i+1 && d.getMonth()===m;})}))];
+                },
+    
+                beep() { if(!window.ac) window.ac = new (window.AudioContext||window.webkitAudioContext)(); const o=ac.createOscillator(), g=ac.createGain(); o.connect(g); g.connect(ac.destination); o.frequency.value=800; g.gain.exponentialRampToValueAtTime(0.00001, ac.currentTime+0.5); o.start(); o.stop(ac.currentTime+0.5); },
+                checkAchievements() { ACHIEVEMENTS.forEach(a => { if(!this.achievements.includes(a.id) && a.check(this.history)) { this.achievements.push(a.id); this.currentAchievement=a; this.modals.achievement=true; db.set('lift_achievements', this.achievements); }}); },
+                hasAchievement(id) { return this.achievements.includes(id); },
+                
+                getMuscleRecovery() {
+                    return [['Bench','Chest'],['OHP','Shoulders'],['Squat','Legs'],['Deadlift','Back']].map(([l,m]) => ({name:m, ...RECOVERY_SYSTEM.getStatus(this.history, m)}));
+                },
+    
+                finishSetup() { if(Object.values(this.setup).some(v=>v>0)) { Object.keys(this.setup).forEach(k=>this.tms[k]=utils.round(this.setup[k]*0.9, this.prefs.weightUnit)); this.saveData(); this.savePrefs(); this.view='dashboard'; } },
+                resumeWorkout() { this.session=this.savedSession; this.modals.resume=false; this.view='workout'; },
+                discardWorkout() { this.savedSession=null; db.del('lift_active_session'); this.modals.resume=false; },
+                finishSavedSession() { this.session=this.savedSession; this.modals.resume=false; this.finishSession(); },
+                cancelWorkout() { if(confirm('Save progress?')) { this.saveSession(); this.view='dashboard'; } },
+                logBodyWeight() { if(this.tempBodyWeight) { this.bwLog.push({date:utils.now(), weight:this.tempBodyWeight}); db.set('lift_bodyweight', this.bwLog); } this.modals.weight=false; this.startSession(); },
+                getBW(t) { const w=this.bwLog.map(x=>x.weight); return !w.length ? '-' : t==='last' ? w[w.length-1] : t==='min' ? Math.min(...w) : Math.max(...w); },
+                startTimer(s) { this.timer = {active:true, start:utils.now(), dur:+s, rem:+s, pct:1}; },
+                stopTimer() { this.timer.active = false; },
+                adjustTimer(s) { if(this.timer.active) this.timer.dur = Math.max(0, this.timer.dur + s); },
+                formatTime: utils.fmtTime, 
+                formatSetTime: utils.fmtSetTime,
+                formatVolume() { const v=this.history.reduce((a,h)=>a+(h.totalVolume||0),0); return v>1e6 ? (v/1e6).toFixed(1)+'M' : v>1e3 ? (v/1e3).toFixed(0)+'K' : v; },
+                formatVolumeShort(v) { return v ? v>1e3 ? (v/1e3).toFixed(1)+'k' : v : '-'; },
+                getAvgDuration() { const l=this.history.filter(h=>h.duration); return l.length ? Math.round(l.reduce((a,b)=>a+b.duration,0)/l.length) : '-'; },
+                getTotalPRs() { return this.history.filter(h=>h.pr).length; },
+                getFailedT1Count() { return this.session.t1?.sets?.filter(s=>s.failed).length || 0; },
+                getSessionProgress() { const t=this.session.t1?.sets, t2=this.session.t2?.sets; return t ? Math.round((t.filter(s=>s.completed).length+(t2?t2.filter(s=>s.completed).length:0))/(t.length+(t2?t2.length:0))*100) : 0; },
+                getEstimatedDuration() { return 60; }, 
+                getTimeAgo(ts) { const d=Math.floor((utils.now()-ts)/60000); return d<60 ? d+'m ago' : Math.floor(d/60)+'h ago'; },
+                toggleAcc(n,i) { const k=`${n}-${i}`; this.session.completedAcc[k]=!this.session.completedAcc[k]; this.saveSession(); if(this.session.completedAcc[k] && this.prefs.autoStartTimer) this.startTimer(+this.prefs.restT3); },
+                isAccDone(n,i) { return !!this.session.completedAcc[`${n}-${i}`]; },
+                addSet() { this.session.t1.sets.push({...this.session.t1.sets[this.session.t1.sets.length-1], completed:false, failed:false}); },
+                changeMonth(d) { this.cal.offset += d; this.buildCalendar(); },
+                exportData() { const b=new Blob([JSON.stringify({nsuns_ultimate:db.get('nsuns_ultimate'), lift_preferences:this.prefs})],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download='lift_backup.json'; a.click(); },
+                importData(e) { const r=new FileReader(); r.onload=ev=>{try{const d=JSON.parse(ev.target.result); db.set('nsuns_ultimate',d.nsuns_ultimate); location.reload();}catch(x){alert('Error');}}; r.readAsText(e.target.files[0]); },
+                resetAll() { if(confirm('Reset all?')) { localStorage.clear(); location.reload(); } },
+                getFilteredHistory() { const l=this.history.slice().reverse(); return this.historyFilter!=='all' ? l.filter(h=>h.details?.t1===this.historyFilter).slice(0,50) : l.slice(0,50); },
+                showDayLogs(day) { const n=new Date(); n.setMonth(n.getMonth()+this.cal.offset); const l=this.history.find(h=>h.date===new Date(n.getFullYear(),n.getMonth(),day.num).toLocaleDateString()); if(l)this.openWorkoutDetail(l); },
+                openWorkoutDetail(l) { this.selectedLog=l; this.modals.workoutDetail=true; },
+                selectProgram(k) { this.prefs.program = k; this.savePrefs(); this.previewDayIdx = 0; this.currentDayIdx = 0; }
+            }
+        }
+    </script>
 </head>
 
 <body x-data="app()" x-init="init()" class="antialiased h-screen overflow-hidden text-slate-200">
@@ -931,303 +1252,5 @@
             </button>
         </template>
     </nav>
-
-    <script>
-    const db = { get: (k, d) => JSON.parse(localStorage.getItem(k) || JSON.stringify(d)), set: (k, v) => localStorage.setItem(k, JSON.stringify(v)), del: (k) => localStorage.removeItem(k) };
-    const utils = {
-        now: () => Date.now(),
-        fmtTime: (s) => `${Math.floor(s/60)}:${String(Math.floor(s%60)).padStart(2,'0')}`,
-        fmtSetTime: (ts) => new Date(ts).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}),
-        getWeekNum: (d) => { d=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())); d.setUTCDate(d.getUTCDate()+4-(d.getUTCDay()||7)); return Math.ceil((((d-new Date(Date.UTC(d.getUTCFullYear(),0,1)))/86400000)+1)/7); },
-        round: (n, u, micro) => { const inc = micro ? (u==='kg'?1.25:2.5) : (u==='kg'?2.5:5); return Math.round(n/inc)*inc; }
-    };
-
-    const RECOVERY_SYSTEM = {
-        muscleRecovery: { 'Squat':{primary:'Legs',rec:72}, 'Deadlift':{primary:'Back',rec:96}, 'Bench':{primary:'Chest',rec:48}, 'OHP':{primary:'Shoulders',rec:48}, 'Row':{primary:'Back',rec:48} },
-        getStatus(hist, muscle) {
-            const mr = this.muscleRecovery, last = hist.slice().reverse().find(h => mr[h.details?.t1]?.primary === muscle);
-            if(!last) return { status:'Ready', recovery:100 };
-            const pct = Math.min(100, ((Date.now()-last.timestamp)/3600000) / (mr[last.details?.t1]?.rec || 48) * 100);
-            return { status: pct>=90?'Ready':pct>=50?'Recovering':'Fatigued', recovery:pct };
-        }
-    };
-
-    const DELOAD_SYSTEM = {
-        levels: [[42,25,'6+ weeks off'],[28,20,'4 weeks off'],[14,10,'2 weeks off']],
-        evaluate(d) { const m = this.levels.find(l => d >= l[0]); return m ? {needed:true, percentage:m[1], reason:m[2], protocol:'volume_reduction'} : {needed:false}; }
-    };
-
-    const SCHEMES = {
-        nsuns: {
-            t1_volume: [[0.65,8],[0.75,6],[0.85,4],[0.85,4],[0.85,4],[0.80,5],[0.75,6],[0.70,7],[0.65,8,'+']],
-            t1_heavy: [[0.75,5],[0.85,3],[0.95,1,'+'],[0.90,3],[0.85,3],[0.80,3],[0.75,5],[0.70,5],[0.65,5,'+']],
-            t1_deadlift: [[0.75,5],[0.85,3],[0.95,1,'+'],[0.90,3],[0.85,3],[0.80,3],[0.75,3],[0.70,3],[0.65,3]],
-            t2_standard: [[0.50,5],[0.60,6],[0.70,7],[0.70,4],[0.70,4],[0.70,4],[0.70,4],[0.70,4]]
-        },
-        stronglifts: { standard: [[1.0,5],[1.0,5],[1.0,5],[1.0,5],[1.0,5,'+']], deadlift: [[1.0,5,'+']] },
-        phul: { power: [[0.85,5],[0.85,5],[0.85,5]], hyper: [[0.65,10],[0.65,10],[0.65,10]], volume: [[0.60,12],[0.60,12],[0.60,12]] },
-        ppl: { main_5x5: [[0.85,5],[0.85,5],[0.85,5],[0.85,5],[0.85,5,'+']], main_1x5: [[0.90,5,'+']], secondary: [[0.70,10],[0.70,10],[0.70,10]] },
-        gzclp: { t1: {stage1:{sets:5,reps:3,amrap:true},stage2:{sets:6,reps:2,amrap:true},stage3:{sets:10,reps:1,amrap:true}}, t2: {stage1:{sets:3,reps:10},stage2:{sets:3,reps:8},stage3:{sets:3,reps:6}} },
-        '531': { week1:[[0.65,5],[0.75,5],[0.85,5,'+']], week2:[[0.70,3],[0.80,3],[0.90,3,'+']], week3:[[0.75,5],[0.85,3],[0.95,1,'+']], deload:[[0.40,5],[0.50,5],[0.60,5]], bbb:[[0.50,10],[0.50,10],[0.50,10],[0.50,10],[0.50,10]] }
-    };
-
-    const PROGRESSION_ENGINE = {
-        evaluateAmrap(performed, target, unit) {
-            const diff = performed - target, base = unit==='kg' ? 2.5 : 5;
-            return diff >= 5 ? base*2 : diff >= 0 ? base : 0;
-        },
-        gzclpFail(currentStage) { return currentStage >= 3 ? {action:'reset',newStage:1} : {action:'advance',newStage:currentStage+1}; }
-    };
-    
-    const PROGRAMS = {
-        nsuns: { name:'nSuns LP', daysPerWeek:5, description:'High volume, auto-regulated.', progressionDesc:'AMRAP-based TM increase', progression:{type:'amrap'}, days:[{title:'Bench Vol',t1:'Bench',t2:'OHP',s:'t1_volume',t2s:'t2_standard',focus:'Chest & Shoulders',acc:[{name:'Row',sets:4,reps:'8-12'}]},{title:'Squat Heavy',t1:'Squat',t2:'Deadlift',s:'t1_heavy',t2s:'t2_standard',focus:'Lower Body Power',acc:[{name:'Leg Acc',sets:4,reps:'10-12'}]},{title:'OHP Heavy',t1:'OHP',t2:'Bench',s:'t1_heavy',t2s:'t2_standard',focus:'Shoulder Strength',acc:[{name:'Pullups',sets:4,reps:'6-10'}]},{title:'Deadlift Heavy',t1:'Deadlift',t2:'Squat',s:'t1_deadlift',t2s:'t2_standard',focus:'Posterior Chain',acc:[{name:'Abs',sets:4,reps:'15'}]},{title:'Bench Heavy',t1:'Bench',t2:'Bench',s:'t1_heavy',t2s:'t2_standard',focus:'Bench Max Effort',acc:[{name:'Arms',sets:4,reps:'10-15'}]}]},
-        ppl: { name:'Classic PPL', daysPerWeek:6, description:'Push Pull Legs. Aesthetics focus.', progressionDesc:'Linear + AMRAP', progression:{type:'linear'}, days:[{title:'Push A',t1:'Bench',t2:'OHP',s:'main_5x5',t2s:'secondary',focus:'Chest/Shoulders/Tri',acc:[{name:'Triceps',sets:3,reps:'10-12'},{name:'Lateral Raise',sets:3,reps:'15'}]},{title:'Pull A',t1:'Deadlift',t2:'Row',s:'main_1x5',t2s:'secondary',focus:'Back/Biceps',acc:[{name:'Biceps',sets:3,reps:'10-12'},{name:'Face Pulls',sets:3,reps:'15'}]},{title:'Legs A',t1:'Squat',t2:'Deadlift',s:'main_5x5',t2s:'secondary',focus:'Quads/Hams',acc:[{name:'Calves',sets:3,reps:'15'},{name:'Leg Curl',sets:3,reps:'12'}]},{title:'Push B',t1:'OHP',t2:'Bench',s:'main_5x5',t2s:'secondary',focus:'Shoulders/Chest/Tri',acc:[{name:'Triceps',sets:3,reps:'10-12'},{name:'Incline DB',sets:3,reps:'12'}]},{title:'Pull B',t1:'Row',t2:'Deadlift',s:'main_5x5',t2s:'volume',focus:'Back/Biceps',acc:[{name:'Hammer Curl',sets:3,reps:'10-12'},{name:'Lat PD',sets:3,reps:'12'}]},{title:'Legs B',t1:'Squat',t2:'Deadlift',s:'main_5x5',t2s:'secondary',focus:'Quads/Hams',acc:[{name:'Lunges',sets:3,reps:'10'},{name:'Leg Ext',sets:3,reps:'15'}]}]},
-        phul: { name:'PHUL', daysPerWeek:4, description:'Power Hypertrophy Upper Lower.', progressionDesc:'Linear Periodization', progression:{type:'linear'}, days:[{title:'Upper Power',t1:'Bench',t2:'Row',s:'power',t2s:'power',focus:'Upper Body Str',acc:[{name:'OHP',sets:3,reps:'8'},{name:'Skullcrushers',sets:3,reps:'8'}]},{title:'Lower Power',t1:'Squat',t2:'Deadlift',s:'power',t2s:'power',focus:'Lower Body Str',acc:[{name:'Leg Press',sets:3,reps:'10'},{name:'Calves',sets:4,reps:'10'}]},{title:'Upper Hyper',t1:'OHP',t2:'Bench',s:'hyper',t2s:'hyper',focus:'Upper Body Size',acc:[{name:'Row',sets:3,reps:'10'},{name:'Bicep Curl',sets:3,reps:'12'}]},{title:'Lower Hyper',t1:'Deadlift',t2:'Squat',s:'hyper',t2s:'hyper',focus:'Lower Body Size',acc:[{name:'Lunges',sets:3,reps:'12'},{name:'Leg Curl',sets:3,reps:'12'}]}]},
-        stronglifts: { name:'StrongLifts 5x5', daysPerWeek:3, description:'Classic beginner strength.', progressionDesc:'+5lbs/2.5kg per workout', progression:{type:'linear',perWorkout:true}, days:[{title:'Workout A',t1:'Squat',t2:'Bench',s:'standard',t2s:'standard',focus:'Full Body A',acc:[{name:'Row',sets:5,reps:'5'}]},{title:'Workout B',t1:'Squat',t2:'OHP',s:'standard',t2s:'standard',focus:'Full Body B',acc:[{name:'Deadlift',sets:1,reps:'5'}]}]},
-        gzclp: { name:'GZCLP', daysPerWeek:4, description:'Tiered intermediate LP.', progressionDesc:'Stage progression on fail', progression:{type:'gzclp'}, days:[{title:'Day 1',t1:'Squat',t2:'Bench',s:'gzclp_t1',t2s:'gzclp_t2',focus:'Squat Focus',acc:[{name:'Lat PD',sets:3,reps:'15+'}]},{title:'Day 2',t1:'OHP',t2:'Deadlift',s:'gzclp_t1',t2s:'gzclp_t2',focus:'Press Focus',acc:[{name:'Row',sets:3,reps:'15+'}]},{title:'Day 3',t1:'Bench',t2:'Squat',s:'gzclp_t1',t2s:'gzclp_t2',focus:'Bench Focus',acc:[{name:'Tri',sets:3,reps:'15+'}]},{title:'Day 4',t1:'Deadlift',t2:'OHP',s:'gzclp_t1',t2s:'gzclp_t2',focus:'Deadlift Focus',acc:[{name:'Bi',sets:3,reps:'15+'}]}]},
-        '531': { name:'5/3/1 BBB', daysPerWeek:4, description:'3-week cycle + Deload.', progressionDesc:'Weekly % variation', progression:{type:'531',perCycle:4}, days:[{title:'OHP Day',t1:'OHP',t2:'OHP',s:'531',t2s:'bbb',focus:'Overhead Press',acc:[{name:'Chins',sets:5,reps:'10'}]},{title:'Deadlift Day',t1:'Deadlift',t2:'Deadlift',s:'531',t2s:'bbb',focus:'Deadlift Volume',acc:[{name:'Abs',sets:5,reps:'10'}]},{title:'Bench Day',t1:'Bench',t2:'Bench',s:'531',t2s:'bbb',focus:'Bench Press',acc:[{name:'Row',sets:5,reps:'10'}]},{title:'Squat Day',t1:'Squat',t2:'Squat',s:'531',t2s:'bbb',focus:'Squat Volume',acc:[{name:'Legs',sets:5,reps:'10'}]}]}
-    };
-
-    const ACHIEVEMENTS = [
-        {id:'first_workout',title:'First Steps',description:'Complete your first workout',icon:'🎯',check:h=>h.length>=1},
-        {id:'week_streak',title:'Week Warrior',description:'Complete 7 workouts',icon:'🔥',check:h=>h.length>=7},
-        {id:'month_streak',title:'Monthly Master',description:'Complete 30 workouts',icon:'💪',check:h=>h.length>=30},
-        {id:'century',title:'Century Club',description:'Complete 100 workouts',icon:'🏆',check:h=>h.length>=100},
-        {id:'first_pr',title:'PR Machine',description:'Get your first TM increase',icon:'📈',check:h=>h.some(w=>w.pr)},
-        {id:'five_prs',title:'Gains Train',description:'Achieve 5 TM increases',icon:'🚂',check:h=>h.filter(w=>w.pr).length>=5},
-        {id:'volume_king',title:'Volume King',description:'Log 100,000 lbs total volume',icon:'👑',check:h=>h.reduce((a,w)=>a+(w.totalVolume||0),0)>=100000},
-        {id:'comeback',title:'Comeback Kid',description:'Return after 14+ days off',icon:'💫',check:h=>h.length>=2},
-        {id:'five_star',title:'Five Star',description:'Rate a workout 5 stars',icon:'✨',check:h=>h.some(w=>w.rating===5)}
-    ];
-
-    function app() {
-        return {
-            view:'dashboard', PROGRAMS, ACHIEVEMENTS,
-            tms:{Bench:0,Squat:0,Deadlift:0,OHP:0,Row:0},
-            programState:{}, prs:{}, history:[], bwLog:[], achievements:[],
-            prefs:{weightUnit:'lbs',program:'nsuns',restT1:180,restT2:120,restT3:60,timerSound:true,vibration:true,autoStartTimer:true,showPreviousWorkout:true,autoDeload:true,barWeight:45,microplates:false},
-            setup:{}, currentDayIdx:0, previewDayIdx:0, currentWeek:1, streak:0,
-            modals:{resume:false,weight:false,onerm:false,deload:false,rating:false,achievement:false,workoutDetail:false,info:false},
-            session:{t1:{},t2:{},acc:[],completedAcc:{},notes:''},
-            savedSession:null, tempBodyWeight:null, timer:{active:false,start:null,dur:0,rem:0,pct:0},
-            showWarmups:false, calc:{w:0,r:0}, plate:{open:false,w:0,plates:[]},
-            chartLift:'Bench', cal:{monthName:'',days:[],offset:0},
-            plateColors:{55:'bg-red-700 text-white',45:'bg-blue-600 text-white',35:'bg-yellow-500 text-black',25:'bg-green-500 text-black',20:'bg-blue-600 text-white',15:'bg-yellow-500 text-black',10:'bg-white text-black',5:'bg-white text-black',2.5:'bg-red-400 text-white',1.25:'bg-gray-400 text-black'},
-            sessionTimerStr:'0:00', deloadInfo:{reason:'',percentage:0,protocol:''}, sessionRating:0, sessionNotes:'', sessionRPE:7.0, currentAchievement:null, selectedLog:null, historyFilter:'all', previousWorkout:null,
-
-            init() {
-                const d = db.get('nsuns_ultimate'), p = db.get('lift_preferences', {});
-                this.prefs = {...this.prefs, ...p};
-                ['restT1','restT2','restT3'].forEach(k => this.prefs[k] = +this.prefs[k]);
-                this.bwLog = db.get('lift_bodyweight', []);
-                this.savedSession = db.get('lift_active_session');
-                this.achievements = db.get('lift_achievements', []);
-                this.prs = db.get('lift_prs', {});
-                if(!this.prefs.barWeight) this.prefs.barWeight = this.prefs.weightUnit==='kg' ? 20 : 45;
-
-                if(d) {
-                    Object.assign(this, {tms:d.tms, history:d.history||[], currentDayIdx:d.idx||0, currentWeek:d.week||1, streak:d.streak||0, programState:d.programState||{}});
-                    this.previewDayIdx = this.currentDayIdx;
-                    this.getLifts().forEach(l => { if(!this.programState[l]) this.programState[l] = {stage:1}; });
-                    this.history.forEach(h => { if(!h.timestamp) h.timestamp = new Date(h.date).getTime(); });
-                    if(this.savedSession) this.modals.resume = true;
-                    this.$nextTick(() => { this.renderMainChart(); this.renderVolumeChart(); this.buildCalendar(); this.checkAchievements(); });
-                } else this.view = 'setup';
-
-                setInterval(() => {
-                    const now = utils.now();
-                    if(this.session.start) this.sessionTimerStr = utils.fmtTime((now - this.session.start)/1000);
-                    if(this.timer.active && this.timer.start) {
-                        this.timer.rem = Math.max(0, this.timer.dur - Math.floor((now - this.timer.start)/1000));
-                        this.timer.pct = this.timer.rem / this.timer.dur;
-                        if(this.timer.rem <= 0) {
-                            this.stopTimer();
-                            if(this.prefs.timerSound) this.beep();
-                            if(this.prefs.vibration && navigator.vibrate) navigator.vibrate([200,100,200]);
-                        }
-                    }
-                }, 1000);
-            },
-
-            navigate(v) { 
-                this.view = v; 
-                if(v==='calendar') this.buildCalendar(); 
-                else if(v==='preferences') this.$nextTick(()=>this.renderBWChart()); 
-                else if(v==='dashboard') this.$nextTick(()=>{ this.renderMainChart(); this.renderVolumeChart(); }); 
-            },
-            getLifts: () => ['Bench','Squat','Deadlift','OHP','Row'],
-            getWorkout() { const p=PROGRAMS[this.prefs.program]; return p.days[this.previewDayIdx % p.days.length]; },
-            isDeloadWeek() { return this.prefs.program === '531' && this.currentWeek % 4 === 0; },
-            
-            changePreviewDay(dir) {
-                const len = PROGRAMS[this.prefs.program].days.length;
-                this.previewDayIdx = (this.previewDayIdx + dir + len) % len;
-            },
-            
-            getSets(schemeName, liftName, tm, tier) {
-                const {program, weightUnit, microplates} = this.prefs, rnd = w => utils.round(w, weightUnit, microplates);
-                
-                if(program === 'gzclp') {
-                    const stage = this.programState[liftName]?.stage || 1, s = SCHEMES.gzclp[tier][`stage${stage}`], pct = tier==='t1' ? 0.85 : 0.65;
-                    return Array(s.sets).fill(0).map((_,i) => ({weight:rnd(tm*pct), reps:s.reps, amrap:i===s.sets-1&&s.amrap?'+':false, completed:false, failed:false}));
-                }
-                if(program === '531' && tier === 't1') {
-                    const wk = this.currentWeek % 4 || 4, s = SCHEMES['531'][wk===4?'deload':`week${wk}`];
-                    return s.map(x => ({weight:rnd(tm*x[0]), reps:x[1], amrap:x[2]==='+', completed:false, failed:false}));
-                }
-                const scheme = (SCHEMES[program] || SCHEMES.nsuns)[schemeName] || SCHEMES.nsuns.t1_volume;
-                return scheme.map(x => ({weight:rnd(tm*x[0]), reps:x[1], amrap:x[2]==='+', completed:false, failed:false}));
-            },
-
-            getBarOptions() { return this.prefs.weightUnit==='kg' ? [{weight:20,name:'Olympic'},{weight:15,name:'Women'},{weight:10,name:'Training'},{weight:7,name:'Curl'}] : [{weight:45,name:'Olympic'},{weight:35,name:'Women'},{weight:25,name:'Training'},{weight:15,name:'Curl'}]; },
-            getDaysOff() { const h = this.history; return h.length ? Math.floor((Date.now() - new Date(h[h.length-1].timestamp || h[h.length-1].date)) / 86400000) : 0; },
-            
-            checkDeloadAndStart() {
-                const check = DELOAD_SYSTEM.evaluate(this.getDaysOff());
-                if(this.prefs.autoDeload && check.needed) { this.deloadInfo = check; this.modals.deload = true; } 
-                else this.modals.weight = true;
-            },
-            applyDeload() { Object.keys(this.tms).forEach(k => this.tms[k] = Math.round(this.tms[k] * (1 - this.deloadInfo.percentage/100))); this.saveData(); this.modals.deload=false; this.modals.weight=true; },
-            
-            startSession(custom) {
-                const d = custom || this.getWorkout();
-                this.session = { 
-                    title:d.title, start:utils.now(), acc:JSON.parse(JSON.stringify(d.acc||[])), completedAcc:{}, notes:'',
-                    dayIdx: custom ? null : this.previewDayIdx, 
-                    t1:{name:d.t1, sets:this.getSets(d.s, d.t1, this.tms[d.t1], 't1')}, 
-                    t2:{name:d.t2, sets:this.getSets(d.t2s, d.t2, this.tms[d.t2], 't2')} 
-                };
-                if(this.prefs.showPreviousWorkout) {
-                    const prev = this.history.slice().reverse().find(h => h.details?.t1 === d.t1);
-                    this.previousWorkout = prev ? {date:prev.date, duration:prev.duration, topSet:prev.details?.weight||'-', amrapResult:prev.setDetails?.t1?.find(s=>s.amrap)?.performed||'-'} : null;
-                }
-                this.saveSession(); this.view = 'workout';
-            },
-
-            completeSet(set, tier, idx) {
-                if(!set.performed && set.amrap) return;
-                set.completed = set.failed || !set.completed;
-                set.completedAt = set.completed ? utils.now() : null;
-                if(set.completed && this.prefs.autoStartTimer) this.startTimer(+this.prefs[tier==='t1'?'restT1':'restT2'] + (set.failed?60:0));
-                this.saveSession();
-            },
-
-            finishSession() { this.sessionRating=0; this.sessionNotes=this.session.notes||''; this.sessionRPE=7; this.stopTimer(); this.modals.rating=true; },
-            
-            saveSessionRating() {
-                const {t1, t2} = this.session, lift = t1.name, prSet = t1.sets.find(s=>s.amrap), prog = this.prefs.program, unit = this.prefs.weightUnit;
-                let inc = 0, baseInc = unit==='kg' ? 2.5 : 5;
-                
-                if(prog === 'gzclp') {
-                    if(t1.sets.some(s => s.failed)) {
-                        const res = PROGRESSION_ENGINE.gzclpFail(this.programState[lift].stage);
-                        if(res.action === 'reset') { this.programState[lift].stage = 1; this.tms[lift] = Math.round(this.tms[lift] * 0.85); }
-                        else this.programState[lift].stage = res.newStage;
-                    } else { inc = baseInc; this.tms[lift] += inc; }
-                } else if(prSet && prSet.performed > prSet.reps) {
-                    inc = PROGRESSION_ENGINE.evaluateAmrap(prSet.performed, prSet.reps, unit);
-                    this.tms[lift] += inc;
-                } else if(PROGRAMS[prog].progression.type==='linear' && !t1.sets.some(s=>s.failed)) {
-                    inc = baseInc; this.tms[lift] += inc;
-                }
-
-                if(inc > 0) confetti({particleCount:100, spread:70, origin:{y:0.6}});
-                
-                const e1rm = prSet ? Math.round(prSet.weight*(1+(prSet.performed||prSet.reps)/30)) : 0;
-                if(e1rm > (this.prs[lift]?.weight || 0)) { this.prs[lift] = {weight:e1rm, date:new Date().toLocaleDateString()}; db.set('lift_prs', this.prs); }
-
-                const allSets = [...t1.sets, ...t2.sets];
-                this.history.push({ 
-                    date: new Date().toLocaleDateString(), timestamp: utils.now(), title: this.session.title, increase: inc, pr: inc>0,
-                    duration: Math.round((utils.now()-this.session.start)/60000), rating: this.sessionRating, rpe: this.sessionRPE, notes: this.sessionNotes,
-                    totalVolume: allSets.reduce((a,s)=>s.completed?a+(s.weight*(s.performed||s.reps)):a, 0),
-                    totalSets: allSets.length, completedSets: allSets.filter(s=>s.completed).length,
-                    details: {t1:lift, weight:prSet?.weight, est1rm:e1rm},
-                    setDetails: {t1:t1.sets, t2Name:t2.name, t2:t2.sets, accessories:this.session.acc.map(a=>({name:a.name, total:a.sets, completed:Object.keys(this.session.completedAcc).filter(k=>k.startsWith(a.name)).length}))}
-                });
-
-                if(this.session.dayIdx !== null) {
-                    const pLen = PROGRAMS[prog].days.length;
-                    this.currentDayIdx = (this.session.dayIdx + 1) % pLen;
-                    if(this.currentDayIdx === 0) this.currentWeek++;
-                    this.previewDayIdx = this.currentDayIdx;
-                }
-
-                this.streak++;
-                this.savedSession = null; db.del('lift_active_session'); this.modals.rating = false;
-                this.saveData(); this.checkAchievements(); this.view = 'dashboard'; this.buildCalendar();
-                this.$nextTick(()=>{ this.renderMainChart(); this.renderVolumeChart(); });
-            },
-
-            generateWarmups() { const w=this.session.t1.sets[0].weight; return [{w:20,r:10},{w:w*0.4,r:5},{w:w*0.6,r:3},{w:w*0.8,r:2}].filter(x=>x.w>20); },
-            renderMainChart() { const d=this.history.filter(h=>h.details?.t1===this.chartLift); this.renderChart('mainChart', d.map(h=>h.date), d.map(h=>h.details.est1rm), '#6366f1'); },
-            renderBWChart() { const d=this.bwLog.slice(-30); this.renderChart('bodyWeightChart', d.map(x=>new Date(x.date).toLocaleDateString()), d.map(x=>x.weight), '#3b82f6'); },
-            renderVolumeChart() { 
-                const v={}; this.history.slice(-20).forEach(h=>{ const k=`W${utils.getWeekNum(new Date(h.timestamp))}`; v[k]=(v[k]||0)+(h.totalVolume||0); });
-                this.renderChart('volumeChart', Object.keys(v), Object.values(v), '#10b981', 'bar'); 
-            },
-            renderChart(id, l, d, c, t='line') {
-                const ctx=document.getElementById(id); if(!ctx)return; if(ctx.c)ctx.c.destroy();
-                ctx.c = new Chart(ctx, {type:t, data:{labels:l, datasets:[{data:d, borderColor:c, backgroundColor:t==='line'?(x=>{const g=x.chart.ctx.createLinearGradient(0,0,0,160);g.addColorStop(0,c+'80');g.addColorStop(1,c+'00');return g}):c+'80', tension:0.3, fill:true}]}, options:{responsive:true,maintainAspectRatio:false,plugins:{legend:false},scales:{x:{display:false},y:{grid:{color:'#ffffff0d'},ticks:{color:'#666'}}}}});
-            },
-
-            saveSession() { db.set('lift_active_session', this.session); },
-            saveData() { db.set('nsuns_ultimate', {tms:this.tms, history:this.history, idx:this.currentDayIdx, week:this.currentWeek, streak:this.streak, programState:this.programState}); },
-            savePrefs() { db.set('lift_preferences', this.prefs); },
-            
-            openPlateCalc(w) {
-                this.plate = {open:true, w, plates:[]}; let rem = (w - this.prefs.barWeight)/2; if(rem<=0) return;
-                (this.prefs.weightUnit==='kg'?[25,20,15,10,5,2.5,1.25]:[45,35,25,10,5,2.5]).forEach(p => { while(rem>=p) { this.plate.plates.push(p); rem-=p; } });
-            },
-
-            buildCalendar() {
-                const now = new Date(); now.setMonth(now.getMonth() + this.cal.offset);
-                this.cal.monthName = now.toLocaleString('default', {month:'long', year:'numeric'});
-                const y = now.getFullYear(), m = now.getMonth(), days = new Date(y, m+1, 0).getDate(), first = new Date(y, m, 1).getDay();
-                this.cal.days = [...Array(first).fill({}), ...[...Array(days).keys()].map(i => ({num:i+1, isToday:new Date().getDate()===i+1 && !this.cal.offset, hasLog:this.history.some(h => {const d=new Date(h.timestamp); return d.getDate()===i+1 && d.getMonth()===m;})}))];
-            },
-
-            beep() { if(!window.ac) window.ac = new (window.AudioContext||window.webkitAudioContext)(); const o=ac.createOscillator(), g=ac.createGain(); o.connect(g); g.connect(ac.destination); o.frequency.value=800; g.gain.exponentialRampToValueAtTime(0.00001, ac.currentTime+0.5); o.start(); o.stop(ac.currentTime+0.5); },
-            checkAchievements() { ACHIEVEMENTS.forEach(a => { if(!this.achievements.includes(a.id) && a.check(this.history)) { this.achievements.push(a.id); this.currentAchievement=a; this.modals.achievement=true; db.set('lift_achievements', this.achievements); }}); },
-            hasAchievement(id) { return this.achievements.includes(id); },
-            
-            getMuscleRecovery() {
-                return [['Bench','Chest'],['OHP','Shoulders'],['Squat','Legs'],['Deadlift','Back']].map(([l,m]) => ({name:m, ...RECOVERY_SYSTEM.getStatus(this.history, m)}));
-            },
-
-            finishSetup() { if(Object.values(this.setup).some(v=>v>0)) { Object.keys(this.setup).forEach(k=>this.tms[k]=utils.round(this.setup[k]*0.9, this.prefs.weightUnit)); this.saveData(); this.savePrefs(); this.view='dashboard'; } },
-            resumeWorkout() { this.session=this.savedSession; this.modals.resume=false; this.view='workout'; },
-            discardWorkout() { this.savedSession=null; db.del('lift_active_session'); this.modals.resume=false; },
-            finishSavedSession() { this.session=this.savedSession; this.modals.resume=false; this.finishSession(); },
-            cancelWorkout() { if(confirm('Save progress?')) { this.saveSession(); this.view='dashboard'; } },
-            logBodyWeight() { if(this.tempBodyWeight) { this.bwLog.push({date:utils.now(), weight:this.tempBodyWeight}); db.set('lift_bodyweight', this.bwLog); } this.modals.weight=false; this.startSession(); },
-            getBW(t) { const w=this.bwLog.map(x=>x.weight); return !w.length ? '-' : t==='last' ? w[w.length-1] : t==='min' ? Math.min(...w) : Math.max(...w); },
-            startTimer(s) { this.timer = {active:true, start:utils.now(), dur:+s, rem:+s, pct:1}; },
-            stopTimer() { this.timer.active = false; },
-            adjustTimer(s) { if(this.timer.active) this.timer.dur = Math.max(0, this.timer.dur + s); },
-            formatTime: utils.fmtTime, 
-            formatSetTime: utils.fmtSetTime,
-            formatVolume() { const v=this.history.reduce((a,h)=>a+(h.totalVolume||0),0); return v>1e6 ? (v/1e6).toFixed(1)+'M' : v>1e3 ? (v/1e3).toFixed(0)+'K' : v; },
-            formatVolumeShort(v) { return v ? v>1e3 ? (v/1e3).toFixed(1)+'k' : v : '-'; },
-            getAvgDuration() { const l=this.history.filter(h=>h.duration); return l.length ? Math.round(l.reduce((a,b)=>a+b.duration,0)/l.length) : '-'; },
-            getTotalPRs() { return this.history.filter(h=>h.pr).length; },
-            getFailedT1Count() { return this.session.t1?.sets?.filter(s=>s.failed).length || 0; },
-            getSessionProgress() { const t=this.session.t1?.sets, t2=this.session.t2?.sets; return t ? Math.round((t.filter(s=>s.completed).length+(t2?t2.filter(s=>s.completed).length:0))/(t.length+(t2?t2.length:0))*100) : 0; },
-            getEstimatedDuration() { return 60; }, 
-            getTimeAgo(ts) { const d=Math.floor((utils.now()-ts)/60000); return d<60 ? d+'m ago' : Math.floor(d/60)+'h ago'; },
-            toggleAcc(n,i) { const k=`${n}-${i}`; this.session.completedAcc[k]=!this.session.completedAcc[k]; this.saveSession(); if(this.session.completedAcc[k] && this.prefs.autoStartTimer) this.startTimer(+this.prefs.restT3); },
-            isAccDone(n,i) { return !!this.session.completedAcc[`${n}-${i}`]; },
-            addSet() { this.session.t1.sets.push({...this.session.t1.sets[this.session.t1.sets.length-1], completed:false, failed:false}); },
-            changeMonth(d) { this.cal.offset += d; this.buildCalendar(); },
-            exportData() { const b=new Blob([JSON.stringify({nsuns_ultimate:db.get('nsuns_ultimate'), lift_preferences:this.prefs})],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download='lift_backup.json'; a.click(); },
-            importData(e) { const r=new FileReader(); r.onload=ev=>{try{const d=JSON.parse(ev.target.result); db.set('nsuns_ultimate',d.nsuns_ultimate); location.reload();}catch(x){alert('Error');}}; r.readAsText(e.target.files[0]); },
-            resetAll() { if(confirm('Reset all?')) { localStorage.clear(); location.reload(); } },
-            getFilteredHistory() { const l=this.history.slice().reverse(); return this.historyFilter!=='all' ? l.filter(h=>h.details?.t1===this.historyFilter).slice(0,50) : l.slice(0,50); },
-            showDayLogs(day) { const n=new Date(); n.setMonth(n.getMonth()+this.cal.offset); const l=this.history.find(h=>h.date===new Date(n.getFullYear(),n.getMonth(),day.num).toLocaleDateString()); if(l)this.openWorkoutDetail(l); },
-            openWorkoutDetail(l) { this.selectedLog=l; this.modals.workoutDetail=true; },
-            selectProgram(k) { this.prefs.program = k; this.savePrefs(); this.previewDayIdx = 0; this.currentDayIdx = 0; }
-        }
-    }
-</script>
 </body>
 </html>
