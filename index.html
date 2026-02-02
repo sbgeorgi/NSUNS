@@ -397,8 +397,34 @@
                         z.s.completed = true; z.s.completedAt = U.now(); this.saveSession();
                         if (this.prefs.autoStartTimer) this.startTimer(z.t === 't1' ? this.prefs.restT1 : this.prefs.restT2);
                     }
-                }
+                },
+                cancelWorkout() { 
+    if (confirm('Cancel workout? Progress will be lost.')) { 
+        this.session = {}; 
+        this.savedSession = null; 
+        DB.d('lift_active_session'); 
+        this.stopTimer(); 
+        this.view = 'dashboard'; 
+        this.$nextTick(() => this.renderCharts());
+    } 
+},
+discardWorkout() { 
+    this.session = {}; 
+    this.savedSession = null; 
+    DB.d('lift_active_session'); 
+    this.modals.resume = false; 
+    this.view = 'dashboard'; 
+},
+finishSavedSession() { 
+    this.session = this.savedSession; 
+    this.modals.resume = false; 
+    this.finishSession(); 
+},
+
+
             }
+
+
         }
     </script>
 </head>
