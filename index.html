@@ -185,6 +185,43 @@
         .set-timeline:last-child::before {
             display: none
         }
+
+        .exercise-swap-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            z-index: 50;
+            margin-top: 4px;
+            background: #1a1a1e;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+        }
+
+        .exercise-swap-option {
+            padding: 10px 14px;
+            cursor: pointer;
+            transition: background 0.15s;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .exercise-swap-option:last-child {
+            border-bottom: none;
+        }
+
+        .exercise-swap-option:hover {
+            background: rgba(99, 102, 241, 0.1);
+        }
+
+        .exercise-swap-option.active {
+            background: rgba(99, 102, 241, 0.2);
+        }
+
+        .zen-bg {
+            background: radial-gradient(circle at center, #1e1e24 0%, #000000 100%);
+        }
     </style>
     <script>
         const ICONS = {
@@ -198,7 +235,9 @@
             train: 'M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10',
             hist: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z',
             set: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z',
-            chev_down: 'M19 9l-7 7-7-7'
+            chev_down: 'M19 9l-7 7-7-7',
+            swap: 'M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4',
+            expand: 'M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4'
         };
         const DB = { g: (k, d) => JSON.parse(localStorage.getItem(k)) || d, s: (k, v) => localStorage.setItem(k, JSON.stringify(v)), d: k => localStorage.removeItem(k) };
         const U = { now: () => Date.now(), fmt: (s) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`, rnd: (n, u, m) => { const i = m ? (u === 'kg' ? 1.25 : 2.5) : (u === 'kg' ? 2.5 : 5); return Math.round(n / i) * i } };
@@ -217,6 +256,164 @@
             gzclp: { name: 'GZCLP', prog: 'gz', daysPerWeek: 4, progressionDesc: 'Stage Failure', days: [{ t: 'D1', t1: 'Squat', t2: 'Bench', s: 't1', t2s: 't2', acc: [{ name: 'LatPD', sets: 3 }] }, { t: 'D2', t1: 'OHP', t2: 'Deadlift', s: 't1', t2s: 't2', acc: [{ name: 'Row', sets: 3 }] }, { t: 'D3', t1: 'Bench', t2: 'Squat', s: 't1', t2s: 't2', acc: [{ name: 'Tri', sets: 3 }] }, { t: 'D4', t1: 'Deadlift', t2: 'OHP', s: 't1', t2s: 't2', acc: [{ name: 'Bi', sets: 3 }] }] },
             '531': { name: '5/3/1 BBB', prog: '531', daysPerWeek: 4, progressionDesc: 'Monthly Wave', days: [{ t: 'OHP', t1: 'OHP', t2: 'OHP', s: '531', t2s: 'bbb', acc: [{ name: 'Chins', sets: 5 }] }, { t: 'DL', t1: 'Deadlift', t2: 'Deadlift', s: '531', t2s: 'bbb', acc: [{ name: 'Abs', sets: 5 }] }, { t: 'Bench', t1: 'Bench', t2: 'Bench', s: '531', t2s: 'bbb', acc: [{ name: 'Row', sets: 5 }] }, { t: 'Squat', t1: 'Squat', t2: 'Squat', s: '531', t2s: 'bbb', acc: [{ name: 'Legs', sets: 5 }] }] }
         };
+        const EXERCISE_GROUPS = {
+            bench_variants: {
+                base: 'Bench',
+                options: [
+                    { id: 'Bench', name: 'Barbell Bench Press', mult: 1.0 },
+                    { id: 'Incline Bench', name: 'Incline Bench Press', mult: 0.85 },
+                    { id: 'Close Grip Bench', name: 'Close Grip Bench', mult: 0.9 },
+                    { id: 'DB Bench', name: 'Dumbbell Bench', mult: 0.8 },
+                    { id: 'Paused Bench', name: 'Paused Bench Press', mult: 0.9 },
+                    { id: 'Spoto Press', name: 'Spoto Press', mult: 0.85 },
+                    { id: 'Floor Press', name: 'Floor Press', mult: 0.9 }
+                ]
+            },
+            ohp_variants: {
+                base: 'OHP',
+                options: [
+                    { id: 'OHP', name: 'Overhead Press', mult: 1.0 },
+                    { id: 'Seated OHP', name: 'Seated OHP', mult: 0.95 },
+                    { id: 'DB OHP', name: 'Dumbbell OHP', mult: 0.85 },
+                    { id: 'Push Press', name: 'Push Press', mult: 1.1 },
+                    { id: 'Z Press', name: 'Z Press', mult: 0.75 },
+                    { id: 'Arnold Press', name: 'Arnold Press', mult: 0.7 },
+                    { id: 'Behind Neck Press', name: 'Behind Neck Press', mult: 0.8 }
+                ]
+            },
+            squat_variants: {
+                base: 'Squat',
+                options: [
+                    { id: 'Squat', name: 'Back Squat', mult: 1.0 },
+                    { id: 'Front Squat', name: 'Front Squat', mult: 0.85 },
+                    { id: 'Pause Squat', name: 'Pause Squat', mult: 0.85 },
+                    { id: 'Box Squat', name: 'Box Squat', mult: 0.9 },
+                    { id: 'SSB Squat', name: 'Safety Bar Squat', mult: 0.9 },
+                    { id: 'Goblet Squat', name: 'Goblet Squat', mult: 0.5 },
+                    { id: 'Tempo Squat', name: 'Tempo Squat', mult: 0.8 }
+                ]
+            },
+            deadlift_variants: {
+                base: 'Deadlift',
+                options: [
+                    { id: 'Deadlift', name: 'Conventional Deadlift', mult: 1.0 },
+                    { id: 'Sumo DL', name: 'Sumo Deadlift', mult: 1.0 },
+                    { id: 'Romanian DL', name: 'Romanian Deadlift', mult: 0.7 },
+                    { id: 'Trap Bar DL', name: 'Trap Bar Deadlift', mult: 1.05 },
+                    { id: 'Deficit DL', name: 'Deficit Deadlift', mult: 0.9 },
+                    { id: 'Paused DL', name: 'Paused Deadlift', mult: 0.85 },
+                    { id: 'Block Pull', name: 'Block Pull', mult: 1.1 },
+                    { id: 'SLDL', name: 'Stiff Leg Deadlift', mult: 0.7 }
+                ]
+            },
+            row_variants: {
+                base: 'Row',
+                options: [
+                    { id: 'Row', name: 'Barbell Row', mult: 1.0 },
+                    { id: 'Pendlay Row', name: 'Pendlay Row', mult: 0.95 },
+                    { id: 'DB Row', name: 'Dumbbell Row', mult: 0.85 },
+                    { id: 'Cable Row', name: 'Seated Cable Row', mult: 0.9 },
+                    { id: 'T-Bar Row', name: 'T-Bar Row', mult: 1.0 },
+                    { id: 'Seal Row', name: 'Seal Row', mult: 0.8 },
+                    { id: 'Chest Supported Row', name: 'Chest Supported Row', mult: 0.85 },
+                    { id: 'Meadows Row', name: 'Meadows Row', mult: 0.7 }
+                ]
+            },
+            triceps: {
+                base: null,
+                options: [
+                    { id: 'Tri', name: 'Tricep Work' },
+                    { id: 'Pushdowns', name: 'Tricep Pushdowns' },
+                    { id: 'Skull Crushers', name: 'Skull Crushers' },
+                    { id: 'Dips', name: 'Dips' },
+                    { id: 'OH Tricep Ext', name: 'Overhead Extension' },
+                    { id: 'Close Grip BP', name: 'Close Grip Bench' },
+                    { id: 'JM Press', name: 'JM Press' },
+                    { id: 'Tricep Kickbacks', name: 'Tricep Kickbacks' }
+                ]
+            },
+            biceps: {
+                base: null,
+                options: [
+                    { id: 'Bi', name: 'Bicep Work' },
+                    { id: 'Barbell Curl', name: 'Barbell Curls' },
+                    { id: 'DB Curl', name: 'Dumbbell Curls' },
+                    { id: 'Hammer Curl', name: 'Hammer Curls' },
+                    { id: 'Preacher Curl', name: 'Preacher Curls' },
+                    { id: 'Incline Curl', name: 'Incline DB Curls' },
+                    { id: 'Cable Curl', name: 'Cable Curls' },
+                    { id: 'Spider Curl', name: 'Spider Curls' }
+                ]
+            },
+            vertical_pull: {
+                base: null,
+                options: [
+                    { id: 'Pullups', name: 'Pull-ups' },
+                    { id: 'Chin-ups', name: 'Chin-ups' },
+                    { id: 'Lat Pulldown', name: 'Lat Pulldown' },
+                    { id: 'LatPD', name: 'Lat Pulldown' },
+                    { id: 'Neutral Pullups', name: 'Neutral Grip Pull-ups' },
+                    { id: 'Chins', name: 'Chin-ups' },
+                    { id: 'Wide Grip Pulldown', name: 'Wide Grip Pulldown' },
+                    { id: 'Close Grip Pulldown', name: 'Close Grip Pulldown' }
+                ]
+            },
+            leg_accessories: {
+                base: null,
+                options: [
+                    { id: 'Legs', name: 'Leg Accessories' },
+                    { id: 'Leg Press', name: 'Leg Press' },
+                    { id: 'Lunges', name: 'Lunges' },
+                    { id: 'Leg Curl', name: 'Leg Curls' },
+                    { id: 'Leg Ext', name: 'Leg Extensions' },
+                    { id: 'Calf Raises', name: 'Calf Raises' },
+                    { id: 'Bulgarian Split', name: 'Bulgarian Split Squats' },
+                    { id: 'Hip Thrust', name: 'Hip Thrusts' },
+                    { id: 'Hack Squat', name: 'Hack Squat' },
+                    { id: 'Nordic Curl', name: 'Nordic Curls' }
+                ]
+            },
+            core: {
+                base: null,
+                options: [
+                    { id: 'Abs', name: 'Ab Work' },
+                    { id: 'Hanging Leg Raise', name: 'Hanging Leg Raises' },
+                    { id: 'Cable Crunch', name: 'Cable Crunches' },
+                    { id: 'Ab Wheel', name: 'Ab Wheel Rollouts' },
+                    { id: 'Planks', name: 'Planks' },
+                    { id: 'Russian Twists', name: 'Russian Twists' },
+                    { id: 'Dead Bug', name: 'Dead Bugs' },
+                    { id: 'Pallof Press', name: 'Pallof Press' }
+                ]
+            },
+            arms: {
+                base: null,
+                options: [
+                    { id: 'Arms', name: 'Arm Work' },
+                    { id: 'Curls + Pushdowns', name: 'Curls + Pushdowns' },
+                    { id: 'Hammer + Dips', name: 'Hammers + Dips' },
+                    { id: 'Arm Circuit', name: 'Arm Circuit' },
+                    { id: 'Supersets', name: 'Bi/Tri Supersets' }
+                ]
+            },
+            dl_accessory: {
+                base: 'Deadlift',
+                options: [
+                    { id: 'DL', name: 'Deadlift', mult: 1.0 },
+                    { id: 'Romanian DL', name: 'Romanian Deadlift', mult: 0.7 },
+                    { id: 'SLDL', name: 'Stiff Leg Deadlift', mult: 0.7 },
+                    { id: 'Good Morning', name: 'Good Mornings', mult: 0.5 },
+                    { id: 'Back Extension', name: 'Back Extensions', mult: 0.3 }
+                ]
+            }
+        };
+        function getExerciseGroupInfo(exerciseId) {
+            for (const [groupKey, group] of Object.entries(EXERCISE_GROUPS)) {
+                const found = group.options.find(opt => opt.id === exerciseId);
+                if (found) return { groupKey, group, exercise: found };
+            }
+            return null;
+        }
         function app() {
             return {
                 view: 'dashboard', PROGRAMS: PROGS, ACHIEVEMENTS: C.achievements, icons: ICONS,
@@ -228,6 +425,9 @@
                 showWarmups: false, calc: { w: 0, r: 0 }, plate: { open: false, w: 0, plates: [] }, chartLift: 'Bench', cal: { monthName: '', days: [], offset: 0 },
                 sessionTimerStr: '0:00', deloadInfo: {}, sessionRating: 0, sessionNotes: '', sessionRPE: 7, currentAchievement: null, selectedLog: null, historyFilter: 'all', previousWorkout: null, isEditingLog: false,
                 plateColors: { 55: 'bg-red-700 text-white', 45: 'bg-blue-600 text-white', 35: 'bg-yellow-500 text-black', 25: 'bg-green-500 text-black', 20: 'bg-blue-600 text-white', 15: 'bg-yellow-500 text-black', 10: 'bg-white text-black', 5: 'bg-white text-black', 2.5: 'bg-red-400 text-white', 1.25: 'bg-gray-400 text-black' },
+                showT2SwapDropdown: false,
+                showAccSwapDropdown: null,
+                zenMode: false,
                 init() {
                     const d = DB.g('nsuns_ultimate', {});
                     Object.assign(this, {
@@ -260,21 +460,126 @@
                 changePreviewDay(d) { const l = PROGS[this.prefs.program].days.length; this.previewDayIdx = (this.previewDayIdx + d + l) % l },
                 formatTime: U.fmt, formatSetTime: ts => new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
                 getDaysOff() { return this.history.length ? Math.floor((U.now() - (this.history[this.history.length - 1].timestamp || 0)) / 86400000) : 0 },
-                getSets(sk, l, tm, tier) {
+                getExerciseInfo(exerciseId) {
+                    return getExerciseGroupInfo(exerciseId);
+                },
+                getExerciseAlternatives(exerciseId) {
+                    const info = getExerciseGroupInfo(exerciseId);
+                    if (info) {
+                        return info.group.options;
+                    }
+                    return [{ id: exerciseId, name: exerciseId, mult: 1.0 }];
+                },
+                getBaseTMForExercise(exerciseId) {
+                    const info = getExerciseGroupInfo(exerciseId);
+                    if (info && info.group.base) {
+                        return info.group.base;
+                    }
+                    if (this.tms[exerciseId] !== undefined) {
+                        return exerciseId;
+                    }
+                    return null;
+                },
+                getExerciseMultiplier(exerciseId) {
+                    const info = getExerciseGroupInfo(exerciseId);
+                    if (info && info.exercise.mult !== undefined) {
+                        return info.exercise.mult;
+                    }
+                    return 1.0;
+                },
+                getExerciseDisplayName(exerciseId) {
+                    const info = getExerciseGroupInfo(exerciseId);
+                    if (info) {
+                        return info.exercise.name;
+                    }
+                    return exerciseId;
+                },
+                getSets(sk, l, tm, tier, exerciseOverride = null) {
                     const { program: p, weightUnit: u, microplates: m } = this.prefs;
                     let s = [], cfg;
+                    let actualExercise = exerciseOverride || l;
+                    let baseTM = this.getBaseTMForExercise(actualExercise);
+                    let multiplier = this.getExerciseMultiplier(actualExercise);
+                    let effectiveTM = baseTM ? (this.tms[baseTM] || tm) * multiplier : tm * multiplier;
                     if (p === 'gzclp') { const st = this.programState[l]?.stage || 1; cfg = C.schemes.gzclp[tier][st - 1]; s = Array(cfg[0]).fill(0).map((_, i) => ({ w: tier === 't1' ? .85 : .65, r: cfg[1], amrap: i === cfg[0] - 1 })) }
                     else if (p === '531' && tier === 't1') { const w = this.currentWeek % 4 || 4; s = C.schemes['531'][w === 4 ? 'del' : `w${w}`].map(x => ({ w: x[0], r: x[1], amrap: x[2] === '+' })) }
                     else { const map = C.schemes[p] || C.schemes.nsuns; s = (map[sk] || map.vol).map(x => ({ w: x[0], r: x[1], amrap: x[2] === '+' })) }
-                    return s.map(x => ({ weight: U.rnd(tm * x.w, u, m), reps: x.r, amrap: x.amrap, completed: false, failed: false }))
+                    return s.map(x => ({ weight: U.rnd(effectiveTM * x.w, u, m), reps: x.r, amrap: x.amrap, completed: false, failed: false }))
                 },
                 checkDeloadAndStart() { const off = this.getDaysOff(), lvls = [[42, 25, '6+ weeks off'], [28, 20, '4 weeks off'], [14, 10, '2 weeks off']].find(l => off >= l[0]); if (lvls && this.prefs.autoDeload) { this.deloadInfo = { needed: true, percentage: lvls[1], reason: lvls[2], protocol: 'Reduce_TMs' }; this.modals.deload = true } else this.modals.weight = true },
                 applyDeload() { Object.keys(this.tms).forEach(k => this.tms[k] = Math.round(this.tms[k] * (1 - this.deloadInfo.percentage / 100))); this.saveData(); this.modals.deload = false; this.modals.weight = true },
                 startSession(c) {
                     const d = c || this.getWorkout();
-                    this.session = { title: d.title || d.t, start: U.now(), acc: JSON.parse(JSON.stringify(d.acc || [])), completedAcc: {}, notes: '', dayIdx: c ? null : this.previewDayIdx, t1: { name: d.t1, sets: this.getSets(d.s, d.t1, this.tms[d.t1], 't1') }, t2: { name: d.t2, sets: this.getSets(d.t2s, d.t2, this.tms[d.t2], 't2') } };
+                    const t2BaseTM = this.getBaseTMForExercise(d.t2);
+                    const t2TM = t2BaseTM ? this.tms[t2BaseTM] : this.tms[d.t2];
+                    this.session = {
+                        title: d.title || d.t,
+                        start: U.now(),
+                        acc: JSON.parse(JSON.stringify(d.acc || [])).map(a => ({
+                            ...a,
+                            originalName: a.name,
+                            selectedExercise: a.name
+                        })),
+                        completedAcc: {},
+                        notes: '',
+                        dayIdx: c ? null : this.previewDayIdx,
+                        t1: { name: d.t1, sets: this.getSets(d.s, d.t1, this.tms[d.t1], 't1') },
+                        t2: {
+                            name: d.t2,
+                            originalName: d.t2,
+                            selectedExercise: d.t2,
+                            schemeKey: d.t2s,
+                            sets: this.getSets(d.t2s, d.t2, t2TM, 't2', d.t2)
+                        }
+                    };
                     if (this.prefs.showPreviousWorkout) { const h = this.history.slice().reverse().find(x => x.details?.t1 === d.t1); if (h) this.previousWorkout = { date: h.date, duration: h.duration, topSet: h.details?.weight, amrapResult: h.setDetails?.t1?.find(s => s.amrap)?.performed } }
                     this.saveSession(); this.view = 'workout';
+                },
+                swapT2Exercise(newExerciseId) {
+                    if (!this.session.t2) return;
+                    const baseTM = this.getBaseTMForExercise(newExerciseId);
+                    const tm = baseTM ? this.tms[baseTM] : this.tms[this.session.t2.originalName];
+                    const completedState = this.session.t2.sets.map(s => ({
+                        completed: s.completed,
+                        failed: s.failed,
+                        performed: s.performed,
+                        completedAt: s.completedAt
+                    }));
+                    const newSets = this.getSets(
+                        this.session.t2.schemeKey,
+                        this.session.t2.originalName,
+                        tm,
+                        't2',
+                        newExerciseId
+                    );
+                    newSets.forEach((set, idx) => {
+                        if (completedState[idx]) {
+                            set.completed = completedState[idx].completed;
+                            set.failed = completedState[idx].failed;
+                            set.performed = completedState[idx].performed;
+                            set.completedAt = completedState[idx].completedAt;
+                        }
+                    });
+                    this.session.t2.selectedExercise = newExerciseId;
+                    this.session.t2.name = newExerciseId;
+                    this.session.t2.sets = newSets;
+                    this.showT2SwapDropdown = false;
+                    this.saveSession();
+                },
+                swapAccessoryExercise(accIndex, newExerciseId) {
+                    if (!this.session.acc || !this.session.acc[accIndex]) return;
+                    this.session.acc[accIndex].selectedExercise = newExerciseId;
+                    this.session.acc[accIndex].name = newExerciseId;
+                    this.showAccSwapDropdown = null;
+                    this.saveSession();
+                },
+                getT2Alternatives() {
+                    if (!this.session.t2) return [];
+                    return this.getExerciseAlternatives(this.session.t2.originalName);
+                },
+                getAccessoryAlternatives(accIndex) {
+                    if (!this.session.acc || !this.session.acc[accIndex]) return [];
+                    return this.getExerciseAlternatives(this.session.acc[accIndex].originalName);
                 },
                 completeSet(s, t) { if (!s.performed && s.amrap) return; s.completed = s.failed || !s.completed; s.completedAt = s.completed ? U.now() : null; if (s.completed && this.prefs.autoStartTimer) this.startTimer(+this.prefs[t === 't1' ? 'restT1' : 'restT2'] + (s.failed ? 60 : 0)); this.saveSession() },
                 finishSession() { this.sessionRating = 0; this.sessionNotes = this.session.notes || ''; this.sessionRPE = 7; this.stopTimer(); this.modals.rating = true },
@@ -288,7 +593,33 @@
                     const e1rm = pr ? Math.round(pr.weight * (1 + (pr.performed || pr.reps) / 30)) : 0;
                     if (e1rm > (this.prs[lift]?.weight || 0)) { this.prs[lift] = { weight: e1rm, date: new Date().toLocaleDateString() }; DB.s('lift_prs', this.prs) }
                     const all = [...t1.sets, ...t2.sets];
-                    this.history.push({ date: new Date().toLocaleDateString(), timestamp: U.now(), title: this.session.title, increase: add, pr: add > 0, duration: Math.round((U.now() - this.session.start) / 60000), rating: this.sessionRating, rpe: this.sessionRPE, notes: this.sessionNotes, totalVolume: all.reduce((a, s) => s.completed ? a + (s.weight * (s.performed || s.reps)) : a, 0), totalSets: all.length, completedSets: all.filter(s => s.completed).length, details: { t1: lift, weight: pr?.weight, est1rm: e1rm }, setDetails: { t1: t1.sets, t2Name: t2.name, t2: t2.sets, accessories: this.session.acc.map(a => ({ name: a.name, total: a.sets, completed: Object.keys(this.session.completedAcc).filter(k => k.startsWith(a.name)).length })) } });
+                    this.history.push({
+                        date: new Date().toLocaleDateString(),
+                        timestamp: U.now(),
+                        title: this.session.title,
+                        increase: add,
+                        pr: add > 0,
+                        duration: Math.round((U.now() - this.session.start) / 60000),
+                        rating: this.sessionRating,
+                        rpe: this.sessionRPE,
+                        notes: this.sessionNotes,
+                        totalVolume: all.reduce((a, s) => s.completed ? a + (s.weight * (s.performed || s.reps)) : a, 0),
+                        totalSets: all.length,
+                        completedSets: all.filter(s => s.completed).length,
+                        details: { t1: lift, weight: pr?.weight, est1rm: e1rm },
+                        setDetails: {
+                            t1: t1.sets,
+                            t2Name: t2.selectedExercise || t2.name,
+                            t2OriginalName: t2.originalName,
+                            t2: t2.sets,
+                            accessories: this.session.acc.map(a => ({
+                                name: a.selectedExercise || a.name,
+                                originalName: a.originalName,
+                                total: a.sets,
+                                completed: Object.keys(this.session.completedAcc).filter(k => k.startsWith(a.originalName) || k.startsWith(a.name)).length
+                            }))
+                        }
+                    });
                     if (this.session.dayIdx !== null) { this.currentDayIdx = (this.session.dayIdx + 1) % PROGS[p].days.length; if (this.currentDayIdx === 0) this.currentWeek++; this.previewDayIdx = this.currentDayIdx }
                     this.streak++; this.session = {}; this.savedSession = null; DB.d('lift_active_session'); this.modals.rating = false; this.saveData(); this.checkAchievements(); this.view = 'dashboard'; this.buildCalendar(); this.$nextTick(() => this.renderCharts())
                 },
@@ -354,7 +685,8 @@
                 deleteLog() { if (confirm('Delete workout?')) { this.history = this.history.filter(h => h.timestamp !== this.selectedLog.timestamp); this.saveData(); this.modals.workoutDetail = false; this.buildCalendar(); this.$nextTick(() => this.renderCharts()) } },
                 saveLogEdits() { const idx = this.history.findIndex(h => h.timestamp === this.selectedLog.timestamp); if (idx !== -1) { Object.assign(this.history[idx], { notes: this.selectedLog.notes, duration: parseInt(this.selectedLog.duration) || 0, rating: parseInt(this.selectedLog.rating) || 0 }); this.saveData(); this.isEditingLog = false; this.$nextTick(() => this.renderCharts()) } },
                 beep() { if (!window.ac) window.ac = new (window.AudioContext || window.webkitAudioContext); const o = ac.createOscillator(), g = ac.createGain(); o.connect(g); g.connect(ac.destination); o.frequency.value = 800; g.gain.exponentialRampToValueAtTime(1e-5, ac.currentTime + .5); o.start(); o.stop(ac.currentTime + .5) },
-                getBarOptions() { return [{ weight: 45, name: 'Standard' }, { weight: 35, name: 'Womens' }, { weight: 20, name: 'Kg Std' }, { weight: 15, name: 'Kg Wm' }] }
+                getBarOptions() { return [{ weight: 45, name: 'Standard' }, { weight: 35, name: 'Womens' }, { weight: 20, name: 'Kg Std' }, { weight: 15, name: 'Kg Wm' }] },
+                toggleZen() { this.zenMode = !this.zenMode; if(this.zenMode) document.body.style.overflow='hidden'; else document.body.style.overflow='' }
             }
         }
     </script>
@@ -443,6 +775,10 @@
                     <p class="text-sm text-slate-300 leading-relaxed"><strong class="text-white">Rate of Perceived
                             Exertion (1-10)</strong><br><span class="block mt-1 text-xs">10: Max Effort<br>9: Heavy (1
                             RIR)<br>8: Moderate (2 RIR)<br>7: Speed (3+ RIR)</span></p>
+                </div>
+                <div class="relative pl-4 border-l-2 border-green-500">
+                    <h4 class="text-xs font-bold text-green-500 uppercase tracking-widest mb-1">Exercise Swapping</h4>
+                    <p class="text-sm text-slate-300 leading-relaxed"><strong class="text-white">Tap the swap icon</strong> next to T2 or accessory exercises to choose alternatives. Weights are automatically adjusted based on exercise equivalence.</p>
                 </div>
             </div>
             <button @click="modals.info=false"
@@ -1107,14 +1443,17 @@
         <div
             class="sticky top-0 bg-black/90 backdrop-blur-md border-b border-white/5 p-4 flex justify-between items-center z-30">
             <button @click="cancelWorkout()" class="text-slate-400 text-sm font-bold">Cancel</button>
-            <div class="text-center">
-                <div class="text-white font-bold text-sm" x-text="session.title"></div><button @click="modals.info=true"
-                    class="flex items-center justify-center gap-1 mx-auto active:opacity-70 group"><span
-                        class="text-[10px] text-indigo-500 font-bold uppercase">In Progress</span><svg
-                        class="w-3 h-3 text-indigo-500 group-hover:text-indigo-400" fill="none" viewBox="0 0 24 24"
-                        stroke="currentColor">
+            <div class="flex gap-4">
+                <button @click="toggleZen()" class="text-indigo-400 hover:text-white transition">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="icons.expand" />
+                    </svg>
+                </button>
+                <button @click="modals.info=true" class="text-slate-500 hover:text-white transition">
+                   <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="icons.info" />
-                    </svg></button>
+                    </svg>
+                </button>
             </div>
             <button @click="finishSession()"
                 class="bg-indigo-600 px-4 py-1.5 rounded-full text-xs font-bold text-white shadow-lg">Finish</button>
@@ -1228,10 +1567,34 @@
                 </div>
             </div>
             <div x-show="session.t2?.sets">
-                <h3 class="text-lg font-bold text-slate-300 mb-3 flex justify-between"><span
-                        x-text="session.t2?.name"></span><span
-                        class="text-[10px] px-2 py-1 rounded bg-white/5 border border-white/10 text-slate-400 uppercase font-bold">Tier
-                        2</span></h3>
+                <div class="relative z-20">
+                    <div class="flex justify-between items-center mb-3">
+                        <button @click="showT2SwapDropdown = !showT2SwapDropdown"
+                            class="flex items-center gap-2 text-lg font-bold text-slate-300 hover:text-white transition group">
+                            <span
+                                x-text="getExerciseDisplayName(session.t2?.selectedExercise || session.t2?.name)"></span>
+                            <svg class="w-4 h-4 text-indigo-500 group-hover:text-indigo-400" fill="none"
+                                viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="icons.swap" />
+                            </svg>
+                        </button>
+                        <span
+                            class="text-[10px] px-2 py-1 rounded bg-white/5 border border-white/10 text-slate-400 uppercase font-bold">Tier
+                            2</span>
+                    </div>
+                    <div x-show="showT2SwapDropdown" @click.outside="showT2SwapDropdown = false"
+                        class="exercise-swap-dropdown w-full max-h-60 overflow-y-auto" x-transition>
+                        <template x-for="alt in getT2Alternatives()">
+                            <div class="exercise-swap-option flex justify-between items-center"
+                                :class="alt.id === (session.t2?.selectedExercise || session.t2?.name) ? 'active text-indigo-400' : 'text-slate-300'"
+                                @click="swapT2Exercise(alt.id)">
+                                <span x-text="alt.name" class="font-bold text-sm"></span>
+                                <span x-show="alt.mult !== 1" class="text-xs opacity-50"
+                                    x-text="'TM x' + alt.mult"></span>
+                            </div>
+                        </template>
+                    </div>
+                </div>
                 <div class="grid grid-cols-4 gap-2"><template x-for="(set, i) in session.t2?.sets"><button
                             @click="completeSet(set,'t2',i)"
                             class="glass w-full aspect-square rounded-xl flex flex-col items-center justify-center relative active:scale-95 transition"
@@ -1243,20 +1606,43 @@
             </div>
             <div x-show="session.acc?.length" class="pt-6 border-t border-white/5">
                 <h3 class="text-sm font-bold text-slate-400 mb-4 uppercase tracking-widest">Accessories</h3>
-                <div class="space-y-4"><template x-for="acc in session.acc">
-                        <div class="glass p-4 rounded-xl">
-                            <div class="flex justify-between items-center mb-2"><span
-                                    class="text-sm font-bold text-white" x-text="acc.name"></span><span
-                                    class="text-[10px] bg-white/10 px-2 py-1 rounded text-slate-300"
-                                    x-text="acc.reps"></span></div>
+                <div class="space-y-4">
+                    <template x-for="(acc, idx) in session.acc">
+                        <div class="glass p-4 rounded-xl relative">
+                            <div class="flex justify-between items-center mb-2">
+                                <button @click="showAccSwapDropdown = showAccSwapDropdown === idx ? null : idx"
+                                    class="flex items-center gap-2 text-sm font-bold text-white hover:text-indigo-400 transition">
+                                    <span x-text="getExerciseDisplayName(acc.selectedExercise || acc.name)"></span>
+                                    <svg class="w-3 h-3 text-slate-500" fill="none" viewBox="0 0 24 24"
+                                        stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            :d="icons.swap" />
+                                    </svg>
+                                </button>
+                                <span class="text-[10px] bg-white/10 px-2 py-1 rounded text-slate-300"
+                                    x-text="acc.reps"></span>
+                            </div>
+
+                            <div x-show="showAccSwapDropdown === idx" @click.outside="showAccSwapDropdown = null"
+                                class="exercise-swap-dropdown z-30 w-[calc(100%+2px)] -left-[1px] top-10" x-transition>
+                                <template x-for="alt in getAccessoryAlternatives(idx)">
+                                    <div class="exercise-swap-option text-sm"
+                                        :class="alt.id === (acc.selectedExercise || acc.name) ? 'active text-indigo-400' : 'text-slate-300'"
+                                        @click="swapAccessoryExercise(idx, alt.id)">
+                                        <span x-text="alt.name" class="font-bold"></span>
+                                    </div>
+                                </template>
+                            </div>
+
                             <div class="flex gap-2"><template x-for="n in acc.sets"><button
-                                        @click="toggleAcc(acc.name,n)"
+                                        @click="toggleAcc(acc.originalName,n)"
                                         class="h-8 flex-1 rounded border text-xs font-bold transition"
-                                        :class="isAccDone(acc.name,n)?'bg-slate-200 text-black border-slate-200':'border-white/10 text-slate-500'"><span
-                                            x-show="!isAccDone(acc.name,n)" x-text="n"></span><span
-                                            x-show="isAccDone(acc.name,n)">✓</span></button></template></div>
+                                        :class="isAccDone(acc.originalName,n)?'bg-slate-200 text-black border-slate-200':'border-white/10 text-slate-500'"><span
+                                            x-show="!isAccDone(acc.originalName,n)" x-text="n"></span><span
+                                            x-show="isAccDone(acc.originalName,n)">✓</span></button></template></div>
                         </div>
-                    </template></div>
+                    </template>
+                </div>
             </div>
             <div class="glass p-4 rounded-xl"><label
                     class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 block">Quick
@@ -1268,6 +1654,59 @@
                     Add Set</button><button @click="modals.onerm=true"
                     class="flex-1 bg-[#1A1A1E] border border-white/10 text-white font-bold py-3 rounded-xl text-sm">🧮
                     1RM Calc</button></div>
+                    
+            <!-- ZEN MODE OVERLAY -->
+            <div x-show="zenMode" x-transition.opacity.duration.300ms 
+                class="fixed inset-0 z-[100] zen-bg flex flex-col items-center justify-center p-6 text-center" x-cloak>
+                <div class="absolute top-6 right-6">
+                    <button @click="toggleZen()" class="p-4 bg-white/10 rounded-full text-white"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>
+                </div>
+                
+                <template x-if="session.t1?.sets.find(s=>!s.completed) || session.t2?.sets.find(s=>!s.completed)">
+                    <div class="w-full max-w-md space-y-8">
+                        <div class="space-y-2">
+                            <h2 class="text-sm font-bold text-indigo-400 uppercase tracking-[0.2em]">Current Set</h2>
+                            <div class="text-4xl font-extrabold text-white" x-text="session.t1?.sets.find(s=>!s.completed) ? session.t1.name : (session.t2?.sets.find(s=>!s.completed) ? session.t2.name : 'Accessories')"></div>
+                        </div>
+
+                        <div class="flex items-center justify-center gap-6">
+                            <div class="bg-zinc-900 rounded-3xl p-6 w-40 border border-white/5">
+                                <div class="text-5xl font-mono font-bold text-white mb-2" x-text="session.t1?.sets.find(s=>!s.completed)?.weight || session.t2?.sets.find(s=>!s.completed)?.weight || '-'"></div>
+                                <div class="text-xs text-zinc-500 uppercase font-bold" x-text="prefs.weightUnit"></div>
+                            </div>
+                            <div class="text-zinc-600 text-3xl">×</div>
+                            <div class="bg-zinc-900 rounded-3xl p-6 w-40 border border-white/5">
+                                <div class="text-5xl font-mono font-bold text-white mb-2" x-text="session.t1?.sets.find(s=>!s.completed)?.reps || session.t2?.sets.find(s=>!s.completed)?.reps || '-'"></div>
+                                <div class="text-xs text-zinc-500 uppercase font-bold" x-text="session.t1?.sets.find(s=>!s.completed)?.amrap ? 'AMRAP' : 'Reps'"></div>
+                            </div>
+                        </div>
+
+                        <button @click="let s = session.t1?.sets.find(x=>!x.completed) || session.t2?.sets.find(x=>!x.completed); if(s) { s.completed=true; s.completedAt=Date.now(); saveSession(); if(prefs.autoStartTimer) startTimer(s === session.t1?.sets.find(x=>!x.completed) ? prefs.restT1 : prefs.restT2); }" 
+                            class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xl py-6 rounded-3xl shadow-[0_0_40px_-10px_rgba(79,70,229,0.5)] active:scale-95 transition-all">
+                            Complete Set
+                        </button>
+                    </div>
+                </template>
+                
+                <template x-if="!session.t1?.sets.find(s=>!s.completed) && !session.t2?.sets.find(s=>!s.completed)">
+                     <div class="text-center space-y-4">
+                        <div class="text-4xl">🎉</div>
+                        <h2 class="text-2xl font-bold text-white">Main Lifts Complete</h2>
+                        <p class="text-slate-400">Time for accessories or finish up.</p>
+                        <button @click="toggleZen()" class="bg-zinc-800 px-6 py-3 rounded-xl font-bold text-white">Exit Focus Mode</button>
+                    </div>
+                </template>
+                
+                <div x-show="timer.active" class="mt-12 w-full max-w-md bg-zinc-900/50 p-6 rounded-3xl border border-white/5">
+                     <div class="text-6xl font-mono font-bold text-slate-200 tabular-nums" x-text="formatTime(timer.rem)"></div>
+                     <div class="text-sm text-indigo-400 mt-2 font-bold uppercase tracking-widest">Resting</div>
+                     <div class="flex justify-center gap-4 mt-4">
+                         <button @click="adjustTimer(-10)" class="text-slate-500 hover:text-white font-bold text-xl px-4">-10s</button>
+                         <button @click="stopTimer()" class="text-red-400 font-bold text-xs uppercase tracking-widest border border-red-500/30 px-3 py-1 rounded hover:bg-red-500/10">Skip</button>
+                         <button @click="adjustTimer(10)" class="text-slate-500 hover:text-white font-bold text-xl px-4">+10s</button>
+                     </div>
+                </div>
+            </div>
         </div>
     </div>
 
