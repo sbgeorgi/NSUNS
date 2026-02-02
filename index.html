@@ -294,9 +294,18 @@
                     this.session.t2.selectedExercise = nEx; this.session.t2.name = nEx; this.session.t2.sets = nSets; this.showT2SwapDropdown = false; this.saveSession();
                 },
                 swapAccessoryExercise(i, n) { if (this.session.acc?.[i]) { this.session.acc[i].selectedExercise = n; this.session.acc[i].name = n; this.showAccSwapDropdown = null; this.saveSession() } },
-                getT2Alternatives() { return this.session.t2 ? this.getExerciseAlternatives(this.session.t2.originalName) : [] },
-                getAccessoryAlternatives(i) { return this.session.acc?.[i] ? this.getExerciseAlternatives(this.session.acc[i].originalName) : [] },
-                completeSet(s, t) { if (!s.performed && s.amrap) return; s.completed = s.failed || !s.completed; s.completedAt = s.completed ? U.now() : null; if (s.completed && this.prefs.autoStartTimer) this.startTimer(+this.prefs[t === 't1' ? 'restT1' : 'restT2'] + (s.failed ? 60 : 0)); this.saveSession() },
+                getT2Alternatives() {
+                    if (!this.session?.t2) return [];
+                    const originalName = this.session.t2.originalName || this.session.t2.name;
+                    if (!originalName) return [];
+                    return this.getExerciseAlternatives(originalName);
+                },
+                getAccessoryAlternatives(i) {
+                    if (!this.session?.acc?.[i]) return [];
+                    const originalName = this.session.acc[i].originalName || this.session.acc[i].name;
+                    if (!originalName) return [];
+                    return this.getExerciseAlternatives(originalName);
+                }, completeSet(s, t) { if (!s.performed && s.amrap) return; s.completed = s.failed || !s.completed; s.completedAt = s.completed ? U.now() : null; if (s.completed && this.prefs.autoStartTimer) this.startTimer(+this.prefs[t === 't1' ? 'restT1' : 'restT2'] + (s.failed ? 60 : 0)); this.saveSession() },
                 finishSession() { this.sessionRating = 0; this.sessionNotes = this.session.notes || ''; this.sessionRPE = 7; this.stopTimer(); this.modals.rating = true },
                 saveSessionRating() {
                     const { t1, t2 } = this.session, l = t1.name, pr = t1.sets.find(s => s.amrap), p = this.prefs.program, inc = this.prefs.weightUnit === 'kg' ? 2.5 : 5; let add = 0;
@@ -334,8 +343,21 @@
                 changeMonth(d) { this.cal.offset += d; this.buildCalendar() }, checkAchievements() { C.achievements.forEach(a => { if (!this.achievements.includes(a.id) && a.check(this.history)) { this.achievements.push(a.id); this.currentAchievement = a; this.modals.achievement = true; DB.s('lift_achievements', this.achievements) } }) }, hasAchievement(id) { return this.achievements.includes(id) },
                 saveSession() { if (this.session?.start) DB.s('lift_active_session', this.session) }, saveData() { DB.s('nsuns_ultimate', { tms: this.tms, history: this.history, idx: this.currentDayIdx, week: this.currentWeek, streak: this.streak, programState: this.programState }) }, savePrefs() { DB.s('lift_preferences', this.prefs) },
                 finishSetup() { if (Object.values(this.setup).some(v => v > 0)) { Object.keys(this.setup).forEach(k => this.tms[k] = U.rnd(this.setup[k] * .9, this.prefs.weightUnit)); this.saveData(); this.savePrefs(); this.view = 'dashboard' } },
-                resumeWorkout() { this.session = this.savedSession; this.modals.resume = false; this.view = 'workout' }, discardWorkout() { this.savedSession = null; DB.d('lift_active_session'); this.modals.resume = false }, finishSavedSession() { this.session = this.savedSession; this.modals.resume = false; this.finishSession() }, cancelWorkout() { if (confirm('Save progress?')) { this.saveSession(); this.view = 'dashboard' } },
-                logBodyWeight() { if (this.tempBodyWeight) { this.bwLog.push({ date: U.now(), weight: this.tempBodyWeight }); DB.s('lift_bodyweight', this.bwLog) } this.modals.weight = false; this.startSession() }, getBW(t) { const w = this.bwLog.map(x => x.weight); return !w.length ? '-' : t === 'last' ? w[w.length - 1] : t === 'min' ? Math.min(...w) : Math.max(...w) },
+                resumeWorkout() {
+                    this.session = this.savedSession;
+                    // Ensure originalName is set for T2 (handles legacy/corrupted sessions)
+                    if (this.session?.t2 && !this.session.t2.originalName) {
+                        this.session.t2.originalName = this.session.t2.name;
+                    }
+                    // Ensure originalName is set for all accessories
+                    if (this.session?.acc) {
+                        this.session.acc.forEach(acc => {
+                            if (!acc.originalName) acc.originalName = acc.name;
+                        });
+                    }
+                    this.modals.resume = false;
+                    this.view = 'workout';
+                }, logBodyWeight() { if (this.tempBodyWeight) { this.bwLog.push({ date: U.now(), weight: this.tempBodyWeight }); DB.s('lift_bodyweight', this.bwLog) } this.modals.weight = false; this.startSession() }, getBW(t) { const w = this.bwLog.map(x => x.weight); return !w.length ? '-' : t === 'last' ? w[w.length - 1] : t === 'min' ? Math.min(...w) : Math.max(...w) },
                 startTimer(s) { this.timer = { active: true, start: U.now(), dur: +s, rem: +s, pct: 1 } }, stopTimer() { this.timer.active = false }, adjustTimer(s) { if (this.timer.active) this.timer.dur = Math.max(0, this.timer.dur + s) },
                 formatVolume() { const v = this.history.reduce((a, h) => a + (h.totalVolume || 0), 0); return v > 1e6 ? (v / 1e6).toFixed(1) + 'M' : v > 1e3 ? (v / 1e3).toFixed(0) + 'K' : v }, formatVolumeShort(v) { return v ? v > 1e3 ? (v / 1e3).toFixed(1) + 'k' : v : '-' }, getAvgDuration() { const l = this.history.filter(h => h.duration); return l.length ? Math.round(l.reduce((a, b) => a + b.duration, 0) / l.length) : '-' },
                 getTotalPRs() { return this.history.filter(h => h.pr).length }, getFailedT1Count() { return this.session.t1?.sets?.filter(s => s.failed).length || 0 },
@@ -352,7 +374,30 @@
                 deleteLog() { if (confirm('Delete workout?')) { this.history = this.history.filter(h => h.timestamp !== this.selectedLog.timestamp); this.saveData(); this.modals.workoutDetail = false; this.buildCalendar(); this.$nextTick(() => this.renderCharts()) } },
                 saveLogEdits() { const idx = this.history.findIndex(h => h.timestamp === this.selectedLog.timestamp); if (idx !== -1) { Object.assign(this.history[idx], { notes: this.selectedLog.notes, duration: parseInt(this.selectedLog.duration) || 0, rating: parseInt(this.selectedLog.rating) || 0 }); this.saveData(); this.isEditingLog = false; this.$nextTick(() => this.renderCharts()) } },
                 beep() { if (!window.ac) window.ac = new (window.AudioContext || window.webkitAudioContext); const o = ac.createOscillator(), g = ac.createGain(); o.connect(g); g.connect(ac.destination); o.frequency.value = 800; g.gain.exponentialRampToValueAtTime(1e-5, ac.currentTime + .5); o.start(); o.stop(ac.currentTime + .5) },
-                toggleZen() { this.zenMode = !this.zenMode; document.body.style.overflow = this.zenMode ? 'hidden' : '' }
+                toggleZen() { this.zenMode = !this.zenMode; document.body.style.overflow = this.zenMode ? 'hidden' : '' },
+                getCurrentZenSet() {
+                    if (!this.session) return null;
+                    if (this.session.t1?.sets) { const s = this.session.t1.sets.find(x => !x.completed); if (s) return { t: 't1', n: this.session.t1.name, w: s.weight, r: s.reps, amrap: s.amrap, s, i: this.session.t1.sets.indexOf(s) }; }
+                    if (this.session.t2?.sets) { const s = this.session.t2.sets.find(x => !x.completed); if (s) return { t: 't2', n: this.session.t2.selectedExercise || this.session.t2.name, w: s.weight, r: s.reps, amrap: false, s, i: this.session.t2.sets.indexOf(s) }; }
+                    if (this.session.acc) {
+                        for (const a of this.session.acc) {
+                            const on = a.originalName || a.name;
+                            for (let i = 1; i <= a.sets; i++) {
+                                if (!this.isAccDone(on, i)) return { t: 'acc', n: a.selectedExercise || a.name, w: '-', r: (a.reps || '10-12'), amrap: false, on, i };
+                            }
+                        }
+                    }
+                    return null;
+                },
+                completeZenSet() {
+                    const z = this.getCurrentZenSet();
+                    if (!z) return;
+                    if (z.t === 'acc') { this.toggleAcc(z.on, z.i); }
+                    else {
+                        z.s.completed = true; z.s.completedAt = U.now(); this.saveSession();
+                        if (this.prefs.autoStartTimer) this.startTimer(z.t === 't1' ? this.prefs.restT1 : this.prefs.restT2);
+                    }
+                }
             }
         }
     </script>
@@ -579,7 +624,8 @@
                             <div class="relative set-timeline pl-6">
                                 <div class="absolute left-0 top-1 w-4 h-4 rounded-full flex items-center justify-center text-[10px]"
                                     :class="set.failed?'bg-red-500/20 text-red-400':'bg-green-500/20 text-green-400'">
-                                    <span x-text="set.failed?'✕':'✓'"></span></div>
+                                    <span x-text="set.failed?'✕':'✓'"></span>
+                                </div>
                                 <div class="bg-black/30 rounded-lg p-3 flex justify-between items-center">
                                     <div><span class="text-white font-bold mono" x-text="set.weight"></span><span
                                             class="text-slate-500 text-xs ml-1" x-text="prefs.weightUnit"></span><span
@@ -664,7 +710,8 @@
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3"
                                             :d="icons.check" />
-                                    </svg></div>
+                                    </svg>
+                                </div>
                             </div>
                         </div>
                     </template></div>
@@ -790,7 +837,8 @@
                     :class="prefs.program===key?'border-indigo-500 bg-indigo-500/10':'border-white/10 bg-black/30'">
                     <div class="font-bold text-white text-sm" x-text="prog.name"></div>
                     <div class="text-xs text-slate-400" x-text="prog.daysPerWeek+' days • '+prog.progressionDesc"></div>
-                </button></template></div>
+                </button></template>
+        </div>
         <div class="space-y-3">
             <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">1 Rep Maxes</p><template
                 x-for="lift in getLifts()">
@@ -821,7 +869,8 @@
                 <div x-show="Object.keys(prs).length>0"
                     class="flex items-center gap-1 bg-yellow-500/10 px-2 py-1 rounded-full border border-yellow-500/20">
                     <span class="text-sm">🏆</span><span class="text-xs font-bold text-yellow-400"
-                        x-text="Object.keys(prs).length"></span></div>
+                        x-text="Object.keys(prs).length"></span>
+                </div>
             </div>
         </header>
         <div class="px-6 space-y-6">
@@ -1056,7 +1105,8 @@
         </div>
         <div class="bg-[#0A0A0A] border-b border-white/5 py-2 flex justify-center gap-4 text-xs text-slate-400 mono">
             <span x-text="sessionTimerStr"></span><span class="text-slate-600">|</span><span
-                x-text="getSessionProgress()+'% complete'"></span></div>
+                x-text="getSessionProgress()+'% complete'"></span>
+        </div>
         <div x-show="timer.active" x-transition
             class="sticky top-24 z-20 mx-auto max-w-[280px] bg-[#1A1A1E] border border-white/10 rounded-full shadow-2xl flex items-center justify-between p-1 pr-4 overflow-hidden mt-2">
             <div class="absolute inset-0 bg-indigo-600/20 origin-left transition-transform duration-1000 linear"
@@ -1211,7 +1261,8 @@
                                         :class="alt.id===(acc.selectedExercise||acc.name)?'active text-indigo-400':'text-slate-300'"
                                         @click="swapAccessoryExercise(idx,alt.id)"><span x-text="alt.name"
                                             class="font-bold"></span></div>
-                                </template></div>
+                                </template>
+                            </div>
                             <div class="flex gap-2"><template x-for="n in acc.sets"><button
                                         @click="toggleAcc(acc.originalName,n)"
                                         class="h-8 flex-1 rounded border text-xs font-bold transition"
@@ -1239,40 +1290,38 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M6 18L18 6M6 6l12 12" />
                         </svg></button></div>
-                <template x-if="session.t1?.sets.find(s=>!s.completed)||session.t2?.sets.find(s=>!s.completed)">
+                <template x-if="getCurrentZenSet()">
                     <div class="w-full max-w-md space-y-8">
                         <div class="space-y-2">
-                            <h2 class="text-sm font-bold text-indigo-400 uppercase tracking-[0.2em]">Current Set</h2>
-                            <div class="text-4xl font-extrabold text-white"
-                                x-text="session.t1?.sets.find(s=>!s.completed)?session.t1.name:(session.t2?.sets.find(s=>!s.completed)?session.t2.name:'Accessories')">
-                            </div>
+                            <h2 class="text-sm font-bold text-indigo-400 uppercase tracking-[0.2em]"
+                                x-text="getCurrentZenSet().t === 'acc' ? 'Accessory' : (getCurrentZenSet().t === 't1' ? 'Tier 1' : 'Tier 2')">
+                            </h2>
+                            <div class="text-4xl font-extrabold text-white" x-text="getCurrentZenSet().n"></div>
                         </div>
                         <div class="flex items-center justify-center gap-6">
                             <div class="bg-zinc-900 rounded-3xl p-6 w-40 border border-white/5">
-                                <div class="text-5xl font-mono font-bold text-white mb-2"
-                                    x-text="session.t1?.sets.find(s=>!s.completed)?.weight||session.t2?.sets.find(s=>!s.completed)?.weight||'-'">
+                                <div class="text-5xl font-mono font-bold text-white mb-2" x-text="getCurrentZenSet().w">
                                 </div>
-                                <div class="text-xs text-zinc-500 uppercase font-bold" x-text="prefs.weightUnit"></div>
+                                <div class="text-xs text-zinc-500 uppercase font-bold"
+                                    x-text="getCurrentZenSet().t === 'acc' ? 'Weight' : prefs.weightUnit"></div>
                             </div>
                             <div class="text-zinc-600 text-3xl">×</div>
                             <div class="bg-zinc-900 rounded-3xl p-6 w-40 border border-white/5">
-                                <div class="text-5xl font-mono font-bold text-white mb-2"
-                                    x-text="session.t1?.sets.find(s=>!s.completed)?.reps||session.t2?.sets.find(s=>!s.completed)?.reps||'-'">
+                                <div class="text-5xl font-mono font-bold text-white mb-2" x-text="getCurrentZenSet().r">
                                 </div>
                                 <div class="text-xs text-zinc-500 uppercase font-bold"
-                                    x-text="session.t1?.sets.find(s=>!s.completed)?.amrap?'AMRAP':'Reps'"></div>
+                                    x-text="getCurrentZenSet().amrap ? 'AMRAP' : 'Reps'"></div>
                             </div>
-                        </div><button
-                            @click="let s=session.t1?.sets.find(x=>!x.completed)||session.t2?.sets.find(x=>!x.completed);if(s){s.completed=true;s.completedAt=Date.now();saveSession();if(prefs.autoStartTimer)startTimer(s===session.t1?.sets.find(x=>!x.completed)?prefs.restT1:prefs.restT2)}"
+                        </div><button @click="completeZenSet()"
                             class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xl py-6 rounded-3xl shadow-[0_0_40px_-10px_rgba(79,70,229,0.5)] active:scale-95 transition-all">Complete
                             Set</button>
                     </div>
                 </template>
-                <template x-if="!session.t1?.sets.find(s=>!s.completed)&&!session.t2?.sets.find(s=>!s.completed)">
+                <template x-if="!getCurrentZenSet()">
                     <div class="text-center space-y-4">
                         <div class="text-4xl">🎉</div>
-                        <h2 class="text-2xl font-bold text-white">Main Lifts Complete</h2>
-                        <p class="text-slate-400">Time for accessories or finish up.</p><button @click="toggleZen()"
+                        <h2 class="text-2xl font-bold text-white">All Sets Complete</h2>
+                        <p class="text-slate-400">Great work! Finish the session.</p><button @click="toggleZen()"
                             class="bg-zinc-800 px-6 py-3 rounded-xl font-bold text-white">Exit Focus Mode</button>
                     </div>
                 </template>
