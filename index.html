@@ -1,8 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="theme-color" content="#000000">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="color-scheme" content="dark">
@@ -13,7 +15,9 @@
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/cdn.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap"
+        rel="stylesheet">
 
     <style type="text/tailwindcss">
         @layer components {
@@ -56,65 +60,65 @@
     </style>
     <script>
         // --- Static Data & Config ---
-        const ICONS={warn:'M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z',x:'M6 18L18 6M6 6l12 12',check:'M5 13l4 4L19 7',trash:'M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16',edit:'M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z',save:'M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4',play:'M8 5v14l11-7z',prev:'M15 19l-7-7 7-7',next:'M9 5l7 7-7 7',warn2:'M12 8v4m0 4h.01',info:'M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z',train:'M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10',hist:'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z',set:'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z',chev_down:'M19 9l-7 7-7-7',swap:'M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4',expand:'M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4',search:'M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z'};
-        const DATA={
-            muscles:{Bench:{chest:1,frontDelt:.6,tri:.5,cns:.3},OHP:{frontDelt:1,tri:.6,upperChest:.3,cns:.4},Squat:{quads:1,glutes:.8,lowBack:.6,cns:.7},Deadlift:{hams:1,glutes:.9,lowBack:1,traps:.4,grip:.6,cns:.9},Row:{lats:1,bi:.7,rearDelt:.5,grip:.4,cns:.2}},
-            halfLife:{chest:24,frontDelt:20,tri:18,upperChest:24,quads:36,glutes:36,lowBack:48,hams:36,traps:24,grip:24,lats:30,bi:18,rearDelt:20,cns:36},
-            groups:{Push:['chest','frontDelt','tri'],Pull:['lats','bi','rearDelt','traps'],Legs:['quads','hams','glutes'],'Core/Back':['lowBack'],CNS:['cns']},
-            schemes:{
-                nsuns:{vol:[[.65,8],[.75,6],[.85,4],[.85,4],[.85,4],[.8,5],[.75,6],[.7,7],[.65,8,'+']],heavy:[[.75,5],[.85,3],[.95,1,'+'],[.9,3],[.85,3],[.8,3],[.75,5],[.7,5],[.65,5,'+']],dl:[[.75,5],[.85,3],[.95,1,'+'],[.9,3],[.85,3],[.8,3],[.75,3],[.7,3],[.65,3]],t2:[[.5,5],[.6,6],[.7,7],[.7,4],[.7,4],[.7,4],[.7,4],[.7,4]]},
-                stronglifts:{std:[[1,5],[1,5],[1,5],[1,5],[1,5,'+']],dl:[[1,5,'+']]},
-                phul:{pow:[[.85,5],[.85,5],[.85,5]],hyp:[[.65,10],[.65,10],[.65,10]],vol:[[.6,12],[.6,12],[.6,12]]},
-                ppl:{m5:[[.85,5],[.85,5],[.85,5],[.85,5],[.85,5,'+']],m1:[[.9,5,'+']],sec:[[.7,10],[.7,10],[.7,10]]},
-                gzclp:{t1:[[.85,3],[.85,3],[.85,3],[.85,3],[.85,3,'+']],t2:[[.65,10],[.65,10],[.65,10]],f1:[[5,3],[6,2],[10,1]],f2:[[3,10],[3,8],[3,6]]},
-                '531':{w1:[[.65,5],[.75,5],[.85,5,'+']],w2:[[.7,3],[.8,3],[.9,3,'+']],w3:[[.75,5],[.85,3],[.95,1,'+']],del:[[.4,5],[.5,5],[.6,5]],bbb:Array(5).fill([.5,10])}
+        const ICONS = { warn: 'M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z', x: 'M6 18L18 6M6 6l12 12', check: 'M5 13l4 4L19 7', trash: 'M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16', edit: 'M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z', save: 'M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4', play: 'M8 5v14l11-7z', prev: 'M15 19l-7-7 7-7', next: 'M9 5l7 7-7 7', warn2: 'M12 8v4m0 4h.01', info: 'M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z', train: 'M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10', hist: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z', set: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z', chev_down: 'M19 9l-7 7-7-7', swap: 'M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4', expand: 'M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4', search: 'M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z' };
+        const DATA = {
+            muscles: { Bench: { chest: 1, frontDelt: .6, tri: .5, cns: .3 }, OHP: { frontDelt: 1, tri: .6, upperChest: .3, cns: .4 }, Squat: { quads: 1, glutes: .8, lowBack: .6, cns: .7 }, Deadlift: { hams: 1, glutes: .9, lowBack: 1, traps: .4, grip: .6, cns: .9 }, Row: { lats: 1, bi: .7, rearDelt: .5, grip: .4, cns: .2 } },
+            halfLife: { chest: 24, frontDelt: 20, tri: 18, upperChest: 24, quads: 36, glutes: 36, lowBack: 48, hams: 36, traps: 24, grip: 24, lats: 30, bi: 18, rearDelt: 20, cns: 36 },
+            groups: { Push: ['chest', 'frontDelt', 'tri'], Pull: ['lats', 'bi', 'rearDelt', 'traps'], Legs: ['quads', 'hams', 'glutes'], 'Core/Back': ['lowBack'], CNS: ['cns'] },
+            schemes: {
+                nsuns: { vol: [[.65, 8], [.75, 6], [.85, 4], [.85, 4], [.85, 4], [.8, 5], [.75, 6], [.7, 7], [.65, 8, '+']], heavy: [[.75, 5], [.85, 3], [.95, 1, '+'], [.9, 3], [.85, 3], [.8, 3], [.75, 5], [.7, 5], [.65, 5, '+']], dl: [[.75, 5], [.85, 3], [.95, 1, '+'], [.9, 3], [.85, 3], [.8, 3], [.75, 3], [.7, 3], [.65, 3]], t2: [[.5, 5], [.6, 6], [.7, 7], [.7, 4], [.7, 4], [.7, 4], [.7, 4], [.7, 4]] },
+                stronglifts: { std: [[1, 5], [1, 5], [1, 5], [1, 5], [1, 5, '+']], dl: [[1, 5, '+']] },
+                phul: { pow: [[.85, 5], [.85, 5], [.85, 5]], hyp: [[.65, 10], [.65, 10], [.65, 10]], vol: [[.6, 12], [.6, 12], [.6, 12]] },
+                ppl: { m5: [[.85, 5], [.85, 5], [.85, 5], [.85, 5], [.85, 5, '+']], m1: [[.9, 5, '+']], sec: [[.7, 10], [.7, 10], [.7, 10]] },
+                gzclp: { t1: [[.85, 3], [.85, 3], [.85, 3], [.85, 3], [.85, 3, '+']], t2: [[.65, 10], [.65, 10], [.65, 10]], f1: [[5, 3], [6, 2], [10, 1]], f2: [[3, 10], [3, 8], [3, 6]] },
+                '531': { w1: [[.65, 5], [.75, 5], [.85, 5, '+']], w2: [[.7, 3], [.8, 3], [.9, 3, '+']], w3: [[.75, 5], [.85, 3], [.95, 1, '+']], del: [[.4, 5], [.5, 5], [.6, 5]], bbb: Array(5).fill([.5, 10]) }
             },
-            progs:{
-                nsuns:{name:'nSuns LP',daysPerWeek:5,progressionDesc:'Linear + AMRAP',days:[{t:'Bench Vol',t1:'Bench',t2:'OHP',s:'vol',t2s:'t2',acc:[{name:'Row',sets:4,reps:'10-12'}]},{t:'Squat Heavy',t1:'Squat',t2:'Deadlift',s:'heavy',t2s:'t2',acc:[{name:'Legs',sets:4,reps:'10-12'}]},{t:'OHP Heavy',t1:'OHP',t2:'Bench',s:'heavy',t2s:'t2',acc:[{name:'Pullups',sets:4,reps:'AMRAP'}]},{t:'Deadlift Heavy',t1:'Deadlift',t2:'Squat',s:'dl',t2s:'t2',acc:[{name:'Abs',sets:4,reps:'10-15'}]},{t:'Bench Heavy',t1:'Bench',t2:'Bench',s:'heavy',t2s:'t2',acc:[{name:'Arms',sets:4,reps:'10-15'}]}]},
-                ppl:{name:'PPL',prog:'lin',daysPerWeek:6,progressionDesc:'Linear',days:[{t:'Push A',t1:'Bench',t2:'OHP',s:'m5',t2s:'sec',acc:[{name:'Tri',sets:3,reps:'10-15'}]},{t:'Pull A',t1:'Deadlift',t2:'Row',s:'m1',t2s:'sec',acc:[{name:'Bi',sets:3,reps:'10-15'}]},{t:'Legs A',t1:'Squat',t2:'Deadlift',s:'m5',t2s:'sec',acc:[{name:'Legs',sets:3,reps:'10-15'}]},{t:'Push B',t1:'OHP',t2:'Bench',s:'m5',t2s:'sec',acc:[{name:'Tri',sets:3,reps:'10-15'}]},{t:'Pull B',t1:'Row',t2:'Deadlift',s:'m5',t2s:'vol',acc:[{name:'Bi',sets:3,reps:'10-15'}]},{t:'Legs B',t1:'Squat',t2:'Deadlift',s:'m5',t2s:'sec',acc:[{name:'Legs',sets:3,reps:'10-15'}]}]},
-                phul:{name:'PHUL',prog:'lin',daysPerWeek:4,progressionDesc:'Linear',days:[{t:'Up Pwr',t1:'Bench',t2:'Row',s:'pow',t2s:'pow',acc:[{name:'OHP',sets:3,reps:'6-10'}]},{t:'Lo Pwr',t1:'Squat',t2:'Deadlift',s:'pow',t2s:'pow',acc:[{name:'Legs',sets:3,reps:'8-12'}]},{t:'Up Hyp',t1:'OHP',t2:'Bench',s:'hyp',t2s:'hyp',acc:[{name:'Row',sets:3,reps:'10-12'}]},{t:'Lo Hyp',t1:'Deadlift',t2:'Squat',s:'hyp',t2s:'hyp',acc:[{name:'Legs',sets:3,reps:'10-15'}]}]},
-                stronglifts:{name:'SL 5x5',prog:'lin',pW:true,daysPerWeek:3,progressionDesc:'Linear',days:[{t:'A',t1:'Squat',t2:'Bench',s:'std',t2s:'std',acc:[{name:'Row',sets:5,reps:'5'}]},{t:'B',t1:'Squat',t2:'OHP',s:'std',t2s:'std',acc:[{name:'DL',sets:1,reps:'5+'}]}]},
-                gzclp:{name:'GZCLP',prog:'gz',daysPerWeek:4,progressionDesc:'Stage Failure',days:[{t:'D1',t1:'Squat',t2:'Bench',s:'t1',t2s:'t2',acc:[{name:'LatPD',sets:3,reps:'10-12'}]},{t:'D2',t1:'OHP',t2:'Deadlift',s:'t1',t2s:'t2',acc:[{name:'Row',sets:3,reps:'10-12'}]},{t:'D3',t1:'Bench',t2:'Squat',s:'t1',t2s:'t2',acc:[{name:'Tri',sets:3,reps:'10-15'}]},{t:'D4',t1:'Deadlift',t2:'OHP',s:'t1',t2s:'t2',acc:[{name:'Bi',sets:3,reps:'10-15'}]}]},
-                '531':{name:'5/3/1 BBB',prog:'531',daysPerWeek:4,progressionDesc:'Monthly Wave',days:[{t:'OHP',t1:'OHP',t2:'OHP',s:'531',t2s:'bbb',acc:[{name:'Chins',sets:5,reps:'AMRAP'}]},{t:'DL',t1:'Deadlift',t2:'Deadlift',s:'531',t2s:'bbb',acc:[{name:'Abs',sets:5,reps:'10-15'}]},{t:'Bench',t1:'Bench',t2:'Bench',s:'531',t2s:'bbb',acc:[{name:'Row',sets:5,reps:'10-12'}]},{t:'Squat',t1:'Squat',t2:'Squat',s:'531',t2s:'bbb',acc:[{name:'Legs',sets:5,reps:'10-15'}]}]}
+            progs: {
+                nsuns: { name: 'nSuns LP', daysPerWeek: 5, progressionDesc: 'Linear + AMRAP', days: [{ t: 'Bench Vol', t1: 'Bench', t2: 'OHP', s: 'vol', t2s: 't2', acc: [{ name: 'Row', sets: 4, reps: '10-12' }] }, { t: 'Squat Heavy', t1: 'Squat', t2: 'Deadlift', s: 'heavy', t2s: 't2', acc: [{ name: 'Legs', sets: 4, reps: '10-12' }] }, { t: 'OHP Heavy', t1: 'OHP', t2: 'Bench', s: 'heavy', t2s: 't2', acc: [{ name: 'Pullups', sets: 4, reps: 'AMRAP' }] }, { t: 'Deadlift Heavy', t1: 'Deadlift', t2: 'Squat', s: 'dl', t2s: 't2', acc: [{ name: 'Abs', sets: 4, reps: '10-15' }] }, { t: 'Bench Heavy', t1: 'Bench', t2: 'Bench', s: 'heavy', t2s: 't2', acc: [{ name: 'Arms', sets: 4, reps: '10-15' }] }] },
+                ppl: { name: 'PPL', prog: 'lin', daysPerWeek: 6, progressionDesc: 'Linear', days: [{ t: 'Push A', t1: 'Bench', t2: 'OHP', s: 'm5', t2s: 'sec', acc: [{ name: 'Tri', sets: 3, reps: '10-15' }] }, { t: 'Pull A', t1: 'Deadlift', t2: 'Row', s: 'm1', t2s: 'sec', acc: [{ name: 'Bi', sets: 3, reps: '10-15' }] }, { t: 'Legs A', t1: 'Squat', t2: 'Deadlift', s: 'm5', t2s: 'sec', acc: [{ name: 'Legs', sets: 3, reps: '10-15' }] }, { t: 'Push B', t1: 'OHP', t2: 'Bench', s: 'm5', t2s: 'sec', acc: [{ name: 'Tri', sets: 3, reps: '10-15' }] }, { t: 'Pull B', t1: 'Row', t2: 'Deadlift', s: 'm5', t2s: 'vol', acc: [{ name: 'Bi', sets: 3, reps: '10-15' }] }, { t: 'Legs B', t1: 'Squat', t2: 'Deadlift', s: 'm5', t2s: 'sec', acc: [{ name: 'Legs', sets: 3, reps: '10-15' }] }] },
+                phul: { name: 'PHUL', prog: 'lin', daysPerWeek: 4, progressionDesc: 'Linear', days: [{ t: 'Up Pwr', t1: 'Bench', t2: 'Row', s: 'pow', t2s: 'pow', acc: [{ name: 'OHP', sets: 3, reps: '6-10' }] }, { t: 'Lo Pwr', t1: 'Squat', t2: 'Deadlift', s: 'pow', t2s: 'pow', acc: [{ name: 'Legs', sets: 3, reps: '8-12' }] }, { t: 'Up Hyp', t1: 'OHP', t2: 'Bench', s: 'hyp', t2s: 'hyp', acc: [{ name: 'Row', sets: 3, reps: '10-12' }] }, { t: 'Lo Hyp', t1: 'Deadlift', t2: 'Squat', s: 'hyp', t2s: 'hyp', acc: [{ name: 'Legs', sets: 3, reps: '10-15' }] }] },
+                stronglifts: { name: 'SL 5x5', prog: 'lin', pW: true, daysPerWeek: 3, progressionDesc: 'Linear', days: [{ t: 'A', t1: 'Squat', t2: 'Bench', s: 'std', t2s: 'std', acc: [{ name: 'Row', sets: 5, reps: '5' }] }, { t: 'B', t1: 'Squat', t2: 'OHP', s: 'std', t2s: 'std', acc: [{ name: 'DL', sets: 1, reps: '5+' }] }] },
+                gzclp: { name: 'GZCLP', prog: 'gz', daysPerWeek: 4, progressionDesc: 'Stage Failure', days: [{ t: 'D1', t1: 'Squat', t2: 'Bench', s: 't1', t2s: 't2', acc: [{ name: 'LatPD', sets: 3, reps: '10-12' }] }, { t: 'D2', t1: 'OHP', t2: 'Deadlift', s: 't1', t2s: 't2', acc: [{ name: 'Row', sets: 3, reps: '10-12' }] }, { t: 'D3', t1: 'Bench', t2: 'Squat', s: 't1', t2s: 't2', acc: [{ name: 'Tri', sets: 3, reps: '10-15' }] }, { t: 'D4', t1: 'Deadlift', t2: 'OHP', s: 't1', t2s: 't2', acc: [{ name: 'Bi', sets: 3, reps: '10-15' }] }] },
+                '531': { name: '5/3/1 BBB', prog: '531', daysPerWeek: 4, progressionDesc: 'Monthly Wave', days: [{ t: 'OHP', t1: 'OHP', t2: 'OHP', s: '531', t2s: 'bbb', acc: [{ name: 'Chins', sets: 5, reps: 'AMRAP' }] }, { t: 'DL', t1: 'Deadlift', t2: 'Deadlift', s: '531', t2s: 'bbb', acc: [{ name: 'Abs', sets: 5, reps: '10-15' }] }, { t: 'Bench', t1: 'Bench', t2: 'Bench', s: '531', t2s: 'bbb', acc: [{ name: 'Row', sets: 5, reps: '10-12' }] }, { t: 'Squat', t1: 'Squat', t2: 'Squat', s: '531', t2s: 'bbb', acc: [{ name: 'Legs', sets: 5, reps: '10-15' }] }] }
             },
-            ui:{
-                bars:[{weight:45,name:'Standard'},{weight:35,name:'Womens'},{weight:20,name:'Kg Std'},{weight:15,name:'Kg Wm'}],
-                timers:[{l:'Main (T1)',k:'restT1',m:300},{l:'Secondary (T2)',k:'restT2',m:180},{l:'Accessory (T3)',k:'restT3',m:120}],
-                opts:[{k:'timerSound',l:'Timer Sound'},{k:'vibration',l:'Vibration'},{k:'autoStartTimer',l:'Auto-start Timer'},{k:'showPreviousWorkout',l:'Show Previous Workout'},{k:'autoDeload',l:'Auto-suggest Deload'},{k:'keepAwake',l:'Keep Screen Awake'},{k:'reduceMotion',l:'Reduce Motion'}],
-                nav:[{id:'dashboard',l:'Train',i:ICONS.train},{id:'calendar',l:'History',i:ICONS.hist},{id:'preferences',l:'Settings',i:ICONS.set}],
-                plates:{kg:[25,20,15,10,5,2.5,1.25],lbs:[45,35,25,10,5,2.5]},
-                colors:{55:'bg-red-700 text-white',45:'bg-blue-600 text-white',35:'bg-yellow-500 text-black',25:'bg-green-500 text-black',20:'bg-blue-600 text-white',15:'bg-yellow-500 text-black',10:'bg-white text-black',5:'bg-white text-black',2.5:'bg-red-400 text-white',1.25:'bg-gray-400 text-black'}
+            ui: {
+                bars: [{ weight: 45, name: 'Standard' }, { weight: 35, name: 'Womens' }, { weight: 20, name: 'Kg Std' }, { weight: 15, name: 'Kg Wm' }],
+                timers: [{ l: 'Main (T1)', k: 'restT1', m: 300 }, { l: 'Secondary (T2)', k: 'restT2', m: 180 }, { l: 'Accessory (T3)', k: 'restT3', m: 120 }],
+                opts: [{ k: 'timerSound', l: 'Timer Sound' }, { k: 'vibration', l: 'Vibration' }, { k: 'autoStartTimer', l: 'Auto-start Timer' }, { k: 'showPreviousWorkout', l: 'Show Previous Workout' }, { k: 'autoDeload', l: 'Auto-suggest Deload' }, { k: 'keepAwake', l: 'Keep Screen Awake' }, { k: 'reduceMotion', l: 'Reduce Motion' }],
+                nav: [{ id: 'dashboard', l: 'Train', i: ICONS.train }, { id: 'calendar', l: 'History', i: ICONS.hist }, { id: 'preferences', l: 'Settings', i: ICONS.set }],
+                plates: { kg: [25, 20, 15, 10, 5, 2.5, 1.25], lbs: [45, 35, 25, 10, 5, 2.5] },
+                colors: { 55: 'bg-red-700 text-white', 45: 'bg-blue-600 text-white', 35: 'bg-yellow-500 text-black', 25: 'bg-green-500 text-black', 20: 'bg-blue-600 text-white', 15: 'bg-yellow-500 text-black', 10: 'bg-white text-black', 5: 'bg-white text-black', 2.5: 'bg-red-400 text-white', 1.25: 'bg-gray-400 text-black' }
             }
         };
-        const ACHIEVEMENTS=[{id:'first',title:'First Steps',icon:'🎯',check:h=>h.length>=1},{id:'week',title:'Week Warrior',icon:'🔥',check:h=>h.length>=7},{id:'month',title:'Monthly Master',icon:'💪',check:h=>h.length>=30},{id:'century',title:'Century Club',icon:'🏆',check:h=>h.length>=100},{id:'pr1',title:'PR Machine',icon:'📈',check:h=>h.some(w=>w.pr)},{id:'pr5',title:'Gains Train',icon:'🚂',check:h=>h.filter(w=>w.pr).length>=5},{id:'vol',title:'Volume King',icon:'👑',check:h=>h.reduce((a,w)=>a+(w.totalVolume||0),0)>=1e5},{id:'back',title:'Comeback Kid',icon:'💫',check:h=>h.length>1&&(h[h.length-1].timestamp-h[h.length-2].timestamp)>12096e5},{id:'star',title:'Five Star',icon:'✨',check:h=>h.some(w=>w.rating===5)}];
-        const EX_OPTS={
-            bench_variants:{base:'Bench',opt:[['Bench',1],['Incline Bench',.85],['Close Grip Bench',.9],['DB Bench',.8],['Paused Bench',.9],['Spoto Press',.85],['Floor Press',.9]]},
-            ohp_variants:{base:'OHP',opt:[['OHP',1],['Seated OHP',.95],['DB OHP',.85],['Push Press',1.1],['Z Press',.75],['Arnold Press',.7],['Behind Neck Press',.8]]},
-            squat_variants:{base:'Squat',opt:[['Squat',1],['Front Squat',.85],['Pause Squat',.85],['Box Squat',.9],['SSB Squat',.9],['Goblet Squat',.5],['Tempo Squat',.8]]},
-            deadlift_variants:{base:'Deadlift',opt:[['Deadlift',1],['Sumo DL',1],['Romanian DL',.7],['Trap Bar DL',1.05],['Deficit DL',.9],['Paused DL',.85],['Block Pull',1.1],['SLDL',.7]]},
-            row_variants:{base:'Row',opt:[['Row',1],['Pendlay Row',.95],['DB Row',.85],['Cable Row',.9],['T-Bar Row',1],['Seal Row',.8],['Chest Supported Row',.85],['Meadows Row',.7]]},
-            triceps:{opt:[['Tri'],['Pushdowns'],['Skull Crushers'],['Dips'],['OH Tricep Ext'],['Close Grip BP'],['JM Press'],['Tricep Kickbacks']]},
-            biceps:{opt:[['Bi'],['Barbell Curl'],['DB Curl'],['Hammer Curl'],['Preacher Curl'],['Incline Curl'],['Cable Curl'],['Spider Curl']]},
-            vertical_pull:{opt:[['Pullups'],['Chin-ups'],['Lat Pulldown'],['LatPD'],['Neutral Pullups'],['Chins'],['Wide Grip Pulldown'],['Close Grip Pulldown']]},
-            leg_accessories:{opt:[['Legs'],['Leg Press'],['Lunges'],['Leg Curl'],['Leg Ext'],['Calf Raises'],['Bulgarian Split'],['Hip Thrust'],['Hack Squat'],['Nordic Curl']]},
-            core:{opt:[['Abs'],['Hanging Leg Raise'],['Cable Crunch'],['Ab Wheel'],['Planks'],['Russian Twists'],['Dead Bug'],['Pallof Press']]},
-            arms:{opt:[['Arms'],['Curls + Pushdowns'],['Hammer + Dips'],['Arm Circuit'],['Supersets']]},
-            dl_accessory:{base:'Deadlift',opt:[['DL',1],['Romanian DL',.7],['SLDL',.7],['Good Morning',.5],['Back Extension',.3]]}
+        const ACHIEVEMENTS = [{ id: 'first', title: 'First Steps', icon: '🎯', check: h => h.length >= 1 }, { id: 'week', title: 'Week Warrior', icon: '🔥', check: h => h.length >= 7 }, { id: 'month', title: 'Monthly Master', icon: '💪', check: h => h.length >= 30 }, { id: 'century', title: 'Century Club', icon: '🏆', check: h => h.length >= 100 }, { id: 'pr1', title: 'PR Machine', icon: '📈', check: h => h.some(w => w.pr) }, { id: 'pr5', title: 'Gains Train', icon: '🚂', check: h => h.filter(w => w.pr).length >= 5 }, { id: 'vol', title: 'Volume King', icon: '👑', check: h => h.reduce((a, w) => a + (w.totalVolume || 0), 0) >= 1e5 }, { id: 'back', title: 'Comeback Kid', icon: '💫', check: h => h.length > 1 && (h[h.length - 1].timestamp - h[h.length - 2].timestamp) > 12096e5 }, { id: 'star', title: 'Five Star', icon: '✨', check: h => h.some(w => w.rating === 5) }];
+        const EX_OPTS = {
+            bench_variants: { base: 'Bench', opt: [['Bench', 1], ['Incline Bench', .85], ['Close Grip Bench', .9], ['DB Bench', .8], ['Paused Bench', .9], ['Spoto Press', .85], ['Floor Press', .9]] },
+            ohp_variants: { base: 'OHP', opt: [['OHP', 1], ['Seated OHP', .95], ['DB OHP', .85], ['Push Press', 1.1], ['Z Press', .75], ['Arnold Press', .7], ['Behind Neck Press', .8]] },
+            squat_variants: { base: 'Squat', opt: [['Squat', 1], ['Front Squat', .85], ['Pause Squat', .85], ['Box Squat', .9], ['SSB Squat', .9], ['Goblet Squat', .5], ['Tempo Squat', .8]] },
+            deadlift_variants: { base: 'Deadlift', opt: [['Deadlift', 1], ['Sumo DL', 1], ['Romanian DL', .7], ['Trap Bar DL', 1.05], ['Deficit DL', .9], ['Paused DL', .85], ['Block Pull', 1.1], ['SLDL', .7]] },
+            row_variants: { base: 'Row', opt: [['Row', 1], ['Pendlay Row', .95], ['DB Row', .85], ['Cable Row', .9], ['T-Bar Row', 1], ['Seal Row', .8], ['Chest Supported Row', .85], ['Meadows Row', .7]] },
+            triceps: { opt: [['Tri'], ['Pushdowns'], ['Skull Crushers'], ['Dips'], ['OH Tricep Ext'], ['Close Grip BP'], ['JM Press'], ['Tricep Kickbacks']] },
+            biceps: { opt: [['Bi'], ['Barbell Curl'], ['DB Curl'], ['Hammer Curl'], ['Preacher Curl'], ['Incline Curl'], ['Cable Curl'], ['Spider Curl']] },
+            vertical_pull: { opt: [['Pullups'], ['Chin-ups'], ['Lat Pulldown'], ['LatPD'], ['Neutral Pullups'], ['Chins'], ['Wide Grip Pulldown'], ['Close Grip Pulldown']] },
+            leg_accessories: { opt: [['Legs'], ['Leg Press'], ['Lunges'], ['Leg Curl'], ['Leg Ext'], ['Calf Raises'], ['Bulgarian Split'], ['Hip Thrust'], ['Hack Squat'], ['Nordic Curl']] },
+            core: { opt: [['Abs'], ['Hanging Leg Raise'], ['Cable Crunch'], ['Ab Wheel'], ['Planks'], ['Russian Twists'], ['Dead Bug'], ['Pallof Press']] },
+            arms: { opt: [['Arms'], ['Curls + Pushdowns'], ['Hammer + Dips'], ['Arm Circuit'], ['Supersets']] },
+            dl_accessory: { base: 'Deadlift', opt: [['DL', 1], ['Romanian DL', .7], ['SLDL', .7], ['Good Morning', .5], ['Back Extension', .3]] }
         };
         // Flatten exercises for O(1) lookup
-        const EX_INDEX={}; Object.entries(EX_OPTS).forEach(([k,g])=>g.opt.forEach(o=>{EX_INDEX[o[0]]={id:o[0],name:o[0],mult:o[1]||1,groupKey:k,base:g.base}}));
+        const EX_INDEX = {}; Object.entries(EX_OPTS).forEach(([k, g]) => g.opt.forEach(o => { EX_INDEX[o[0]] = { id: o[0], name: o[0], mult: o[1] || 1, groupKey: k, base: g.base } }));
 
         // --- Utilities ---
-        const DB={g:(k,d)=>JSON.parse(localStorage.getItem(k)||"null")||d, s:(k,v)=>localStorage.setItem(k,JSON.stringify(v)), d:k=>localStorage.removeItem(k)};
-        const U={
-            now:()=>Date.now(),
-            fmt:s=>`${Math.floor(s/60)}:${String(Math.floor(s%60)).padStart(2,'0')}`,
-            iso:ts=>new Date(ts).toISOString().split('T')[0],
-            rnd:(n,u,m)=>m?(u==='kg'?Math.round(n/1.25)*1.25:Math.round(n/2.5)*2.5):(u==='kg'?Math.round(n/2.5)*2.5:Math.round(n/5)*5),
-            conv:(w,f,t)=>f===t?+w:f==='lbs'?+w*0.453592:+w/0.453592,
-            safe:(v,d=0)=>Number.isFinite(+v)?+v:d
+        const DB = { g: (k, d) => JSON.parse(localStorage.getItem(k) || "null") || d, s: (k, v) => localStorage.setItem(k, JSON.stringify(v)), d: k => localStorage.removeItem(k) };
+        const U = {
+            now: () => Date.now(),
+            fmt: s => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`,
+            iso: ts => new Date(ts).toISOString().split('T')[0],
+            rnd: (n, u, m) => m ? (u === 'kg' ? Math.round(n / 1.25) * 1.25 : Math.round(n / 2.5) * 2.5) : (u === 'kg' ? Math.round(n / 2.5) * 2.5 : Math.round(n / 5) * 5),
+            conv: (w, f, t) => f === t ? +w : f === 'lbs' ? +w * 0.453592 : +w / 0.453592,
+            safe: (v, d = 0) => Number.isFinite(+v) ? +v : d
         };
-        const K={main:'nsuns_ultimate',prefs:'lift_preferences',bw:'lift_bodyweight',session:'lift_active_session',ach:'lift_achievements',prs:'lift_prs'};
+        const K = { main: 'nsuns_ultimate', prefs: 'lift_preferences', bw: 'lift_bodyweight', session: 'lift_active_session', ach: 'lift_achievements', prs: 'lift_prs' };
 
         let charts = {}; // External chart storage to avoid reactivity overhead
 
@@ -175,26 +179,27 @@
                 exAlts: id => EX_INDEX[id] ? EX_OPTS[EX_INDEX[id].groupKey].opt.map(o => ({ id: o[0], name: o[0], mult: o[1] || 1 })) : [{ id, name: id, mult: 1 }],
                 baseTM: id => EX_INDEX[id]?.base || (this.tms[id] !== undefined ? id : null),
                 exMult: id => EX_INDEX[id]?.mult || 1, exName: id => EX_INDEX[id]?.name || id,
-                
+
                 getSets(sk, l, tm, tier, exOv = null) {
                     const { program: p, weightUnit: u, microplates: m } = this.prefs, actEx = exOv || l, base = this.baseTM(actEx), effTM = (base ? (this.tms[base] || tm) : tm) * this.exMult(actEx);
                     let s = [];
-                    if (p === 'gzclp') { const st = this.state[l]?.stage || 1, cfg = DATA.schemes.gzclp[tier==='t1' ? (st<3?'t1':'f1') : (st<3?'t2':'f2')][st<3?0:st-3]; 
-                         // Logic adaptation for GZCLP recursive failure scheme would be complex, simplifying to the basic tier structure from DATA.schemes
-                         // Re-mapping based on original logic:
-                         const scheme = DATA.schemes.gzclp[tier==='t1'?'f1':'f2'][st-1]; 
-                         // Original logic used t1/t2 arrays for initial stages. Fixing:
-                         const src = tier==='t1' ? (st===1?DATA.schemes.gzclp.t1 : DATA.schemes.gzclp.f1[st-1]) : (st===1?DATA.schemes.gzclp.t2 : DATA.schemes.gzclp.f2[st-1]);
-                         // The original logic was: t1: [[5,3], [6,2], [10,1]], t2: [[3,10], [3,8], [3,6]]
-                         const stages = tier==='t1' ? [[5,3],[6,2],[10,1]] : [[3,10],[3,8],[3,6]];
-                         const cfg2 = stages[Math.min(st-1, 2)];
-                         s = Array(cfg2[0]).fill(0).map((_, i) => ({ w: tier === 't1' ? .85 : .65, r: cfg2[1], amrap: i === cfg2[0] - 1 }));
-                    } else if (p === '531' && tier === 't1') { 
-                        const w = this.week % 4 || 4; 
-                        s = DATA.schemes['531'][w === 4 ? 'del' : `w${w}`].map(x => ({ w: x[0], r: x[1], amrap: x[2] === '+' })); 
-                    } else { 
-                        const map = DATA.schemes[p] || DATA.schemes.nsuns; 
-                        s = (map[sk] || map.vol).map(x => ({ w: x[0], r: x[1], amrap: x[2] === '+' })); 
+                    if (p === 'gzclp') {
+                        const st = this.state[l]?.stage || 1, cfg = DATA.schemes.gzclp[tier === 't1' ? (st < 3 ? 't1' : 'f1') : (st < 3 ? 't2' : 'f2')][st < 3 ? 0 : st - 3];
+                        // Logic adaptation for GZCLP recursive failure scheme would be complex, simplifying to the basic tier structure from DATA.schemes
+                        // Re-mapping based on original logic:
+                        const scheme = DATA.schemes.gzclp[tier === 't1' ? 'f1' : 'f2'][st - 1];
+                        // Original logic used t1/t2 arrays for initial stages. Fixing:
+                        const src = tier === 't1' ? (st === 1 ? DATA.schemes.gzclp.t1 : DATA.schemes.gzclp.f1[st - 1]) : (st === 1 ? DATA.schemes.gzclp.t2 : DATA.schemes.gzclp.f2[st - 1]);
+                        // The original logic was: t1: [[5,3], [6,2], [10,1]], t2: [[3,10], [3,8], [3,6]]
+                        const stages = tier === 't1' ? [[5, 3], [6, 2], [10, 1]] : [[3, 10], [3, 8], [3, 6]];
+                        const cfg2 = stages[Math.min(st - 1, 2)];
+                        s = Array(cfg2[0]).fill(0).map((_, i) => ({ w: tier === 't1' ? .85 : .65, r: cfg2[1], amrap: i === cfg2[0] - 1 }));
+                    } else if (p === '531' && tier === 't1') {
+                        const w = this.week % 4 || 4;
+                        s = DATA.schemes['531'][w === 4 ? 'del' : `w${w}`].map(x => ({ w: x[0], r: x[1], amrap: x[2] === '+' }));
+                    } else {
+                        const map = DATA.schemes[p] || DATA.schemes.nsuns;
+                        s = (map[sk] || map.vol).map(x => ({ w: x[0], r: x[1], amrap: x[2] === '+' }));
                     }
                     return s.map(x => ({ weight: U.rnd(effTM * x.w, u, m), reps: x.r, amrap: x.amrap, completed: false, failed: false, performed: null, completedAt: null }));
                 },
@@ -203,7 +208,7 @@
                 doDeload() { Object.keys(this.tms).forEach(k => { this.tms[k] = U.rnd((this.tms[k] || 0) * (1 - this.deloadInfo.percentage / 100), this.prefs.weightUnit, this.prefs.microplates) }); this.save(); this.activeModal = 'weight'; },
                 async reqWake() { if (!this.prefs.keepAwake || !('wakeLock' in navigator)) return; try { this.wakeLock = await navigator.wakeLock.request('screen'); } catch { } },
                 relWake() { this.wakeLock?.release().catch(() => { }); this.wakeLock = null; },
-                
+
                 start(c) {
                     const d = c || this.getWk(), title = d.title || d.t || 'Workout', t2B = this.baseTM(d.t2), t2TM = t2B ? this.tms[t2B] : this.tms[d.t2];
                     this.session = { title, start: U.now(), acc: JSON.parse(JSON.stringify(d.acc || [])).map(a => ({ ...a, reps: a.reps || '10-12', originalName: a.name, selectedExercise: a.name })), completedAcc: {}, notes: '', dayIdx: c ? null : this.pIdx, t1: { name: d.t1, sets: this.getSets(d.s, d.t1, this.tms[d.t1], 't1') }, t2: { name: d.t2, originalName: d.t2, selectedExercise: d.t2, schemeKey: d.t2s, sets: this.getSets(d.t2s, d.t2, t2TM, 't2', d.t2) } };
@@ -215,25 +220,25 @@
                 swapAcc(i, n) { if (this.session.acc?.[i]) { this.session.acc[i].selectedExercise = n; this.session.acc[i].name = n; this.swapState.acc = null; this.swapState.q = ''; this.saveSess(); } },
                 getT2Alts() { const q = (this.swapState.q || '').trim().toLowerCase(), alts = this.session?.t2 ? this.exAlts(this.session.t2.originalName || this.session.t2.name) : []; return !q ? alts : alts.filter(a => (a.name || a.id).toLowerCase().includes(q) || (a.id || '').toLowerCase().includes(q)); },
                 getAccAlts(i) { const q = (this.swapState.q || '').trim().toLowerCase(), alts = this.session?.acc?.[i] ? this.exAlts(this.session.acc[i].originalName || this.session.acc[i].name) : []; return !q ? alts : alts.filter(a => (a.name || a.id).toLowerCase().includes(q) || (a.id || '').toLowerCase().includes(q)); },
-                
+
                 timerStart(s, label = 'Rest') { const dur = Math.max(1, Math.floor(+s)); this.timer = { active: true, start: U.now(), dur, rem: dur, pct: 1, label }; },
                 timerAdj(d) { if (!this.timer.active) return; const e = Math.floor((U.now() - this.timer.start) / 1000), n = Math.max(5, (this.timer.dur || 0) + d); this.timer.dur = n; this.timer.rem = Math.max(0, n - e); this.timer.pct = n > 0 ? (this.timer.rem / n) : 0; },
-                
-                toggleSet(s, tier, fail=false) {
-                     if(fail) { s.failed = !s.failed; if(s.failed) { s.completed=true; s.completedAt=U.now(); if(this.prefs.autoStartTimer) this.timerStart(+this.prefs[tier==='t1'?'restT1':'restT2']+60, 'Fail Rest'); } }
-                     else {
-                         if (s.amrap && !U.safe(s.performed, 0) && !s.completed) { const r = prompt(`AMRAP Target: ${s.reps}+\nReps performed?`); if (r === null) return; const val = parseInt(r); if (!isNaN(val) && val >= 0) s.performed = val; else return; }
-                         s.completed = !s.completed; if (!s.completed) { s.failed = false; s.completedAt = null; } else { s.completedAt = U.now(); if (this.prefs.autoStartTimer) this.timerStart(+this.prefs[tier === 't1' ? 'restT1' : 'restT2'] + (s.failed ? 60 : 0), tier === 't1' ? 'T1 Rest' : 'T2 Rest'); }
-                     }
-                     this.saveSess();
+
+                toggleSet(s, tier, fail = false) {
+                    if (fail) { s.failed = !s.failed; if (s.failed) { s.completed = true; s.completedAt = U.now(); if (this.prefs.autoStartTimer) this.timerStart(+this.prefs[tier === 't1' ? 'restT1' : 'restT2'] + 60, 'Fail Rest'); } }
+                    else {
+                        if (s.amrap && !U.safe(s.performed, 0) && !s.completed) { const r = prompt(`AMRAP Target: ${s.reps}+\nReps performed?`); if (r === null) return; const val = parseInt(r); if (!isNaN(val) && val >= 0) s.performed = val; else return; }
+                        s.completed = !s.completed; if (!s.completed) { s.failed = false; s.completedAt = null; } else { s.completedAt = U.now(); if (this.prefs.autoStartTimer) this.timerStart(+this.prefs[tier === 't1' ? 'restT1' : 'restT2'] + (s.failed ? 60 : 0), tier === 't1' ? 'T1 Rest' : 'T2 Rest'); }
+                    }
+                    this.saveSess();
                 },
-                
+
                 editSet(tier, idx) { const set = tier === 't1' ? this.session?.t1?.sets?.[idx] : this.session?.t2?.sets?.[idx]; if (!set) return; this.setEdit = { tier, idx, weight: U.safe(set.weight, 0), reps: U.safe(set.reps, 0), performed: set.performed ?? null, failed: !!set.failed, amrap: !!set.amrap, completed: !!set.completed }; this.activeModal = 'setEdit'; },
                 saveSetEdit() { const set = this.setEdit.tier === 't1' ? this.session?.t1?.sets?.[this.setEdit.idx] : this.session?.t2?.sets?.[this.setEdit.idx]; if (!set) return; set.weight = U.rnd(U.safe(this.setEdit.weight, set.weight), this.prefs.weightUnit, this.prefs.microplates); set.reps = Math.max(0, Math.round(U.safe(this.setEdit.reps, set.reps))); if (set.amrap) set.performed = this.setEdit.performed === null || this.setEdit.performed === '' ? null : Math.max(0, Math.round(U.safe(this.setEdit.performed, 0))); set.failed = !!this.setEdit.failed; if (set.failed) { set.completed = true; set.completedAt = set.completedAt || U.now() } this.activeModal = null; this.saveSess(); },
-                
+
                 finish() { const inc = this.getInc(); if (inc.total > 0 && !confirm(`Incomplete: ${inc.total}. Finish?`)) return; this.sessionRating = 0; this.sessionNotes = this.session.notes || ''; this.sessionRPE = 7; this.timer.active = false; this.activeModal = 'rating'; },
                 getInc() { const t1 = this.session?.t1?.sets || [], t2 = this.session?.t2?.sets || [], mr = [...t1, ...t2].filter(s => !s.completed).length; let at = 0, ad = 0; (this.session?.acc || []).forEach(a => { const on = a.originalName || a.name; for (let i = 1; i <= (a.sets || 0); i++) { at++; if (this.isAccDone(on, i)) ad++; } }); return { mainRemaining: mr, accRemaining: Math.max(0, at - ad), total: mr + Math.max(0, at - ad) }; },
-                
+
                 saveFinish() {
                     const { t1, t2 } = this.session, l = t1.name, pr = t1.sets.find(s => s.amrap), p = this.prefs.program, inc = this.prefs.weightUnit === 'kg' ? 2.5 : 5; let add = 0;
                     if (p === 'gzclp') { if (t1.sets.some(s => s.failed)) { const s = this.state[l].stage; if (s >= 3) { this.state[l].stage = 1; this.tms[l] = Math.round(this.tms[l] * .85); } else this.state[l].stage++; } else { add = inc; this.tms[l] += add; } }
@@ -246,52 +251,188 @@
                     if (this.session.dayIdx !== null) { this.idx = (this.session.dayIdx + 1) % DATA.progs[p].days.length; if (this.idx === 0) this.week++; this.pIdx = this.idx; }
                     this.streak++; this.session = {}; this.savedSession = null; DB.d(K.session); this.activeModal = null; this.save(); this.chkAch(); this.view = 'dashboard'; this.calBuild(); this.$nextTick(() => this.draw());
                 },
-                
+
                 warmups() { if (!this.session?.t1?.sets?.[0]) return []; const w = this.session.t1.sets[0].weight; return [{ w: 20, r: 10 }, { w: w * .4, r: 5 }, { w: w * .6, r: 3 }, { w: w * .8, r: 2 }].filter(x => x.w > 20) },
                 calcPlates(w) { this.plate = { open: true, w, plates: [] }; let r = (w - this.prefs.barWeight) / 2; DATA.ui.plates[this.prefs.weightUnit].forEach(p => { while (r >= p) { this.plate.plates.push(p); r -= p; } }); },
-                
+
                 draw() {
                     const line = (id, src, d, c) => {
-                         const ctx = document.getElementById(id); if(!ctx) return;
-                         if(charts[id]) charts[id].destroy();
-                         const l = src.map ? src.map(x => x.date || x) : src.labels || [], data = d || src.map(x => x.details?.est1rm || x.weight);
-                         charts[id] = new Chart(ctx, { type: 'line', data: { labels: l, datasets: [{ data, borderColor: c, backgroundColor: c+'80', tension: .3, fill: true }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: false }, scales: { x: { display: false }, y: { grid: { color: '#ffffff0d' }, ticks: { color: '#666' } } } } });
+                        const ctx = document.getElementById(id); if (!ctx) return;
+                        if (charts[id]) charts[id].destroy();
+                        const l = src.map ? src.map(x => x.date || x) : src.labels || [], data = d || src.map(x => x.details?.est1rm || x.weight);
+                        charts[id] = new Chart(ctx, { type: 'line', data: { labels: l, datasets: [{ data, borderColor: c, backgroundColor: c + '80', tension: .3, fill: true }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: false }, scales: { x: { display: false }, y: { grid: { color: '#ffffff0d' }, ticks: { color: '#666' } } } } });
                     };
                     line('mainChart', this.history.filter(h => h.details?.t1 === this.chartLift), null, '#6366f1');
                     const d = this.bwLog.slice(-30); line('bodyWeightChart', d, d.map(x => x.weight), '#3b82f6');
                     // Volume
                     const v = {}; this.history.slice(-20).forEach(h => { const ts = new Date(h.timestamp), k = `W${Math.ceil((((ts - new Date(ts.getFullYear(), 0, 1)) / 864e5) + 1) / 7)}`; v[k] = (v[k] || 0) + (h.totalVolume || 0); });
                     const ctx = document.getElementById('volumeChart');
-                    if(ctx) {
-                        if(charts.vol) charts.vol.destroy();
+                    if (ctx) {
+                        if (charts.vol) charts.vol.destroy();
                         charts.vol = new Chart(ctx, { type: 'bar', data: { labels: Object.keys(v), datasets: [{ data: Object.values(v), backgroundColor: '#10b98180' }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: false }, scales: { x: { display: false }, y: { grid: { color: '#ffffff0d' }, ticks: { color: '#666' } } } } });
                     }
                 },
-                
-                impact: id => { const i=EX_INDEX[id]; if(!i) return {}; const g=i.groupKey; if(g.includes('variant')||g==='dl_accessory') return DATA.muscles[i.base]||{}; return g==='triceps'?{tri:1}:g==='biceps'?{bi:1}:g==='vertical_pull'?{lats:1,bi:.5}:g==='leg_accessories'?{quads:.6,hams:.6}:g==='core'?{lowBack:.3}:{}; },
-                updCache() {
-                    const res = {}, now = U.now(), cutoff = now - 12096e5;
+
+                impact(id) {
+                    const ex = EX_INDEX[id];
+
+                    // Enhanced accessory mappings
+                    const ACC_MUSCLES = {
+                        triceps: { tri: 1, frontDelt: 0.15 },
+                        biceps: { bi: 1, forearm: 0.2 },
+                        vertical_pull: { lats: 1, bi: 0.5, rearDelt: 0.25, traps: 0.15 },
+                        leg_accessories: { quads: 0.6, hams: 0.6, glutes: 0.5 },
+                        core: { lowBack: 0.4, abs: 0.8 },
+                        arms: { tri: 0.5, bi: 0.5 }  // Fixed: was returning empty!
+                    };
+
+                    if (ex) {
+                        const g = ex.groupKey;
+                        if (g.includes('variant') || g === 'dl_accessory') return DATA.muscles[ex.base] || {};
+                        if (ACC_MUSCLES[g]) return ACC_MUSCLES[g];
+                    }
+
+                    // Fallback: infer from exercise name
+                    const lower = (id || '').toLowerCase();
+                    if (lower.includes('curl') || lower.includes('bi')) return { bi: 1, forearm: 0.2 };
+                    if (lower.includes('pushdown') || lower.includes('extension') || lower.includes('skull') || lower.includes('tri') || lower.includes('dip')) return { tri: 1, frontDelt: 0.15 };
+                    if (lower.includes('pullup') || lower.includes('chin') || lower.includes('lat') || lower.includes('pulldown')) return { lats: 1, bi: 0.5, rearDelt: 0.2 };
+                    if (lower.includes('row')) return { lats: 0.8, bi: 0.5, rearDelt: 0.4, traps: 0.3 };
+                    if (lower.includes('leg') || lower.includes('press') || lower.includes('lunge') || lower.includes('split')) return { quads: 0.7, hams: 0.5, glutes: 0.5 };
+                    if (lower.includes('ham') || lower.includes('rdl') || lower.includes('curl')) return { hams: 0.9, glutes: 0.4 };
+                    if (lower.includes('calf')) return { calves: 1 };
+                    if (lower.includes('ab') || lower.includes('core') || lower.includes('plank') || lower.includes('crunch')) return { abs: 0.8, lowBack: 0.2 };
+                    if (lower.includes('arm') || lower.includes('superset')) return { tri: 0.5, bi: 0.5 };
+                    if (lower.includes('shrug') || lower.includes('trap')) return { traps: 1 };
+                    if (lower.includes('face') || lower.includes('rear')) return { rearDelt: 1, traps: 0.3 };
+                    if (lower.includes('fly') || lower.includes('cable')) return { chest: 0.7, frontDelt: 0.3 };
+
+                    return {};
+                }, updCache() {
+                    const res = {};
+                    const now = U.now();
+                    const cutoff = now - 14 * 24 * 3600 * 1000; // 14 days lookback
+
+                    // Fatigue thresholds per muscle (higher = more capacity before fatigued)
+                    const THRESHOLDS = {
+                        chest: 28, quads: 35, lats: 28, glutes: 32, hams: 30,
+                        tri: 20, bi: 18, frontDelt: 22, rearDelt: 20, upperChest: 25,
+                        lowBack: 40, traps: 22, grip: 18, abs: 25, calves: 20,
+                        forearm: 15, cns: 45
+                    };
+
                     this.history.forEach(w => {
                         if (w.timestamp < cutoff) return;
-                        const age = (now - w.timestamp) / 36e5;
-                        const proc = (n, s, f = 1) => {
-                            if (!n || !s?.length) return;
-                            const mus = this.impact(n), tm = this.tms[this.baseTM(n)] || 100, fat = s.reduce((a, x) => x.completed ? a + (Math.pow((x.weight || tm * .5) / tm, 2) * (x.performed || x.reps)) : a, 0) * f;
-                            Object.entries(mus).forEach(([m, v]) => res[m] = (res[m] || 0) + (fat * v) * Math.pow(0.5, age / DATA.halfLife[m]));
+
+                        const ageHrs = (now - w.timestamp) / 3600000;
+                        const rpeScale = w.rpe ? (0.6 + w.rpe * 0.04) : 0.85; // RPE 5=0.8, 10=1.0
+
+                        // Process T1 - Full systemic impact
+                        const procSets = (name, sets, tier) => {
+                            if (!name || !sets?.length) return;
+                            const mus = this.impact(name);
+                            if (!Object.keys(mus).length) return;
+
+                            const baseTM = this.tms[this.baseTM(name)] || 100;
+                            const tierMult = tier === 't1' ? 1.0 : tier === 't2' ? 0.7 : 0.5;
+
+                            // Calculate volume-based fatigue
+                            let setFatigue = 0;
+                            let completedSets = 0;
+
+                            sets.forEach(s => {
+                                if (!s.completed) return;
+                                completedSets++;
+
+                                const wt = s.weight || baseTM * 0.5;
+                                const reps = s.performed || s.reps || 0;
+                                const intensity = Math.min(wt / baseTM, 1.2); // Cap at 120% TM
+
+                                // Volume load with intensity scaling
+                                // Higher intensity = exponentially more fatigue
+                                const intensityFactor = Math.pow(intensity, 1.8);
+                                const volume = wt * reps;
+                                const failMult = s.failed ? 1.4 : 1.0;
+
+                                setFatigue += (intensityFactor * volume * failMult) / 1000;
+                            });
+
+                            // Add set count fatigue (more sets = more accumulated fatigue)
+                            const setCountFatigue = completedSets * 0.5;
+                            const totalFatigue = (setFatigue + setCountFatigue) * tierMult * rpeScale;
+
+                            // Distribute to muscles with half-life decay
+                            Object.entries(mus).forEach(([m, v]) => {
+                                const hl = DATA.halfLife[m] || 24;
+                                const decay = Math.pow(0.5, ageHrs / hl);
+                                res[m] = (res[m] || 0) + totalFatigue * v * decay;
+                            });
+
+                            // CNS fatigue for compound movements (T1 only)
+                            if (tier === 't1' && DATA.muscles[this.baseTM(name)]?.cns) {
+                                const cnsFatigue = totalFatigue * DATA.muscles[this.baseTM(name)].cns;
+                                const cnsDecay = Math.pow(0.5, ageHrs / DATA.halfLife.cns);
+                                res.cns = (res.cns || 0) + cnsFatigue * cnsDecay;
+                            }
                         };
-                        proc(w.details?.t1, w.setDetails?.t1); proc(w.setDetails?.t2Name, w.setDetails?.t2);
-                        (w.setDetails?.accessories || []).forEach(a => { if (a.completed) { const mus = this.impact(a.name); Object.entries(mus).forEach(([m, v]) => res[m] = (res[m] || 0) + (a.completed * 5 * v) * Math.pow(0.5, age / DATA.halfLife[m])); } });
+
+                        procSets(w.details?.t1, w.setDetails?.t1, 't1');
+                        procSets(w.setDetails?.t2Name, w.setDetails?.t2, 't2');
+
+                        // Process accessories with proper volume estimation
+                        (w.setDetails?.accessories || []).forEach(a => {
+                            if (!a.completed) return;
+
+                            const mus = this.impact(a.name);
+                            if (!Object.keys(mus).length) return;
+
+                            // Parse rep range to get average
+                            let avgReps = 10;
+                            if (a.reps) {
+                                const match = String(a.reps).match(/(\d+)/g);
+                                if (match?.length === 2) avgReps = (parseInt(match[0]) + parseInt(match[1])) / 2;
+                                else if (match?.length === 1) avgReps = parseInt(match[0]);
+                            }
+
+                            // Estimate accessory fatigue: sets × reps × ~0.5 intensity factor
+                            const accFatigue = a.completed * avgReps * 0.08 * rpeScale;
+
+                            Object.entries(mus).forEach(([m, v]) => {
+                                const hl = DATA.halfLife[m] || 24;
+                                const decay = Math.pow(0.5, ageHrs / hl);
+                                res[m] = (res[m] || 0) + accFatigue * v * decay;
+                            });
+                        });
                     });
-                    Object.keys(DATA.halfLife).forEach(m => res[m] = Math.max(0, Math.min(100, 100 - ((res[m] || 0) / (m === 'cns' ? 30 : 20)) * 100)));
-                    this.cache.recovery = Object.entries(DATA.groups).map(([name, ms]) => { const v = ms.map(m => res[m] || 0), min = Math.min(...v); return { name, recovery: Math.round(v.reduce((a, b) => a + b, 0) / v.length), weakest: Math.round(min), status: min >= 85 ? 'Ready' : min >= 60 ? 'Recovering' : 'Fatigued' }; });
+
+                    // Convert fatigue to recovery % using muscle-specific thresholds
+                    Object.keys({ ...DATA.halfLife, abs: 24, calves: 24, forearm: 18 }).forEach(m => {
+                        const fatigue = res[m] || 0;
+                        const threshold = THRESHOLDS[m] || 25;
+                        // 0 fatigue = 100%, threshold = ~65%, 2×threshold = ~30%, 3×threshold = 0%
+                        res[m] = Math.max(0, Math.min(100, 100 * Math.exp(-fatigue / threshold)));
+                    });
+
+                    // Build grouped recovery status
+                    this.cache.recovery = Object.entries(DATA.groups).map(([name, ms]) => {
+                        const vals = ms.map(m => res[m] ?? 100);
+                        const min = Math.min(...vals);
+                        const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
+                        return {
+                            name,
+                            recovery: Math.round(avg),
+                            weakest: Math.round(min),
+                            status: min >= 75 ? 'Ready' : min >= 45 ? 'Recovering' : 'Fatigued'
+                        };
+                    });
                 },
-                
+
                 calBuild() { const n = new Date(); n.setMonth(n.getMonth() + this.cal.offset); this.cal.monthName = n.toLocaleString('default', { month: 'long', year: 'numeric' }); const y = n.getFullYear(), m = n.getMonth(), d = new Date(y, m, 1).getDay(), ld = new Date(y, m + 1, 0).getDate(); this.cal.days = [...Array(d).fill({}), ...[...Array(ld).keys()].map(i => ({ num: i + 1, isToday: new Date().getDate() === i + 1 && !this.cal.offset, hasLog: this.history.some(h => { const x = new Date(h.timestamp); return x.getDate() === i + 1 && x.getMonth() === m; }) }))]; },
                 chkAch() { ACHIEVEMENTS.forEach(a => { if (!this.achievements.includes(a.id) && a.check(this.history)) { this.achievements.push(a.id); this.currentAchievement = a; this.activeModal = 'achievement'; DB.s(K.ach, this.achievements); } }); },
                 saveSess() { if (this.session?.start) DB.s(K.session, this.session); },
                 save() { DB.s(K.main, { tms: this.tms, history: this.history, idx: this.idx, week: this.week, streak: this.streak, state: this.state }); this.updCache(); },
                 savePrefs() { DB.s(K.prefs, this.prefs); },
-                
+
                 togUnit(newUnit) { if (newUnit === this.prefs.weightUnit) return; if (confirm(`Convert weights?`)) { const from = this.prefs.weightUnit; Object.keys(this.tms).forEach(k => this.tms[k] = U.rnd(U.conv(this.tms[k], from, newUnit), newUnit, this.prefs.microplates)); Object.keys(this.prs).forEach(k => { if (this.prs[k]) this.prs[k].weight = Math.round(U.conv(this.prs[k].weight, from, newUnit)); }); this.history.forEach(h => { h.increase = 0; if (h.details) h.details.weight = Math.round(U.conv(h.details.weight, from, newUnit)); h.totalVolume = Math.round(U.conv(h.totalVolume, from, newUnit)); }); this.bwLog.forEach(b => b.weight = U.conv(b.weight, from, newUnit)); this.prefs.barWeight = newUnit === 'kg' ? 20 : 45; } this.prefs.weightUnit = newUnit; this.savePrefs(); this.save(); DB.s(K.bw, this.bwLog); DB.s(K.prs, this.prs); this.$nextTick(() => { this.draw(); }); },
                 finSetup() { if (Object.values(this.setup).some(v => v > 0)) { Object.keys(this.setup).forEach(k => this.tms[k] = U.rnd(this.setup[k] * .9, this.prefs.weightUnit)); this.save(); this.savePrefs(); this.view = 'dashboard'; } },
                 resume() { this.session = this.savedSession; if (this.session?.t2 && !this.session.t2.originalName) this.session.t2.originalName = this.session.t2.name; if (this.session?.acc) this.session.acc.forEach(acc => { if (!acc.originalName) acc.originalName = acc.name; }); if (!this.session.completedAcc) this.session.completedAcc = {}; this.activeModal = null; this.view = 'workout'; this.reqWake(); },
@@ -323,10 +464,10 @@
                     if (this.session.acc) { for (const a of this.session.acc) { const on = a.originalName || a.name; for (let i = 1; i <= a.sets; i++) { if (!this.isAccDone(on, i)) return { t: 'acc', n: a.selectedExercise || a.name, w: '-', r: (a.reps || '10-12'), amrap: false, on, i }; } } }
                     return null;
                 },
-                doZen() { 
-                    const z = this.getZen(); if (!z) return; 
-                    if (z.t === 'acc') this.togAcc(z.on, z.i); 
-                    else { if (z.s.amrap) { if(this.zenAmrap===null||this.zenAmrap==='') return alert('Enter reps'); z.s.performed = this.zenAmrap; this.zenAmrap = null; } this.toggleSet(z.s, z.t); }
+                doZen() {
+                    const z = this.getZen(); if (!z) return;
+                    if (z.t === 'acc') this.togAcc(z.on, z.i);
+                    else { if (z.s.amrap) { if (this.zenAmrap === null || this.zenAmrap === '') return alert('Enter reps'); z.s.performed = this.zenAmrap; this.zenAmrap = null; } this.toggleSet(z.s, z.t); }
                 },
                 cancel() { if (confirm('Cancel workout?')) { this.session = {}; this.savedSession = null; DB.d(K.session); this.timer.active = false; this.view = 'dashboard'; this.relWake(); this.$nextTick(() => this.draw()); } }
             }
@@ -334,223 +475,969 @@
     </script>
 </head>
 
-<body x-data="app()" x-init="init()" @keydown.window.escape="handleEscape" class="antialiased h-screen overflow-hidden text-slate-200">
+<body x-data="app()" x-init="init()" @keydown.window.escape="handleEscape"
+    class="antialiased h-screen overflow-hidden text-slate-200">
     <div x-show="activeModal==='resume'" class="modal-bg" x-cloak x-transition>
         <div class="glass-panel w-full max-w-sm">
             <div class="text-center mb-6">
                 <h3 class="text-xl font-bold text-white">Workout In Progress</h3>
                 <p class="text-sm text-slate-400 mt-1" x-text="'Session: '+(savedSession?.title||'')"></p>
-                <p class="text-xs text-slate-500 mt-1" x-text="savedSession?.start?'Started '+timeAgo(savedSession.start):''"></p>
+                <p class="text-xs text-slate-500 mt-1"
+                    x-text="savedSession?.start?'Started '+timeAgo(savedSession.start):''"></p>
             </div>
-            <div class="space-y-3"><button @click="resume()" class="btn-p">Resume</button><button @click="finish()" class="btn border border-green-500/30 bg-green-600/20 text-green-400">Finish & Save</button><button @click="session={};savedSession=null;DB.d('lift_active_session');activeModal=null" class="btn border border-red-500/20 bg-red-600/10 text-red-400">Discard</button></div>
+            <div class="space-y-3"><button @click="resume()" class="btn-p">Resume</button><button @click="finish()"
+                    class="btn border border-green-500/30 bg-green-600/20 text-green-400">Finish & Save</button><button
+                    @click="session={};savedSession=null;DB.d('lift_active_session');activeModal=null"
+                    class="btn border border-red-500/20 bg-red-600/10 text-red-400">Discard</button></div>
         </div>
     </div>
     <div x-show="activeModal==='deload'" class="modal-bg" x-cloak x-transition>
         <div class="glass-panel w-full max-w-sm border-orange-500/30">
             <div class="text-center mb-6">
-                <div class="w-16 h-16 mx-auto mb-4 bg-orange-500/20 rounded-full f-c"><svg class="w-8 h-8 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="icons.warn" /></svg></div>
+                <div class="w-16 h-16 mx-auto mb-4 bg-orange-500/20 rounded-full f-c"><svg
+                        class="w-8 h-8 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="icons.warn" />
+                    </svg></div>
                 <h3 class="text-xl font-bold text-white">Deload Recommended</h3>
                 <p class="text-sm text-slate-400 mt-2" x-text="deloadInfo.reason"></p>
-                <p class="text-xs text-slate-500 mt-1" x-text="'Recommended protocol: '+deloadInfo.protocol?.replace('_',' ')"></p>
+                <p class="text-xs text-slate-500 mt-1"
+                    x-text="'Recommended protocol: '+deloadInfo.protocol?.replace('_',' ')"></p>
             </div>
-            <div class="space-y-3"><button @click="doDeload()" class="btn bg-orange-600 text-white shadow-lg">Apply Deload</button><button @click="activeModal='weight'" class="btn-s">Skip</button></div>
+            <div class="space-y-3"><button @click="doDeload()" class="btn bg-orange-600 text-white shadow-lg">Apply
+                    Deload</button><button @click="activeModal='weight'" class="btn-s">Skip</button></div>
         </div>
     </div>
     <div x-show="activeModal==='setEdit'" class="modal-bg z-[200]" x-cloak x-transition>
         <div class="glass-panel w-full max-w-sm" @click.outside="activeModal=null">
             <div class="f-cb mb-6">
-                <h3 class="text-xl font-bold text-white">Edit Set</h3><button @click="activeModal=null" class="text-slate-500 hover:text-white"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="icons.x" /></svg></button>
+                <h3 class="text-xl font-bold text-white">Edit Set</h3><button @click="activeModal=null"
+                    class="text-slate-500 hover:text-white"><svg class="w-6 h-6" fill="none" stroke="currentColor"
+                        viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="icons.x" />
+                    </svg></button>
             </div>
             <div class="space-y-4 mb-6">
                 <div class="f-cb gap-4">
-                    <div class="flex-1"><label class="lbl">Weight</label><input type="number" x-model.number="setEdit.weight" class="inp-lg" step="1.25"></div>
-                    <div class="flex-1"><label class="lbl">Reps</label><input type="number" x-model.number="setEdit.reps" class="inp-lg"></div>
+                    <div class="flex-1"><label class="lbl">Weight</label><input type="number"
+                            x-model.number="setEdit.weight" class="inp-lg" step="1.25"></div>
+                    <div class="flex-1"><label class="lbl">Reps</label><input type="number"
+                            x-model.number="setEdit.reps" class="inp-lg"></div>
                 </div>
-                <div x-show="setEdit.amrap"><label class="lbl text-yellow-500">Performed (AMRAP)</label><input type="number" x-model="setEdit.performed" placeholder="-" class="inp-lg border-yellow-500/30"></div>
-                <div class="flex items-center gap-3 bg-red-900/10 p-3 rounded-xl border border-red-500/20 cursor-pointer" @click="setEdit.failed=!setEdit.failed">
-                    <div class="w-6 h-6 rounded border f-c" :class="setEdit.failed?'bg-red-500 border-red-500 text-white':'border-white/20 text-transparent'">✓</div><span class="font-bold text-red-400">Mark as Failed</span>
+                <div x-show="setEdit.amrap"><label class="lbl text-yellow-500">Performed (AMRAP)</label><input
+                        type="number" x-model="setEdit.performed" placeholder="-" class="inp-lg border-yellow-500/30">
+                </div>
+                <div class="flex items-center gap-3 bg-red-900/10 p-3 rounded-xl border border-red-500/20 cursor-pointer"
+                    @click="setEdit.failed=!setEdit.failed">
+                    <div class="w-6 h-6 rounded border f-c"
+                        :class="setEdit.failed?'bg-red-500 border-red-500 text-white':'border-white/20 text-transparent'">
+                        ✓</div><span class="font-bold text-red-400">Mark as Failed</span>
                 </div>
             </div>
             <button @click="saveSetEdit()" class="btn-p">Update Set</button>
         </div>
     </div>
-    <div x-show="activeModal==='info'" class="fixed inset-0 z-[250] f-c p-6 bg-black/90 backdrop-blur-md" x-cloak x-transition @click.self="activeModal=null">
+    <div x-show="activeModal==='info'" class="fixed inset-0 z-[250] f-c p-6 bg-black/90 backdrop-blur-md" x-cloak
+        x-transition @click.self="activeModal=null">
         <div class="glass-panel w-full max-w-sm overflow-y-auto max-h-[85vh] no-scrollbar">
             <div class="f-cb mb-6 border-b border-white/5 pb-4">
-                <h3 class="text-xl font-bold text-white">Workout Key</h3><button @click="activeModal=null" class="text-slate-500 hover:text-white p-2"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="icons.x" /></svg></button>
+                <h3 class="text-xl font-bold text-white">Workout Key</h3><button @click="activeModal=null"
+                    class="text-slate-500 hover:text-white p-2"><svg class="w-6 h-6" fill="none" stroke="currentColor"
+                        viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="icons.x" />
+                    </svg></button>
             </div>
             <div class="space-y-6">
-                <div class="relative pl-4 border-l-2 border-indigo-500"><h4 class="text-xs font-bold text-indigo-400 uppercase tracking-widest mb-1">Tiers</h4><p class="text-sm text-slate-300">T1: Heavy | T2: Volume</p></div>
-                <div class="relative pl-4 border-l-2 border-yellow-500"><h4 class="text-xs font-bold text-yellow-500 uppercase tracking-widest mb-1">AMRAP</h4><p class="text-sm text-slate-300">As Many Reps As Possible</p></div>
-                <div class="relative pl-4 border-l-2 border-green-500"><h4 class="text-xs font-bold text-green-500 uppercase tracking-widest mb-1">Edit</h4><p class="text-sm text-slate-300">Tap weights to edit. Tap names to swap.</p></div>
+                <div class="relative pl-4 border-l-2 border-indigo-500">
+                    <h4 class="text-xs font-bold text-indigo-400 uppercase tracking-widest mb-1">Tiers</h4>
+                    <p class="text-sm text-slate-300">T1: Heavy | T2: Volume</p>
+                </div>
+                <div class="relative pl-4 border-l-2 border-yellow-500">
+                    <h4 class="text-xs font-bold text-yellow-500 uppercase tracking-widest mb-1">AMRAP</h4>
+                    <p class="text-sm text-slate-300">As Many Reps As Possible</p>
+                </div>
+                <div class="relative pl-4 border-l-2 border-green-500">
+                    <h4 class="text-xs font-bold text-green-500 uppercase tracking-widest mb-1">Edit</h4>
+                    <p class="text-sm text-slate-300">Tap weights to edit. Tap names to swap.</p>
+                </div>
             </div>
-            <button @click="activeModal=null" class="w-full mt-8 bg-[#333] text-white font-bold py-3.5 rounded-xl border border-white/10 active:scale-95 transition">Got it</button>
+            <button @click="activeModal=null"
+                class="w-full mt-8 bg-[#333] text-white font-bold py-3.5 rounded-xl border border-white/10 active:scale-95 transition">Got
+                it</button>
         </div>
     </div>
-    <div x-show="activeModal==='rating'" class="fixed inset-0 z-[170] f-c p-6 bg-black/90 backdrop-blur-md" x-cloak x-transition>
+    <div x-show="activeModal==='rating'" class="fixed inset-0 z-[170] f-c p-6 bg-black/90 backdrop-blur-md" x-cloak
+        x-transition>
         <div class="glass-panel w-full max-w-sm">
-            <div class="text-center mb-6"><div class="text-4xl mb-3">💪</div><h3 class="text-xl font-bold text-white">Workout Complete!</h3></div>
-            <div class="mb-6 text-center"><label class="lbl">Rating</label><div class="f-c gap-2"><template x-for="i in 5"><button @click="sessionRating=i" class="rating-star text-3xl transition" :class="i<=sessionRating?'opacity-100 scale-110':'opacity-30'" x-text="i<=sessionRating?'⭐':'☆'"></button></template></div></div>
-            <div class="mb-6"><div class="f-cb mb-2"><label class="text-xs font-bold text-slate-500 uppercase">RPE</label><span class="text-xs font-bold text-indigo-400" x-text="sessionRPE+'/10'"></span></div><input type="range" x-model.number="sessionRPE" min="5" max="10" step="0.5" class="w-full accent-indigo-500"></div>
-            <div class="mb-6"><label class="lbl">Notes</label><textarea x-model="sessionNotes" class="inp resize-none h-20" placeholder="Notes..."></textarea></div>
+            <div class="text-center mb-6">
+                <div class="text-4xl mb-3">💪</div>
+                <h3 class="text-xl font-bold text-white">Workout Complete!</h3>
+            </div>
+            <div class="mb-6 text-center"><label class="lbl">Rating</label>
+                <div class="f-c gap-2"><template x-for="i in 5"><button @click="sessionRating=i"
+                            class="rating-star text-3xl transition"
+                            :class="i<=sessionRating?'opacity-100 scale-110':'opacity-30'"
+                            x-text="i<=sessionRating?'⭐':'☆'"></button></template></div>
+            </div>
+            <div class="mb-6">
+                <div class="f-cb mb-2"><label class="text-xs font-bold text-slate-500 uppercase">RPE</label><span
+                        class="text-xs font-bold text-indigo-400" x-text="sessionRPE+'/10'"></span></div><input
+                    type="range" x-model.number="sessionRPE" min="5" max="10" step="0.5"
+                    class="w-full accent-indigo-500">
+            </div>
+            <div class="mb-6"><label class="lbl">Notes</label><textarea x-model="sessionNotes"
+                    class="inp resize-none h-20" placeholder="Notes..."></textarea></div>
             <button @click="saveFinish()" class="btn-p">Save & Continue</button>
         </div>
     </div>
-    <div x-show="activeModal==='weight'" class="fixed inset-0 z-[150] f-c p-6 bg-black/90 backdrop-blur-md" x-cloak x-transition>
+    <div x-show="activeModal==='weight'" class="fixed inset-0 z-[150] f-c p-6 bg-black/90 backdrop-blur-md" x-cloak
+        x-transition>
         <div class="glass-panel w-full max-w-sm">
             <h3 class="text-xl font-bold text-white text-center mb-4">Log Weight</h3>
-            <div class="relative mb-6"><input type="number" x-model.number="tempBodyWeight" step="0.1" class="inp-lg" :placeholder="prefs.weightUnit==='kg'?'75.0':'165.0'"><span class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 font-bold" x-text="prefs.weightUnit"></span></div>
-            <div class="flex gap-3"><button @click="activeModal=null;start()" class="flex-1 btn-s">Skip</button><button @click="logBW()" class="flex-1 btn bg-blue-600 text-white shadow-lg">Log</button></div>
+            <div class="relative mb-6"><input type="number" x-model.number="tempBodyWeight" step="0.1" class="inp-lg"
+                    :placeholder="prefs.weightUnit==='kg'?'75.0':'165.0'"><span
+                    class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 font-bold"
+                    x-text="prefs.weightUnit"></span></div>
+            <div class="flex gap-3"><button @click="activeModal=null;start()" class="flex-1 btn-s">Skip</button><button
+                    @click="logBW()" class="flex-1 btn bg-blue-600 text-white shadow-lg">Log</button></div>
         </div>
     </div>
-    <div x-show="activeModal==='achievement'" class="fixed inset-0 z-[190] f-c p-6 bg-black/90 backdrop-blur-md" x-cloak x-transition>
-        <div class="bg-gradient-to-br from-indigo-900/50 to-purple-900/50 border border-indigo-500/30 rounded-3xl p-6 w-full max-w-sm shadow-2xl relative overflow-hidden">
-            <div class="absolute inset-0 bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-pink-500/10 shimmer"></div>
-            <div class="relative z-10 text-center"><div class="text-6xl mb-4" x-text="currentAchievement?.icon||'🏆'"></div><h3 class="text-2xl font-bold text-white mb-2">Achievement Unlocked!</h3><p class="text-lg font-bold text-indigo-400" x-text="currentAchievement?.title"></p><button @click="activeModal=null" class="mt-6 bg-white/10 text-white font-bold py-3 px-8 rounded-xl hover:bg-white/20">Awesome!</button></div>
+    <div x-show="activeModal==='achievement'" class="fixed inset-0 z-[190] f-c p-6 bg-black/90 backdrop-blur-md" x-cloak
+        x-transition>
+        <div
+            class="bg-gradient-to-br from-indigo-900/50 to-purple-900/50 border border-indigo-500/30 rounded-3xl p-6 w-full max-w-sm shadow-2xl relative overflow-hidden">
+            <div class="absolute inset-0 bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-pink-500/10 shimmer">
+            </div>
+            <div class="relative z-10 text-center">
+                <div class="text-6xl mb-4" x-text="currentAchievement?.icon||'🏆'"></div>
+                <h3 class="text-2xl font-bold text-white mb-2">Achievement Unlocked!</h3>
+                <p class="text-lg font-bold text-indigo-400" x-text="currentAchievement?.title"></p><button
+                    @click="activeModal=null"
+                    class="mt-6 bg-white/10 text-white font-bold py-3 px-8 rounded-xl hover:bg-white/20">Awesome!</button>
+            </div>
         </div>
     </div>
-    <div x-show="activeModal==='detail'" class="fixed inset-0 z-[160] flex items-end sm:items-center justify-center bg-black/90 backdrop-blur-md" x-cloak x-transition @click.self="activeModal=null">
-        <div class="bg-[#1A1A1E] w-full max-w-md max-h-[85vh] rounded-t-3xl sm:rounded-3xl border border-white/10 overflow-hidden flex flex-col">
+    <div x-show="activeModal==='detail'"
+        class="fixed inset-0 z-[160] flex items-end sm:items-center justify-center bg-black/90 backdrop-blur-md" x-cloak
+        x-transition @click.self="activeModal=null">
+        <div
+            class="bg-[#1A1A1E] w-full max-w-md max-h-[85vh] rounded-t-3xl sm:rounded-3xl border border-white/10 overflow-hidden flex flex-col">
             <div class="sticky top-0 bg-[#1A1A1E] border-b border-white/10 p-4 f-cb z-10">
-                <div><h3 class="text-lg font-bold text-white" x-text="selectedLog?.title"></h3><p class="text-xs text-slate-500" x-text="selectedLog?.date"></p></div>
+                <div>
+                    <h3 class="text-lg font-bold text-white" x-text="selectedLog?.title"></h3>
+                    <p class="text-xs text-slate-500" x-text="selectedLog?.date"></p>
+                </div>
                 <div class="f-c gap-2">
                     <template x-if="!isEditingLog">
-                        <div class="f-g2"><button @click="delLog()" class="btn-icon text-red-400 hover:text-red-300 hover:bg-red-500/10"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="icons.trash" /></svg></button><button @click="isEditingLog=true" class="btn-icon text-blue-400 hover:text-blue-300 hover:bg-blue-500/10"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="icons.edit" /></svg></button><button @click="activeModal=null" class="btn-icon"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="icons.x" /></svg></button></div>
+                        <div class="f-g2"><button @click="delLog()"
+                                class="btn-icon text-red-400 hover:text-red-300 hover:bg-red-500/10"><svg
+                                    class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        :d="icons.trash" />
+                                </svg></button><button @click="isEditingLog=true"
+                                class="btn-icon text-blue-400 hover:text-blue-300 hover:bg-blue-500/10"><svg
+                                    class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        :d="icons.edit" />
+                                </svg></button><button @click="activeModal=null" class="btn-icon"><svg class="w-6 h-6"
+                                    fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        :d="icons.x" />
+                                </svg></button></div>
                     </template>
                     <template x-if="isEditingLog">
-                        <div class="f-g2"><button @click="saveLog()" class="btn-icon text-green-400 hover:text-green-300 hover:bg-green-500/10"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="icons.save" /></svg></button><button @click="isEditingLog=false" class="btn-icon"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="icons.x" /></svg></button></div>
+                        <div class="f-g2"><button @click="saveLog()"
+                                class="btn-icon text-green-400 hover:text-green-300 hover:bg-green-500/10"><svg
+                                    class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        :d="icons.save" />
+                                </svg></button><button @click="isEditingLog=false" class="btn-icon"><svg class="w-6 h-6"
+                                    fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        :d="icons.x" />
+                                </svg></button></div>
                     </template>
                 </div>
             </div>
             <div class="p-4 overflow-y-auto max-h-[70vh] no-scrollbar space-y-6 flex-1">
                 <div class="grid grid-cols-4 gap-2">
-                    <div class="glass-item text-center"><template x-if="!isEditingLog"><div class="text-lg font-bold text-white mono" x-text="selectedLog?.duration||'-'"></div></template><template x-if="isEditingLog"><input type="number" x-model="selectedLog.duration" class="w-full bg-black border border-white/20 rounded text-center text-white font-mono font-bold"></template><div class="text-[9px] text-slate-500 uppercase">Minutes</div></div>
-                    <div class="glass-item text-center"><div class="text-lg font-bold text-white mono" x-text="selectedLog?.totalSets||'-'"></div><div class="text-[9px] text-slate-500 uppercase">Sets</div></div>
-                    <div class="glass-item text-center"><div class="text-lg font-bold text-white mono" x-text="fmtVolS(selectedLog?.totalVolume)"></div><div class="text-[9px] text-slate-500 uppercase">Volume</div></div>
-                    <div class="glass-item text-center"><template x-if="!isEditingLog"><div class="text-lg font-bold text-white" x-text="'⭐'.repeat(selectedLog?.rating||0)||'-'"></div></template><template x-if="isEditingLog"><input type="number" min="0" max="5" x-model="selectedLog.rating" class="w-full bg-black border border-white/20 rounded text-center text-white font-mono font-bold"></template><div class="text-[9px] text-slate-500 uppercase">Rating</div></div>
+                    <div class="glass-item text-center"><template x-if="!isEditingLog">
+                            <div class="text-lg font-bold text-white mono" x-text="selectedLog?.duration||'-'"></div>
+                        </template><template x-if="isEditingLog"><input type="number" x-model="selectedLog.duration"
+                                class="w-full bg-black border border-white/20 rounded text-center text-white font-mono font-bold"></template>
+                        <div class="text-[9px] text-slate-500 uppercase">Minutes</div>
+                    </div>
+                    <div class="glass-item text-center">
+                        <div class="text-lg font-bold text-white mono" x-text="selectedLog?.totalSets||'-'"></div>
+                        <div class="text-[9px] text-slate-500 uppercase">Sets</div>
+                    </div>
+                    <div class="glass-item text-center">
+                        <div class="text-lg font-bold text-white mono" x-text="fmtVolS(selectedLog?.totalVolume)"></div>
+                        <div class="text-[9px] text-slate-500 uppercase">Volume</div>
+                    </div>
+                    <div class="glass-item text-center"><template x-if="!isEditingLog">
+                            <div class="text-lg font-bold text-white" x-text="'⭐'.repeat(selectedLog?.rating||0)||'-'">
+                            </div>
+                        </template><template x-if="isEditingLog"><input type="number" min="0" max="5"
+                                x-model="selectedLog.rating"
+                                class="w-full bg-black border border-white/20 rounded text-center text-white font-mono font-bold"></template>
+                        <div class="text-[9px] text-slate-500 uppercase">Rating</div>
+                    </div>
                 </div>
-                <div x-show="selectedLog?.setDetails?.t1?.length"><h4 class="lbl mb-3"><span x-text="selectedLog?.details?.t1"></span> (T1)</h4><div class="space-y-2"><template x-for="(set, idx) in selectedLog?.setDetails?.t1||[]"><div class="relative set-timeline pl-6"><div class="absolute left-0 top-1 w-4 h-4 rounded-full f-c text-[10px]" :class="set.failed?'bg-red-500/20 text-red-400':'bg-green-500/20 text-green-400'"><span x-text="set.failed?'✕':'✓'"></span></div><div class="glass-item f-cb"><div><span class="mono-num" x-text="set.weight"></span><span class="text-slate-500 text-xs ml-1" x-text="prefs.weightUnit"></span><span class="text-slate-400 text-sm ml-2">×</span><span class="font-bold ml-1" :class="set.amrap?'text-yellow-400':'text-white'" x-text="set.performed||set.reps"></span><span x-show="set.amrap" class="text-yellow-500 text-xs ml-1">AMRAP</span></div><div class="text-right"><div class="text-xs text-slate-500" x-text="set.completedAt?fmtSet(set.completedAt):''"></div></div></div></div></template></div></div>
-                <div x-show="selectedLog?.setDetails?.t2?.length"><h4 class="lbl mb-3"><span x-text="selectedLog?.setDetails?.t2Name"></span> (T2)</h4><div class="grid grid-cols-4 gap-2"><template x-for="set in selectedLog?.setDetails?.t2||[]"><div class="glass-item text-center" :class="set.completed?'border border-indigo-500/30':'opacity-50'"><div class="text-sm font-bold text-white mono" x-text="set.weight"></div><div class="text-[10px] text-slate-500">×<span x-text="set.reps"></span></div></div></template></div></div>
-                <div x-show="selectedLog?.setDetails?.accessories"><h4 class="lbl mb-3">Accessories</h4><div class="space-y-2"><template x-for="acc in selectedLog?.setDetails?.accessories||[]"><div class="glass-item f-cb"><span class="text-white text-sm" x-text="acc.name"></span><span class="text-slate-400 text-xs" x-text="acc.completed+'/'+acc.total+' sets'"></span></div></template></div></div>
-                <div x-show="selectedLog?.notes||isEditingLog"><h4 class="lbl mb-3">Notes</h4><div class="glass-item"><template x-if="!isEditingLog"><p class="text-sm text-slate-300" x-text="selectedLog?.notes"></p></template><template x-if="isEditingLog"><textarea x-model="selectedLog.notes" class="w-full bg-black border border-white/20 rounded p-2 text-white text-sm outline-none resize-none h-24"></textarea></template></div></div>
+                <div x-show="selectedLog?.setDetails?.t1?.length">
+                    <h4 class="lbl mb-3"><span x-text="selectedLog?.details?.t1"></span> (T1)</h4>
+                    <div class="space-y-2"><template x-for="(set, idx) in selectedLog?.setDetails?.t1||[]">
+                            <div class="relative set-timeline pl-6">
+                                <div class="absolute left-0 top-1 w-4 h-4 rounded-full f-c text-[10px]"
+                                    :class="set.failed?'bg-red-500/20 text-red-400':'bg-green-500/20 text-green-400'">
+                                    <span x-text="set.failed?'✕':'✓'"></span></div>
+                                <div class="glass-item f-cb">
+                                    <div><span class="mono-num" x-text="set.weight"></span><span
+                                            class="text-slate-500 text-xs ml-1" x-text="prefs.weightUnit"></span><span
+                                            class="text-slate-400 text-sm ml-2">×</span><span class="font-bold ml-1"
+                                            :class="set.amrap?'text-yellow-400':'text-white'"
+                                            x-text="set.performed||set.reps"></span><span x-show="set.amrap"
+                                            class="text-yellow-500 text-xs ml-1">AMRAP</span></div>
+                                    <div class="text-right">
+                                        <div class="text-xs text-slate-500"
+                                            x-text="set.completedAt?fmtSet(set.completedAt):''"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </template></div>
+                </div>
+                <div x-show="selectedLog?.setDetails?.t2?.length">
+                    <h4 class="lbl mb-3"><span x-text="selectedLog?.setDetails?.t2Name"></span> (T2)</h4>
+                    <div class="grid grid-cols-4 gap-2"><template x-for="set in selectedLog?.setDetails?.t2||[]">
+                            <div class="glass-item text-center"
+                                :class="set.completed?'border border-indigo-500/30':'opacity-50'">
+                                <div class="text-sm font-bold text-white mono" x-text="set.weight"></div>
+                                <div class="text-[10px] text-slate-500">×<span x-text="set.reps"></span></div>
+                            </div>
+                        </template></div>
+                </div>
+                <div x-show="selectedLog?.setDetails?.accessories">
+                    <h4 class="lbl mb-3">Accessories</h4>
+                    <div class="space-y-2"><template x-for="acc in selectedLog?.setDetails?.accessories||[]">
+                            <div class="glass-item f-cb"><span class="text-white text-sm" x-text="acc.name"></span><span
+                                    class="text-slate-400 text-xs" x-text="acc.completed+'/'+acc.total+' sets'"></span>
+                            </div>
+                        </template></div>
+                </div>
+                <div x-show="selectedLog?.notes||isEditingLog">
+                    <h4 class="lbl mb-3">Notes</h4>
+                    <div class="glass-item"><template x-if="!isEditingLog">
+                            <p class="text-sm text-slate-300" x-text="selectedLog?.notes"></p>
+                        </template><template x-if="isEditingLog"><textarea x-model="selectedLog.notes"
+                                class="w-full bg-black border border-white/20 rounded p-2 text-white text-sm outline-none resize-none h-24"></textarea></template>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
     <!-- PREFS -->
     <div x-show="view==='preferences'" class="h-full overflow-y-auto pb-32 no-scrollbar" x-cloak>
-        <header class="pt-14 pb-6 px-6 bg-gradient-to-b from-black to-transparent sticky top-0 z-20"><h2 class="text-3xl font-extrabold text-white">Settings</h2></header>
+        <header class="pt-14 pb-6 px-6 bg-gradient-to-b from-black to-transparent sticky top-0 z-20">
+            <h2 class="text-3xl font-extrabold text-white">Settings</h2>
+        </header>
         <div class="px-6 space-y-8">
-            <div class="glass-card"><h3 class="lbl mb-4">Unit</h3><div class="flex gap-3"><template x-for="u in ['lbs','kg']"><button @click="togUnit(u)" class="flex-1 py-3 rounded-xl font-bold text-sm transition-all" :class="prefs.weightUnit===u?'bg-indigo-600 text-white shadow-lg':'bg-[#222] text-slate-400 border border-white/10'" x-text="u==='lbs'?'Pounds (lbs)':'Kilograms (kg)'"></button></template></div></div>
-            <div class="glass-card"><h3 class="lbl mb-4">Program</h3><div class="space-y-3"><template x-for="(prog, key) in PROGRAMS"><div @click="prefs.program=key;savePrefs();pIdx=0;idx=0" class="p-4 rounded-xl border border-white/10 cursor-pointer" :class="prefs.program===key?'border-indigo-500 bg-indigo-500/10':'bg-[#121214] border-white/10'"><div class="flex justify-between items-start"><div><h4 class="font-bold text-white" x-text="prog.name"></h4><p class="text-[10px] text-indigo-400 mt-1" x-text="'Progression: '+prog.progressionDesc"></p></div><div x-show="prefs.program===key" class="w-6 h-6 bg-indigo-600 rounded-full f-c text-white"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" :d="icons.check" /></svg></div></div></div></template></div></div>
-            <div class="glass-card"><h3 class="lbl mb-4">Bar & Plates</h3><div class="space-y-4"><div><label class="text-sm text-slate-300 mb-2 block">Bar Weight</label><div class="grid grid-cols-4 gap-2"><template x-for="bar in UI.bars"><button @click="prefs.barWeight=bar.weight;savePrefs()" class="py-2 rounded-lg text-xs font-bold transition-all" :class="prefs.barWeight===bar.weight?'bg-indigo-600 text-white':'bg-[#222] text-slate-400 border border-white/10'"><div x-text="bar.weight"></div><div class="text-[9px] opacity-70" x-text="bar.name"></div></button></template></div></div><div class="f-cb"><span class="text-sm text-white">Microplates</span><button @click="prefs.microplates=!prefs.microplates;savePrefs()" class="w-12 h-7 rounded-full transition-colors relative" :class="prefs.microplates?'bg-indigo-600':'bg-[#333]'"><div class="absolute top-1 left-1 w-5 h-5 bg-white rounded-full transition-transform" :class="prefs.microplates?'translate-x-5':''"></div></button></div></div></div>
-            <div class="glass-card"><h3 class="lbl mb-4">Timers</h3><div class="space-y-4"><template x-for="t in UI.timers"><div><label class="text-sm text-slate-300 mb-2 block" x-text="t.l"></label><div class="flex items-center gap-3"><input type="range" x-model.number="prefs[t.k]" min="30" :max="t.m" step="15" class="flex-1 accent-indigo-500" @change="savePrefs()"><span class="mono-num w-16 text-right" x-text="fmt(prefs[t.k])"></span></div></div></template></div></div>
-            <div class="glass-card"><h3 class="lbl mb-4">Options</h3><div class="space-y-3"><template x-for="opt in UI.opts"><div class="f-cb"><span class="text-sm text-white" x-text="opt.l"></span><button @click="prefs[opt.k]=!prefs[opt.k];savePrefs();if(opt.k==='reduceMotion')applyRM()" class="w-12 h-7 rounded-full transition-colors relative" :class="prefs[opt.k]?'bg-indigo-600':'bg-[#333]'"><div class="absolute top-1 left-1 w-5 h-5 bg-white rounded-full transition-transform" :class="prefs[opt.k]?'translate-x-5':''"></div></button></div></template></div></div>
-            <div class="glass-card"><h3 class="lbl mb-4">Body Weight</h3><div class="h-40 relative"><canvas id="bodyWeightChart"></canvas></div><div class="mt-4 grid grid-cols-3 gap-3 text-center mono-num"><div class="glass-item"><div class="text-[10px] text-slate-500 uppercase font-sans">Current</div><span x-text="getBW('last')"></span></div><div class="glass-item"><div class="text-[10px] text-slate-500 uppercase font-sans">Min</div><span class="text-green-400" x-text="getBW('min')"></span></div><div class="glass-item"><div class="text-[10px] text-slate-500 uppercase font-sans">Max</div><span class="text-red-400" x-text="getBW('max')"></span></div></div></div>
-            <div class="glass-card"><h3 class="lbl mb-4">Training Maxes</h3><div class="space-y-3"><template x-for="lift in lifts()"><div class="flex items-center gap-3"><label class="text-sm text-slate-300 w-24" x-text="lift"></label><input type="number" x-model.number="tms[lift]" class="flex-1 bg-black border border-white/20 rounded-lg p-2 text-white font-bold mono text-center outline-none focus:border-indigo-500"><div class="text-[10px] text-slate-500 w-16 text-right"><span x-text="'1RM: '+Math.round(tms[lift]/0.9)"></span></div></div></template></div><button @click="save()" class="w-full mt-4 bg-green-600/20 text-green-400 font-bold py-3 rounded-xl border border-green-500/30">Save TMs</button></div>
-            <div class="glass-card"><h3 class="lbl mb-4">Achievements</h3><div class="grid grid-cols-4 gap-3"><template x-for="ach in ACHIEVEMENTS"><div class="text-center transition-opacity" :class="achievements.includes(ach.id)?'opacity-100':'opacity-30'"><div class="text-2xl mb-1" x-text="ach.icon"></div><div class="text-[9px] text-slate-400" x-text="ach.title"></div></div></template></div></div>
-            <div class="glass-card"><h3 class="lbl mb-4">Records</h3><div class="space-y-3"><template x-for="lift in lifts()"><div class="f-cb glass-item"><span class="text-sm text-slate-300" x-text="lift"></span><div class="text-right"><span class="mono-num" x-text="prs[lift]?.weight||'-'"></span><span class="text-slate-500 text-xs ml-1" x-text="prefs.weightUnit"></span><div class="text-[9px] text-slate-600" x-text="prs[lift]?.date||''"></div></div></div></template></div></div>
+            <div class="glass-card">
+                <h3 class="lbl mb-4">Unit</h3>
+                <div class="flex gap-3"><template x-for="u in ['lbs','kg']"><button @click="togUnit(u)"
+                            class="flex-1 py-3 rounded-xl font-bold text-sm transition-all"
+                            :class="prefs.weightUnit===u?'bg-indigo-600 text-white shadow-lg':'bg-[#222] text-slate-400 border border-white/10'"
+                            x-text="u==='lbs'?'Pounds (lbs)':'Kilograms (kg)'"></button></template></div>
+            </div>
+            <div class="glass-card">
+                <h3 class="lbl mb-4">Program</h3>
+                <div class="space-y-3"><template x-for="(prog, key) in PROGRAMS">
+                        <div @click="prefs.program=key;savePrefs();pIdx=0;idx=0"
+                            class="p-4 rounded-xl border border-white/10 cursor-pointer"
+                            :class="prefs.program===key?'border-indigo-500 bg-indigo-500/10':'bg-[#121214] border-white/10'">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <h4 class="font-bold text-white" x-text="prog.name"></h4>
+                                    <p class="text-[10px] text-indigo-400 mt-1"
+                                        x-text="'Progression: '+prog.progressionDesc"></p>
+                                </div>
+                                <div x-show="prefs.program===key"
+                                    class="w-6 h-6 bg-indigo-600 rounded-full f-c text-white"><svg class="w-4 h-4"
+                                        fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3"
+                                            :d="icons.check" />
+                                    </svg></div>
+                            </div>
+                        </div>
+                    </template></div>
+            </div>
+            <div class="glass-card">
+                <h3 class="lbl mb-4">Bar & Plates</h3>
+                <div class="space-y-4">
+                    <div><label class="text-sm text-slate-300 mb-2 block">Bar Weight</label>
+                        <div class="grid grid-cols-4 gap-2"><template x-for="bar in UI.bars"><button
+                                    @click="prefs.barWeight=bar.weight;savePrefs()"
+                                    class="py-2 rounded-lg text-xs font-bold transition-all"
+                                    :class="prefs.barWeight===bar.weight?'bg-indigo-600 text-white':'bg-[#222] text-slate-400 border border-white/10'">
+                                    <div x-text="bar.weight"></div>
+                                    <div class="text-[9px] opacity-70" x-text="bar.name"></div>
+                                </button></template></div>
+                    </div>
+                    <div class="f-cb"><span class="text-sm text-white">Microplates</span><button
+                            @click="prefs.microplates=!prefs.microplates;savePrefs()"
+                            class="w-12 h-7 rounded-full transition-colors relative"
+                            :class="prefs.microplates?'bg-indigo-600':'bg-[#333]'">
+                            <div class="absolute top-1 left-1 w-5 h-5 bg-white rounded-full transition-transform"
+                                :class="prefs.microplates?'translate-x-5':''"></div>
+                        </button></div>
+                </div>
+            </div>
+            <div class="glass-card">
+                <h3 class="lbl mb-4">Timers</h3>
+                <div class="space-y-4"><template x-for="t in UI.timers">
+                        <div><label class="text-sm text-slate-300 mb-2 block" x-text="t.l"></label>
+                            <div class="flex items-center gap-3"><input type="range" x-model.number="prefs[t.k]"
+                                    min="30" :max="t.m" step="15" class="flex-1 accent-indigo-500"
+                                    @change="savePrefs()"><span class="mono-num w-16 text-right"
+                                    x-text="fmt(prefs[t.k])"></span></div>
+                        </div>
+                    </template></div>
+            </div>
+            <div class="glass-card">
+                <h3 class="lbl mb-4">Options</h3>
+                <div class="space-y-3"><template x-for="opt in UI.opts">
+                        <div class="f-cb"><span class="text-sm text-white" x-text="opt.l"></span><button
+                                @click="prefs[opt.k]=!prefs[opt.k];savePrefs();if(opt.k==='reduceMotion')applyRM()"
+                                class="w-12 h-7 rounded-full transition-colors relative"
+                                :class="prefs[opt.k]?'bg-indigo-600':'bg-[#333]'">
+                                <div class="absolute top-1 left-1 w-5 h-5 bg-white rounded-full transition-transform"
+                                    :class="prefs[opt.k]?'translate-x-5':''"></div>
+                            </button></div>
+                    </template></div>
+            </div>
+            <div class="glass-card">
+                <h3 class="lbl mb-4">Body Weight</h3>
+                <div class="h-40 relative"><canvas id="bodyWeightChart"></canvas></div>
+                <div class="mt-4 grid grid-cols-3 gap-3 text-center mono-num">
+                    <div class="glass-item">
+                        <div class="text-[10px] text-slate-500 uppercase font-sans">Current</div><span
+                            x-text="getBW('last')"></span>
+                    </div>
+                    <div class="glass-item">
+                        <div class="text-[10px] text-slate-500 uppercase font-sans">Min</div><span
+                            class="text-green-400" x-text="getBW('min')"></span>
+                    </div>
+                    <div class="glass-item">
+                        <div class="text-[10px] text-slate-500 uppercase font-sans">Max</div><span class="text-red-400"
+                            x-text="getBW('max')"></span>
+                    </div>
+                </div>
+            </div>
+            <div class="glass-card">
+                <h3 class="lbl mb-4">Training Maxes</h3>
+                <div class="space-y-3"><template x-for="lift in lifts()">
+                        <div class="flex items-center gap-3"><label class="text-sm text-slate-300 w-24"
+                                x-text="lift"></label><input type="number" x-model.number="tms[lift]"
+                                class="flex-1 bg-black border border-white/20 rounded-lg p-2 text-white font-bold mono text-center outline-none focus:border-indigo-500">
+                            <div class="text-[10px] text-slate-500 w-16 text-right"><span
+                                    x-text="'1RM: '+Math.round(tms[lift]/0.9)"></span></div>
+                        </div>
+                    </template></div><button @click="save()"
+                    class="w-full mt-4 bg-green-600/20 text-green-400 font-bold py-3 rounded-xl border border-green-500/30">Save
+                    TMs</button>
+            </div>
+            <div class="glass-card">
+                <h3 class="lbl mb-4">Achievements</h3>
+                <div class="grid grid-cols-4 gap-3"><template x-for="ach in ACHIEVEMENTS">
+                        <div class="text-center transition-opacity"
+                            :class="achievements.includes(ach.id)?'opacity-100':'opacity-30'">
+                            <div class="text-2xl mb-1" x-text="ach.icon"></div>
+                            <div class="text-[9px] text-slate-400" x-text="ach.title"></div>
+                        </div>
+                    </template></div>
+            </div>
+            <div class="glass-card">
+                <h3 class="lbl mb-4">Records</h3>
+                <div class="space-y-3"><template x-for="lift in lifts()">
+                        <div class="f-cb glass-item"><span class="text-sm text-slate-300" x-text="lift"></span>
+                            <div class="text-right"><span class="mono-num" x-text="prs[lift]?.weight||'-'"></span><span
+                                    class="text-slate-500 text-xs ml-1" x-text="prefs.weightUnit"></span>
+                                <div class="text-[9px] text-slate-600" x-text="prs[lift]?.date||''"></div>
+                            </div>
+                        </div>
+                    </template></div>
+            </div>
         </div>
     </div>
 
     <!-- SETUP -->
-    <div x-show="view==='setup'" x-transition.opacity class="fixed inset-0 z-[100] bg-black f-col justify-center p-8 space-y-6 overflow-y-auto">
-        <div class="text-center pt-8"><h1 class="text-4xl font-extrabold text-white tracking-tighter mb-2">LIFT <span class="text-indigo-500">ULTIMATE</span></h1><p class="text-slate-500">Configure your training</p></div>
-        <div class="glass-card"><div class="flex gap-3"><template x-for="u in ['lbs','kg']"><button @click="prefs.weightUnit=u" class="flex-1 py-3 rounded-xl font-bold text-sm transition-all" :class="prefs.weightUnit===u?'bg-indigo-600 text-white':'bg-[#333] text-slate-400'" x-text="u"></button></template></div></div>
-        <div class="glass-card max-h-48 overflow-y-auto no-scrollbar space-y-2"><template x-for="(prog, key) in PROGRAMS"><button @click="prefs.program=key" class="w-full text-left p-3 rounded-xl border transition-all" :class="prefs.program===key?'border-indigo-500 bg-indigo-500/10':'border-white/10 bg-black/30'"><div class="font-bold text-white text-sm" x-text="prog.name"></div><div class="text-xs text-slate-400" x-text="prog.daysPerWeek+' days • '+prog.progressionDesc"></div></button></template></div>
-        <div class="space-y-3"><p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">1 Rep Maxes</p><template x-for="lift in lifts()"><div class="relative"><input type="number" x-model.number="setup[lift]" class="inp-lg bg-[#1A1A1E] text-left pl-4" :placeholder="lift"><span class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 text-sm" x-text="prefs.weightUnit"></span></div></template></div>
+    <div x-show="view==='setup'" x-transition.opacity
+        class="fixed inset-0 z-[100] bg-black f-col justify-center p-8 space-y-6 overflow-y-auto">
+        <div class="text-center pt-8">
+            <h1 class="text-4xl font-extrabold text-white tracking-tighter mb-2">LIFT <span
+                    class="text-indigo-500">ULTIMATE</span></h1>
+            <p class="text-slate-500">Configure your training</p>
+        </div>
+        <div class="glass-card">
+            <div class="flex gap-3"><template x-for="u in ['lbs','kg']"><button @click="prefs.weightUnit=u"
+                        class="flex-1 py-3 rounded-xl font-bold text-sm transition-all"
+                        :class="prefs.weightUnit===u?'bg-indigo-600 text-white':'bg-[#333] text-slate-400'"
+                        x-text="u"></button></template></div>
+        </div>
+        <div class="glass-card max-h-48 overflow-y-auto no-scrollbar space-y-2"><template
+                x-for="(prog, key) in PROGRAMS"><button @click="prefs.program=key"
+                    class="w-full text-left p-3 rounded-xl border transition-all"
+                    :class="prefs.program===key?'border-indigo-500 bg-indigo-500/10':'border-white/10 bg-black/30'">
+                    <div class="font-bold text-white text-sm" x-text="prog.name"></div>
+                    <div class="text-xs text-slate-400" x-text="prog.daysPerWeek+' days • '+prog.progressionDesc"></div>
+                </button></template></div>
+        <div class="space-y-3">
+            <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">1 Rep Maxes</p><template
+                x-for="lift in lifts()">
+                <div class="relative"><input type="number" x-model.number="setup[lift]"
+                        class="inp-lg bg-[#1A1A1E] text-left pl-4" :placeholder="lift"><span
+                        class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 text-sm"
+                        x-text="prefs.weightUnit"></span></div>
+            </template>
+        </div>
         <button @click="finSetup()" class="btn-p">Start Program</button>
     </div>
 
     <!-- DASHBOARD -->
     <div x-show="view==='dashboard'" class="h-full overflow-y-auto pb-32 no-scrollbar">
         <header class="pt-14 pb-4 px-6 f-cb bg-gradient-to-b from-black to-transparent sticky top-0 z-20">
-            <div><p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-0.5" x-text="PROGRAMS[prefs.program].name"></p><h2 class="text-2xl font-extrabold text-white">Week <span class="text-indigo-500" x-text="week"></span></h2></div>
-            <div class="flex items-center gap-3"><div class="flex items-center gap-2 bg-[#1A1A1E] px-3 py-1.5 rounded-full border border-white/5"><span class="text-lg">🔥</span><span class="text-sm font-bold text-white mono" x-text="streak">0</span></div><div x-show="Object.keys(prs).length>0" class="flex items-center gap-1 bg-yellow-500/10 px-2 py-1 rounded-full border border-yellow-500/20"><span class="text-sm">🏆</span><span class="text-xs font-bold text-yellow-400" x-text="Object.keys(prs).length"></span></div></div>
+            <div>
+                <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-0.5"
+                    x-text="PROGRAMS[prefs.program].name"></p>
+                <h2 class="text-2xl font-extrabold text-white">Week <span class="text-indigo-500" x-text="week"></span>
+                </h2>
+            </div>
+            <div class="flex items-center gap-3">
+                <div class="flex items-center gap-2 bg-[#1A1A1E] px-3 py-1.5 rounded-full border border-white/5"><span
+                        class="text-lg">🔥</span><span class="text-sm font-bold text-white mono"
+                        x-text="streak">0</span></div>
+                <div x-show="Object.keys(prs).length>0"
+                    class="flex items-center gap-1 bg-yellow-500/10 px-2 py-1 rounded-full border border-yellow-500/20">
+                    <span class="text-sm">🏆</span><span class="text-xs font-bold text-yellow-400"
+                        x-text="Object.keys(prs).length"></span></div>
+            </div>
         </header>
         <div class="px-6 space-y-6">
-            <div x-show="daysOff()>=7&&prefs.autoDeload" class="rounded-2xl p-4 flex items-center gap-3 bg-gradient-to-r from-orange-500/10 to-yellow-500/5 border border-orange-500/20"><div class="w-10 h-10 bg-orange-500/20 rounded-full f-c flex-shrink-0"><svg class="w-5 h-5 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="icons.warn2" /></svg></div><div class="flex-1"><p class="text-sm font-bold text-orange-400">Welcome Back!</p><p class="text-xs text-slate-400">You've been away <span x-text="daysOff()"></span> days. Consider a deload.</p></div></div>
-            <div class="glass-card" x-show="history.length>0"><h3 class="lbl mb-3">Recovery Status</h3><div class="grid grid-cols-2 gap-3"><template x-for="m in cache.recovery"><div class="glass-item"><div class="f-cb mb-2"><span class="text-xs text-slate-400" x-text="m.name"></span><span class="text-[10px] font-bold" :class="m.status==='Ready'?'text-green-400':m.status==='Recovering'?'text-yellow-400':'text-red-400'" x-text="m.status"></span></div><div class="h-1.5 bg-black/50 rounded-full overflow-hidden"><div class="h-full rounded-full transition-[width] duration-700 ease-out" :class="m.recovery>=100?'bg-green-500':m.recovery>=50?'bg-yellow-500':'bg-red-500'" :style="'width: '+Math.min(100,m.recovery)+'%'"></div></div></div></template></div></div>
-            <div class="relative overflow-hidden rounded-[2rem] bg-[#121214] border border-white/10 p-6 shadow-2xl shadow-black"><div class="absolute -right-10 -top-10 w-40 h-40 bg-indigo-500/10 blur-[50px] rounded-full"></div><div class="relative z-10"><div class="f-cb mb-4"><button @click="chgDay(-1)" class="w-8 h-8 rounded-full bg-white/5 f-c text-slate-400 active:scale-95 transition hover:bg-white/10"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="icons.prev" /></svg></button><div class="text-center"><div class="f-c gap-2"><div class="inline-block text-indigo-400 text-[10px] font-bold uppercase tracking-widest">Day <span x-text="pIdx+1"></span><span x-show="prefs.program==='531'&&isDeload()" class="ml-1 text-yellow-500">DELOAD</span></div><div x-show="pIdx===idx" class="px-1.5 py-0.5 rounded bg-indigo-600 text-[9px] font-bold text-white">Next</div></div></div><button @click="chgDay(1)" class="w-8 h-8 rounded-full bg-white/5 f-c text-slate-400 active:scale-95 transition hover:bg-white/10"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="icons.next" /></svg></button></div><div @click="chkDeload()" class="cursor-pointer active:scale-[0.98] transition-transform group"><h3 class="text-3xl font-extrabold text-white mb-1" x-text="getWk().title"></h3><p class="text-slate-400 text-sm font-medium" x-text="getWk().focus"></p><div class="mt-3 flex items-center gap-4 text-xs text-slate-500"><span>⏱️ ~<span x-text="estDur()"></span> min</span><span>📊 <span x-text="getWk().t1"></span> + <span x-text="getWk().t2"></span></span></div><div class="mt-6 f-cb"><div class="flex items-center gap-2 text-sm font-bold text-white"><span class="bg-indigo-600 rounded-full w-8 h-8 f-c pulse-glow"><svg class="w-4 h-4 ml-0.5" fill="currentColor" viewBox="0 0 24 24"><path :d="icons.play" /></svg></span><span class="ml-1">Start Workout</span></div><button @click.stop="pIdx=idx" x-show="pIdx!==idx" class="text-[10px] font-bold text-slate-500 bg-white/5 px-2 py-1 rounded-full border border-white/5 hover:bg-white/10">Jump to Scheduled</button></div></div></div></div>
-            <div class="grid grid-cols-2 gap-3"><button @click="repLast()" x-show="prevSim()" class="glass-card text-left active:scale-95 transition"><div class="text-[10px] font-bold text-slate-500 uppercase">Repeat Last</div><div class="text-sm font-bold text-white mt-1" x-text="prevSim()?.title||''"></div><div class="text-xs text-slate-500" x-text="prevSim()?.date||''"></div></button><button @click="startCust()" class="glass-card text-left active:scale-95 transition"><div class="text-[10px] font-bold text-slate-500 uppercase">Custom</div><div class="text-sm font-bold text-white mt-1">Free Workout</div><div class="text-xs text-slate-500">Build your own</div></button></div>
-            <div class="grid grid-cols-2 gap-3"><template x-for="lift in lifts()"><div class="glass-card relative overflow-hidden"><div x-show="prs[lift]" class="absolute top-2 right-2"><span class="text-xs">🏆</span></div><div class="text-[10px] font-bold text-slate-500 uppercase tracking-widest" x-text="lift"></div><div class="flex items-end gap-1 mt-1"><span class="text-2xl font-bold text-white mono" x-text="Math.round(tms[lift])"></span><span class="text-[10px] font-bold text-slate-600 mb-1.5">TM</span></div><div class="text-[10px] text-slate-600 mt-1">Est 1RM: <span x-text="Math.round(tms[lift]/0.9)"></span></div><div x-show="prefs.program==='gzclp'" class="text-[9px] text-indigo-400 mt-1">Stage: <span x-text="state[lift]?.stage||1"></span></div></div></template></div>
-            <div class="glass-card"><div class="f-cb mb-4"><h3 class="text-xs font-bold text-slate-500 uppercase tracking-widest">Est 1RM History</h3><select x-model="chartLift" @change="$nextTick(()=>draw())" class="bg-black/50 border border-white/10 text-[10px] font-bold text-white rounded px-2 py-1 outline-none"><template x-for="lift in lifts()"><option :value="lift" x-text="lift"></option></template></select></div><div class="h-40 relative"><canvas id="mainChart"></canvas></div></div>
-            <div class="glass-card"><h3 class="lbl mb-4">Weekly Volume</h3><div class="h-32 relative"><canvas id="volumeChart"></canvas></div></div>
-            <div class="grid grid-cols-4 gap-3"><div class="glass-item text-center"><div class="text-xl font-bold text-white mono" x-text="history.length"></div><div class="text-[9px] text-slate-500 uppercase">Workouts</div></div><div class="glass-item text-center"><div class="text-xl font-bold text-white mono" x-text="fmtVol(history.reduce((a,b)=>a+(b.totalVolume||0),0))"></div><div class="text-[9px] text-slate-500 uppercase">Vol</div></div><div class="glass-item text-center"><div class="text-xl font-bold text-white mono" x-text="avgDur()"></div><div class="text-[9px] text-slate-500 uppercase">Avg Min</div></div><div class="glass-item text-center"><div class="text-xl font-bold text-white mono" x-text="history.filter(h=>h.pr).length"></div><div class="text-[9px] text-slate-500 uppercase">PRs</div></div></div>
+            <div x-show="daysOff()>=7&&prefs.autoDeload"
+                class="rounded-2xl p-4 flex items-center gap-3 bg-gradient-to-r from-orange-500/10 to-yellow-500/5 border border-orange-500/20">
+                <div class="w-10 h-10 bg-orange-500/20 rounded-full f-c flex-shrink-0"><svg
+                        class="w-5 h-5 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="icons.warn2" />
+                    </svg></div>
+                <div class="flex-1">
+                    <p class="text-sm font-bold text-orange-400">Welcome Back!</p>
+                    <p class="text-xs text-slate-400">You've been away <span x-text="daysOff()"></span> days. Consider a
+                        deload.</p>
+                </div>
+            </div>
+            <div class="glass-card" x-show="history.length>0">
+                <h3 class="lbl mb-3">Recovery Status</h3>
+                <div class="grid grid-cols-2 gap-3"><template x-for="m in cache.recovery">
+                        <div class="glass-item">
+                            <div class="f-cb mb-2"><span class="text-xs text-slate-400" x-text="m.name"></span><span
+                                    class="text-[10px] font-bold"
+                                    :class="m.status==='Ready'?'text-green-400':m.status==='Recovering'?'text-yellow-400':'text-red-400'"
+                                    x-text="m.status"></span></div>
+                            <div class="h-1.5 bg-black/50 rounded-full overflow-hidden">
+                                <div class="h-full rounded-full transition-[width] duration-700 ease-out"
+                                    :class="m.recovery>=100?'bg-green-500':m.recovery>=50?'bg-yellow-500':'bg-red-500'"
+                                    :style="'width: '+Math.min(100,m.recovery)+'%'"></div>
+                            </div>
+                        </div>
+                    </template></div>
+            </div>
+            <div
+                class="relative overflow-hidden rounded-[2rem] bg-[#121214] border border-white/10 p-6 shadow-2xl shadow-black">
+                <div class="absolute -right-10 -top-10 w-40 h-40 bg-indigo-500/10 blur-[50px] rounded-full"></div>
+                <div class="relative z-10">
+                    <div class="f-cb mb-4"><button @click="chgDay(-1)"
+                            class="w-8 h-8 rounded-full bg-white/5 f-c text-slate-400 active:scale-95 transition hover:bg-white/10"><svg
+                                class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="icons.prev" />
+                            </svg></button>
+                        <div class="text-center">
+                            <div class="f-c gap-2">
+                                <div
+                                    class="inline-block text-indigo-400 text-[10px] font-bold uppercase tracking-widest">
+                                    Day <span x-text="pIdx+1"></span><span x-show="prefs.program==='531'&&isDeload()"
+                                        class="ml-1 text-yellow-500">DELOAD</span></div>
+                                <div x-show="pIdx===idx"
+                                    class="px-1.5 py-0.5 rounded bg-indigo-600 text-[9px] font-bold text-white">Next
+                                </div>
+                            </div>
+                        </div><button @click="chgDay(1)"
+                            class="w-8 h-8 rounded-full bg-white/5 f-c text-slate-400 active:scale-95 transition hover:bg-white/10"><svg
+                                class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="icons.next" />
+                            </svg></button>
+                    </div>
+                    <div @click="chkDeload()" class="cursor-pointer active:scale-[0.98] transition-transform group">
+                        <h3 class="text-3xl font-extrabold text-white mb-1" x-text="getWk().title"></h3>
+                        <p class="text-slate-400 text-sm font-medium" x-text="getWk().focus"></p>
+                        <div class="mt-3 flex items-center gap-4 text-xs text-slate-500"><span>⏱️ ~<span
+                                    x-text="estDur()"></span> min</span><span>📊 <span x-text="getWk().t1"></span> +
+                                <span x-text="getWk().t2"></span></span></div>
+                        <div class="mt-6 f-cb">
+                            <div class="flex items-center gap-2 text-sm font-bold text-white"><span
+                                    class="bg-indigo-600 rounded-full w-8 h-8 f-c pulse-glow"><svg
+                                        class="w-4 h-4 ml-0.5" fill="currentColor" viewBox="0 0 24 24">
+                                        <path :d="icons.play" />
+                                    </svg></span><span class="ml-1">Start Workout</span></div><button
+                                @click.stop="pIdx=idx" x-show="pIdx!==idx"
+                                class="text-[10px] font-bold text-slate-500 bg-white/5 px-2 py-1 rounded-full border border-white/5 hover:bg-white/10">Jump
+                                to Scheduled</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="grid grid-cols-2 gap-3"><button @click="repLast()" x-show="prevSim()"
+                    class="glass-card text-left active:scale-95 transition">
+                    <div class="text-[10px] font-bold text-slate-500 uppercase">Repeat Last</div>
+                    <div class="text-sm font-bold text-white mt-1" x-text="prevSim()?.title||''"></div>
+                    <div class="text-xs text-slate-500" x-text="prevSim()?.date||''"></div>
+                </button><button @click="startCust()" class="glass-card text-left active:scale-95 transition">
+                    <div class="text-[10px] font-bold text-slate-500 uppercase">Custom</div>
+                    <div class="text-sm font-bold text-white mt-1">Free Workout</div>
+                    <div class="text-xs text-slate-500">Build your own</div>
+                </button></div>
+            <div class="grid grid-cols-2 gap-3"><template x-for="lift in lifts()">
+                    <div class="glass-card relative overflow-hidden">
+                        <div x-show="prs[lift]" class="absolute top-2 right-2"><span class="text-xs">🏆</span></div>
+                        <div class="text-[10px] font-bold text-slate-500 uppercase tracking-widest" x-text="lift"></div>
+                        <div class="flex items-end gap-1 mt-1"><span class="text-2xl font-bold text-white mono"
+                                x-text="Math.round(tms[lift])"></span><span
+                                class="text-[10px] font-bold text-slate-600 mb-1.5">TM</span></div>
+                        <div class="text-[10px] text-slate-600 mt-1">Est 1RM: <span
+                                x-text="Math.round(tms[lift]/0.9)"></span></div>
+                        <div x-show="prefs.program==='gzclp'" class="text-[9px] text-indigo-400 mt-1">Stage: <span
+                                x-text="state[lift]?.stage||1"></span></div>
+                    </div>
+                </template></div>
+            <div class="glass-card">
+                <div class="f-cb mb-4">
+                    <h3 class="text-xs font-bold text-slate-500 uppercase tracking-widest">Est 1RM History</h3><select
+                        x-model="chartLift" @change="$nextTick(()=>draw())"
+                        class="bg-black/50 border border-white/10 text-[10px] font-bold text-white rounded px-2 py-1 outline-none"><template
+                            x-for="lift in lifts()">
+                            <option :value="lift" x-text="lift"></option>
+                        </template></select>
+                </div>
+                <div class="h-40 relative"><canvas id="mainChart"></canvas></div>
+            </div>
+            <div class="glass-card">
+                <h3 class="lbl mb-4">Weekly Volume</h3>
+                <div class="h-32 relative"><canvas id="volumeChart"></canvas></div>
+            </div>
+            <div class="grid grid-cols-4 gap-3">
+                <div class="glass-item text-center">
+                    <div class="text-xl font-bold text-white mono" x-text="history.length"></div>
+                    <div class="text-[9px] text-slate-500 uppercase">Workouts</div>
+                </div>
+                <div class="glass-item text-center">
+                    <div class="text-xl font-bold text-white mono"
+                        x-text="fmtVol(history.reduce((a,b)=>a+(b.totalVolume||0),0))"></div>
+                    <div class="text-[9px] text-slate-500 uppercase">Vol</div>
+                </div>
+                <div class="glass-item text-center">
+                    <div class="text-xl font-bold text-white mono" x-text="avgDur()"></div>
+                    <div class="text-[9px] text-slate-500 uppercase">Avg Min</div>
+                </div>
+                <div class="glass-item text-center">
+                    <div class="text-xl font-bold text-white mono" x-text="history.filter(h=>h.pr).length"></div>
+                    <div class="text-[9px] text-slate-500 uppercase">PRs</div>
+                </div>
+            </div>
         </div>
     </div>
 
     <!-- CALENDAR -->
     <div x-show="view==='calendar'" class="h-full overflow-y-auto pb-32 no-scrollbar" x-cloak>
-        <header class="pt-14 pb-6 px-6 bg-gradient-to-b from-black to-transparent sticky top-0 z-20"><h2 class="text-3xl font-extrabold text-white">History</h2></header>
+        <header class="pt-14 pb-6 px-6 bg-gradient-to-b from-black to-transparent sticky top-0 z-20">
+            <h2 class="text-3xl font-extrabold text-white">History</h2>
+        </header>
         <div class="px-6 space-y-8">
-            <div class="glass-panel"><div class="f-cb mb-4"><h3 class="font-bold text-white" x-text="cal.monthName"></h3><div class="f-g2"><button @click="cal.offset--;calBuild()" class="p-1 hover:text-white text-slate-500"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="icons.prev" /></svg></button><button @click="cal.offset++;calBuild()" class="p-1 hover:text-white text-slate-500"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="icons.next" /></svg></button></div></div><div class="cal-grid mb-2 text-center"><template x-for="d in ['S','M','T','W','T','F','S']"><span class="text-[10px] font-bold text-slate-600" x-text="d"></span></template></div><div class="cal-grid"><template x-for="day in cal.days"><div @click="day.hasLog&&showDay(day)" :class="['cal-day',day.isToday?'cal-today':'',day.hasLog?'cal-active cursor-pointer':'']" x-text="day.num"></div></template></div></div>
-            <div class="flex gap-2 overflow-x-auto no-scrollbar py-1"><button @click="historyFilter='all'" class="flex-shrink-0 px-4 py-2 rounded-full text-xs font-bold transition" :class="historyFilter==='all'?'bg-indigo-600 text-white':'bg-[#222] text-slate-400'">All</button><template x-for="lift in lifts()"><button @click="historyFilter=lift" class="flex-shrink-0 px-4 py-2 rounded-full text-xs font-bold transition" :class="historyFilter===lift?'bg-indigo-600 text-white':'bg-[#222] text-slate-400'" x-text="lift"></button></template></div>
-            <div><h3 class="lbl mb-4">Workout Log</h3><div class="space-y-3"><template x-for="log in histFilt()"><div @click="openLog(log)" class="glass-card cursor-pointer active:scale-[0.98] transition"><div class="flex justify-between items-start mb-3"><div><div class="flex items-center gap-2"><div class="text-sm font-bold text-white" x-text="log.title"></div><div x-show="log.pr" class="bg-yellow-400 text-black px-1.5 py-0.5 rounded text-[9px] font-bold">PR</div></div><div class="text-xs text-slate-500" x-text="log.date"></div></div><div class="flex items-center gap-2"><div x-show="log.rating" class="text-xs" x-text="'⭐'.repeat(log.rating)"></div><svg class="w-4 h-4 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="icons.next" /></svg></div></div><div class="flex gap-3 text-[10px]"><span class="text-slate-500">⏱️ <span class="text-slate-300" x-text="log.duration + ' min'"></span></span><span class="text-slate-500">📊 <span class="text-slate-300" x-text="fmtVolS(log.totalVolume)"></span></span><span x-show="log.totalSets" class="text-slate-500">Sets: <span class="text-slate-300" x-text="log.completedSets + '/' + log.totalSets"></span></span><span x-show="log.increase" class="text-green-400">TM +<span x-text="log.increase"></span></span></div></div></template><div x-show="!history.length" class="text-center text-slate-500 text-sm py-8">No workouts yet. Start your first session!</div></div></div>
-            <div class="flex gap-3"><button @click="export()" class="flex-1 bg-[#222] text-xs font-bold py-3 rounded-xl border border-white/10 hover:bg-white/5 transition">Export</button><button @click="$refs.import.click()" class="flex-1 bg-[#222] text-xs font-bold py-3 rounded-xl border border-white/10 hover:bg-white/5 transition">Import</button><input type="file" x-ref="import" class="hidden" @change="import($event)"><button @click="reset()" class="flex-1 bg-red-900/10 text-xs font-bold py-3 rounded-xl border border-red-500/20 text-red-400 hover:bg-red-900/20 transition">Reset</button></div>
+            <div class="glass-panel">
+                <div class="f-cb mb-4">
+                    <h3 class="font-bold text-white" x-text="cal.monthName"></h3>
+                    <div class="f-g2"><button @click="cal.offset--;calBuild()"
+                            class="p-1 hover:text-white text-slate-500"><svg class="w-5 h-5" fill="none"
+                                stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="icons.prev" />
+                            </svg></button><button @click="cal.offset++;calBuild()"
+                            class="p-1 hover:text-white text-slate-500"><svg class="w-5 h-5" fill="none"
+                                stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="icons.next" />
+                            </svg></button></div>
+                </div>
+                <div class="cal-grid mb-2 text-center"><template x-for="d in ['S','M','T','W','T','F','S']"><span
+                            class="text-[10px] font-bold text-slate-600" x-text="d"></span></template></div>
+                <div class="cal-grid"><template x-for="day in cal.days">
+                        <div @click="day.hasLog&&showDay(day)"
+                            :class="['cal-day',day.isToday?'cal-today':'',day.hasLog?'cal-active cursor-pointer':'']"
+                            x-text="day.num"></div>
+                    </template></div>
+            </div>
+            <div class="flex gap-2 overflow-x-auto no-scrollbar py-1"><button @click="historyFilter='all'"
+                    class="flex-shrink-0 px-4 py-2 rounded-full text-xs font-bold transition"
+                    :class="historyFilter==='all'?'bg-indigo-600 text-white':'bg-[#222] text-slate-400'">All</button><template
+                    x-for="lift in lifts()"><button @click="historyFilter=lift"
+                        class="flex-shrink-0 px-4 py-2 rounded-full text-xs font-bold transition"
+                        :class="historyFilter===lift?'bg-indigo-600 text-white':'bg-[#222] text-slate-400'"
+                        x-text="lift"></button></template></div>
+            <div>
+                <h3 class="lbl mb-4">Workout Log</h3>
+                <div class="space-y-3"><template x-for="log in histFilt()">
+                        <div @click="openLog(log)" class="glass-card cursor-pointer active:scale-[0.98] transition">
+                            <div class="flex justify-between items-start mb-3">
+                                <div>
+                                    <div class="flex items-center gap-2">
+                                        <div class="text-sm font-bold text-white" x-text="log.title"></div>
+                                        <div x-show="log.pr"
+                                            class="bg-yellow-400 text-black px-1.5 py-0.5 rounded text-[9px] font-bold">
+                                            PR</div>
+                                    </div>
+                                    <div class="text-xs text-slate-500" x-text="log.date"></div>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <div x-show="log.rating" class="text-xs" x-text="'⭐'.repeat(log.rating)"></div><svg
+                                        class="w-4 h-4 text-slate-600" fill="none" stroke="currentColor"
+                                        viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            :d="icons.next" />
+                                    </svg>
+                                </div>
+                            </div>
+                            <div class="flex gap-3 text-[10px]"><span class="text-slate-500">⏱️ <span
+                                        class="text-slate-300" x-text="log.duration + ' min'"></span></span><span
+                                    class="text-slate-500">📊 <span class="text-slate-300"
+                                        x-text="fmtVolS(log.totalVolume)"></span></span><span x-show="log.totalSets"
+                                    class="text-slate-500">Sets: <span class="text-slate-300"
+                                        x-text="log.completedSets + '/' + log.totalSets"></span></span><span
+                                    x-show="log.increase" class="text-green-400">TM +<span
+                                        x-text="log.increase"></span></span></div>
+                        </div>
+                    </template>
+                    <div x-show="!history.length" class="text-center text-slate-500 text-sm py-8">No workouts yet. Start
+                        your first session!</div>
+                </div>
+            </div>
+            <div class="flex gap-3"><button @click="export()"
+                    class="flex-1 bg-[#222] text-xs font-bold py-3 rounded-xl border border-white/10 hover:bg-white/5 transition">Export</button><button
+                    @click="$refs.import.click()"
+                    class="flex-1 bg-[#222] text-xs font-bold py-3 rounded-xl border border-white/10 hover:bg-white/5 transition">Import</button><input
+                    type="file" x-ref="import" class="hidden" @change="import($event)"><button @click="reset()"
+                    class="flex-1 bg-red-900/10 text-xs font-bold py-3 rounded-xl border border-red-500/20 text-red-400 hover:bg-red-900/20 transition">Reset</button>
+            </div>
         </div>
     </div>
 
     <!-- WORKOUT -->
     <div x-show="view==='workout'" class="fixed inset-0 z-50 bg-black overflow-y-auto" x-cloak>
-        <div class="sticky top-0 bg-black/90 backdrop-blur-md border-b border-white/5 p-4 f-cb z-30"><button @click="cancel()" class="text-slate-400 text-sm font-bold">Cancel</button><div class="flex gap-4"><button @click="toggleZen()" class="text-indigo-400 hover:text-white transition"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="icons.expand" /></svg></button><button @click="activeModal='info'" class="text-slate-500 hover:text-white transition"><svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="icons.info" /></svg></button></div><button @click="finish()" class="bg-indigo-600 px-4 py-1.5 rounded-full text-xs font-bold text-white shadow-lg">Finish</button></div>
-        <div class="bg-[#0A0A0A] border-b border-white/5 py-2 flex justify-center gap-4 text-xs text-slate-400 mono"><span x-text="sessionTimerStr"></span><span class="text-slate-600">|</span><span x-text="sessProg()+'% complete'"></span></div>
-        <div x-show="timer.active" x-transition class="sticky top-24 z-20 mx-auto max-w-[280px] bg-[#1A1A1E] border border-white/10 rounded-full shadow-2xl f-cb p-1 pr-4 overflow-hidden mt-2">
-            <div class="absolute inset-0 bg-indigo-600/20 origin-left transition-transform duration-1000 linear" :style="`transform: scaleX(${timer.pct})`"></div>
-            <div class="flex items-center gap-2 relative z-10"><button @click="timerAdj(-15)" class="w-8 h-8 rounded-full text-slate-400 hover:bg-white/5">-</button><span class="mono-num w-14 text-center text-lg" x-text="fmt(timer.rem)"></span><button @click="timerAdj(15)" class="w-8 h-8 rounded-full text-slate-400 hover:bg-white/5">+</button></div>
-            <div class="relative z-10 f-col items-end"><span class="text-[9px] font-bold text-indigo-400 uppercase" x-text="timer.label||'REST'"></span><button @click="timer.active=false" class="text-[9px] font-bold text-red-400">SKIP</button></div>
+        <div class="sticky top-0 bg-black/90 backdrop-blur-md border-b border-white/5 p-4 f-cb z-30"><button
+                @click="cancel()" class="text-slate-400 text-sm font-bold">Cancel</button>
+            <div class="flex gap-4"><button @click="toggleZen()"
+                    class="text-indigo-400 hover:text-white transition"><svg class="w-5 h-5" fill="none"
+                        stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="icons.expand" />
+                    </svg></button><button @click="activeModal='info'"
+                    class="text-slate-500 hover:text-white transition"><svg class="w-5 h-5" fill="none"
+                        viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="icons.info" />
+                    </svg></button></div><button @click="finish()"
+                class="bg-indigo-600 px-4 py-1.5 rounded-full text-xs font-bold text-white shadow-lg">Finish</button>
+        </div>
+        <div class="bg-[#0A0A0A] border-b border-white/5 py-2 flex justify-center gap-4 text-xs text-slate-400 mono">
+            <span x-text="sessionTimerStr"></span><span class="text-slate-600">|</span><span
+                x-text="sessProg()+'% complete'"></span></div>
+        <div x-show="timer.active" x-transition
+            class="sticky top-24 z-20 mx-auto max-w-[280px] bg-[#1A1A1E] border border-white/10 rounded-full shadow-2xl f-cb p-1 pr-4 overflow-hidden mt-2">
+            <div class="absolute inset-0 bg-indigo-600/20 origin-left transition-transform duration-1000 linear"
+                :style="`transform: scaleX(${timer.pct})`"></div>
+            <div class="flex items-center gap-2 relative z-10"><button @click="timerAdj(-15)"
+                    class="w-8 h-8 rounded-full text-slate-400 hover:bg-white/5">-</button><span
+                    class="mono-num w-14 text-center text-lg" x-text="fmt(timer.rem)"></span><button
+                    @click="timerAdj(15)" class="w-8 h-8 rounded-full text-slate-400 hover:bg-white/5">+</button></div>
+            <div class="relative z-10 f-col items-end"><span class="text-[9px] font-bold text-indigo-400 uppercase"
+                    x-text="timer.label||'REST'"></span><button @click="timer.active=false"
+                    class="text-[9px] font-bold text-red-400">SKIP</button></div>
         </div>
         <div class="p-4 space-y-8 pb-40">
-            <div x-show="prefs.showPreviousWorkout&&previousWorkout" class="bg-slate-900/50 border border-slate-700/50 rounded-2xl p-4"><div class="f-cb mb-3"><h4 class="lbl">Last Time</h4><span class="text-[10px] text-slate-600" x-text="previousWorkout?.date"></span></div><div class="grid grid-cols-3 gap-2 text-center text-xs"><div><div class="text-slate-400">Duration</div><div class="text-white font-bold" x-text="(previousWorkout?.duration||'-')+' min'"></div></div><div><div class="text-slate-400">Top Set</div><div class="text-white font-bold" x-text="previousWorkout?.topSet||'-'"></div></div><div><div class="text-slate-400">AMRAP</div><div class="text-white font-bold" x-text="previousWorkout?.amrapResult||'-'"></div></div></div></div>
-            <div class="bg-indigo-900/10 border border-indigo-500/20 rounded-2xl overflow-hidden"><button @click="showWarmups=!showWarmups" class="w-full f-cb p-3"><span class="text-xs font-bold text-indigo-400 uppercase tracking-widest">Warm-up Sets</span><svg class="w-4 h-4 text-indigo-400 transition-transform" :class="showWarmups?'rotate-180':''" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="icons.chev_down" /></svg></button><div x-show="showWarmups" x-collapse class="px-3 pb-3 grid grid-cols-4 gap-2"><template x-for="wu in warmups()"><div class="bg-black/40 rounded-lg p-2 text-center border border-white/5"><div class="text-sm font-bold text-white mono" x-text="Math.round(wu.w)"></div><div class="text-[9px] text-slate-400">x<span x-text="wu.r"></span></div></div></template></div></div>
+            <div x-show="prefs.showPreviousWorkout&&previousWorkout"
+                class="bg-slate-900/50 border border-slate-700/50 rounded-2xl p-4">
+                <div class="f-cb mb-3">
+                    <h4 class="lbl">Last Time</h4><span class="text-[10px] text-slate-600"
+                        x-text="previousWorkout?.date"></span>
+                </div>
+                <div class="grid grid-cols-3 gap-2 text-center text-xs">
+                    <div>
+                        <div class="text-slate-400">Duration</div>
+                        <div class="text-white font-bold" x-text="(previousWorkout?.duration||'-')+' min'"></div>
+                    </div>
+                    <div>
+                        <div class="text-slate-400">Top Set</div>
+                        <div class="text-white font-bold" x-text="previousWorkout?.topSet||'-'"></div>
+                    </div>
+                    <div>
+                        <div class="text-slate-400">AMRAP</div>
+                        <div class="text-white font-bold" x-text="previousWorkout?.amrapResult||'-'"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-indigo-900/10 border border-indigo-500/20 rounded-2xl overflow-hidden"><button
+                    @click="showWarmups=!showWarmups" class="w-full f-cb p-3"><span
+                        class="text-xs font-bold text-indigo-400 uppercase tracking-widest">Warm-up Sets</span><svg
+                        class="w-4 h-4 text-indigo-400 transition-transform" :class="showWarmups?'rotate-180':''"
+                        fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="icons.chev_down" />
+                    </svg></button>
+                <div x-show="showWarmups" x-collapse class="px-3 pb-3 grid grid-cols-4 gap-2"><template
+                        x-for="wu in warmups()">
+                        <div class="bg-black/40 rounded-lg p-2 text-center border border-white/5">
+                            <div class="text-sm font-bold text-white mono" x-text="Math.round(wu.w)"></div>
+                            <div class="text-[9px] text-slate-400">x<span x-text="wu.r"></span></div>
+                        </div>
+                    </template></div>
+            </div>
             <div x-show="session.t1?.sets">
-                <h3 class="text-2xl font-extrabold text-white mb-4 f-cb"><span x-text="session.t1?.name"></span><span class="text-[10px] px-2 py-1 rounded bg-white/5 border border-white/10 text-slate-400 uppercase font-bold">Tier 1</span></h3>
-                <div class="space-y-2"><template x-for="(set, i) in session.t1?.sets||[]"><div class="glass-item f-cb transition-all" :class="[set.completed?(set.failed?'border border-red-500/40 bg-red-500/5':'border-green-500/30 bg-green-500/5'):'']"><div class="flex items-center gap-3"><div class="f-col items-center"><span class="text-xs font-bold text-slate-600 w-4" x-text="i+1"></span><span x-show="set.completedAt" class="text-[8px] text-slate-700" x-text="fmtSet(set.completedAt)"></span></div><div @click="editSet('t1', i)" class="cursor-pointer"><div class="text-xl font-bold text-white mono"><span x-text="Math.round(set.weight)"></span> <span class="text-xs text-slate-500 ml-1 font-sans" x-text="prefs.weightUnit"></span></div><div class="text-[10px] font-bold" :class="set.amrap?'text-yellow-500':'text-slate-500'" x-text="set.amrap?(set.performed||set.reps)+'+ AMRAP':set.reps+' reps'"></div></div></div><div class="flex items-center gap-2"><button @click="calcPlates(set.weight)" class="w-8 h-8 rounded-lg border border-white/10 f-c text-[10px] text-slate-500"><span>⚖️</span></button><button @click="toggleSet(set,'t1')" class="w-10 h-10 rounded-lg border f-c transition" :class="set.completed?(set.failed?'bg-red-500 border-red-500 text-white':'bg-green-500 border-green-500 text-black shadow-[0_0_15px_rgba(34,197,94,0.4)]'):'border-white/10'"><span x-show="set.completed&&set.failed">✕</span><svg x-show="set.completed&&!set.failed" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" :d="icons.check" /></svg></button></div></div></template></div>
+                <h3 class="text-2xl font-extrabold text-white mb-4 f-cb"><span x-text="session.t1?.name"></span><span
+                        class="text-[10px] px-2 py-1 rounded bg-white/5 border border-white/10 text-slate-400 uppercase font-bold">Tier
+                        1</span></h3>
+                <div class="space-y-2"><template x-for="(set, i) in session.t1?.sets||[]">
+                        <div class="glass-item f-cb transition-all"
+                            :class="[set.completed?(set.failed?'border border-red-500/40 bg-red-500/5':'border-green-500/30 bg-green-500/5'):'']">
+                            <div class="flex items-center gap-3">
+                                <div class="f-col items-center"><span class="text-xs font-bold text-slate-600 w-4"
+                                        x-text="i+1"></span><span x-show="set.completedAt"
+                                        class="text-[8px] text-slate-700" x-text="fmtSet(set.completedAt)"></span></div>
+                                <div @click="editSet('t1', i)" class="cursor-pointer">
+                                    <div class="text-xl font-bold text-white mono"><span
+                                            x-text="Math.round(set.weight)"></span> <span
+                                            class="text-xs text-slate-500 ml-1 font-sans"
+                                            x-text="prefs.weightUnit"></span></div>
+                                    <div class="text-[10px] font-bold"
+                                        :class="set.amrap?'text-yellow-500':'text-slate-500'"
+                                        x-text="set.amrap?(set.performed||set.reps)+'+ AMRAP':set.reps+' reps'"></div>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-2"><button @click="calcPlates(set.weight)"
+                                    class="w-8 h-8 rounded-lg border border-white/10 f-c text-[10px] text-slate-500"><span>⚖️</span></button><button
+                                    @click="toggleSet(set,'t1')" class="w-10 h-10 rounded-lg border f-c transition"
+                                    :class="set.completed?(set.failed?'bg-red-500 border-red-500 text-white':'bg-green-500 border-green-500 text-black shadow-[0_0_15px_rgba(34,197,94,0.4)]'):'border-white/10'"><span
+                                        x-show="set.completed&&set.failed">✕</span><svg
+                                        x-show="set.completed&&!set.failed" class="w-5 h-5" fill="none"
+                                        stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3"
+                                            :d="icons.check" />
+                                    </svg></button></div>
+                        </div>
+                    </template></div>
             </div>
             <div x-show="session.t2?.sets">
-                <div class="relative z-20"><div class="f-cb mb-3"><button @click="swapState.t2=!swapState.t2" class="flex items-center gap-2 text-lg font-bold text-slate-300 hover:text-white transition group"><span x-text="exName(session.t2?.selectedExercise||session.t2?.name)"></span><svg class="w-4 h-4 text-indigo-500 group-hover:text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="icons.swap" /></svg></button><span class="text-[10px] px-2 py-1 rounded bg-white/5 border border-white/10 text-slate-400 uppercase font-bold">Tier 2</span></div>
-                    <div x-show="swapState.t2" @click.outside="swapState.t2=false" class="exercise-swap-dropdown w-full max-h-60" x-transition><div class="sticky top-0 bg-[#101012] p-2 border-b border-white/10"><input type="text" x-model="swapState.q" class="w-full bg-black/50 p-2 text-sm text-white rounded border border-white/10 focus:border-indigo-500 outline-none" placeholder="Search exercises..." @click.stop></div><div class="overflow-y-auto max-h-48"><template x-for="alt in getT2Alts()"><div class="exercise-swap-option f-cb" :class="alt.id===(session.t2?.selectedExercise||session.t2?.name)?'active text-indigo-400':'text-slate-300'" @click="swapT2(alt.id)"><span x-text="alt.name" class="font-bold text-sm"></span><span x-show="alt.mult!==1" class="text-xs opacity-50" x-text="'TM x'+alt.mult"></span></div></template></div></div></div>
-                <div class="grid grid-cols-4 gap-2"><template x-for="(set, i) in session.t2?.sets||[]"><button @click="toggleSet(set,'t2')" @contextmenu.prevent="toggleSet(set,'t2',true)" class="glass-item w-full aspect-square f-col items-center justify-center relative active:scale-95 transition" :class="[set.completed?(set.failed?'border border-red-500/40 bg-red-500/5':'border-indigo-500/50 bg-indigo-500/10 shadow-[0_0_10px_rgba(99,102,241,0.2)]'):'']"><div class="absolute top-1 right-1" @click.stop="toggleSet(set,'t2',true)"><div class="w-3 h-3 rounded-full border border-white/10 f-c text-[8px]" :class="set.failed?'bg-red-500 border-red-500 text-white':'text-transparent'">✕</div></div><span class="text-sm font-bold text-white mono" x-text="Math.round(set.weight)"></span><span class="text-[9px] text-slate-500 mt-1">x<span x-text="set.reps"></span></span><span x-show="set.completedAt" class="absolute bottom-1 text-[7px] text-slate-600" x-text="fmtSet(set.completedAt)"></span></button></template></div>
+                <div class="relative z-20">
+                    <div class="f-cb mb-3"><button @click="swapState.t2=!swapState.t2"
+                            class="flex items-center gap-2 text-lg font-bold text-slate-300 hover:text-white transition group"><span
+                                x-text="exName(session.t2?.selectedExercise||session.t2?.name)"></span><svg
+                                class="w-4 h-4 text-indigo-500 group-hover:text-indigo-400" fill="none"
+                                viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="icons.swap" />
+                            </svg></button><span
+                            class="text-[10px] px-2 py-1 rounded bg-white/5 border border-white/10 text-slate-400 uppercase font-bold">Tier
+                            2</span></div>
+                    <div x-show="swapState.t2" @click.outside="swapState.t2=false"
+                        class="exercise-swap-dropdown w-full max-h-60" x-transition>
+                        <div class="sticky top-0 bg-[#101012] p-2 border-b border-white/10"><input type="text"
+                                x-model="swapState.q"
+                                class="w-full bg-black/50 p-2 text-sm text-white rounded border border-white/10 focus:border-indigo-500 outline-none"
+                                placeholder="Search exercises..." @click.stop></div>
+                        <div class="overflow-y-auto max-h-48"><template x-for="alt in getT2Alts()">
+                                <div class="exercise-swap-option f-cb"
+                                    :class="alt.id===(session.t2?.selectedExercise||session.t2?.name)?'active text-indigo-400':'text-slate-300'"
+                                    @click="swapT2(alt.id)"><span x-text="alt.name"
+                                        class="font-bold text-sm"></span><span x-show="alt.mult!==1"
+                                        class="text-xs opacity-50" x-text="'TM x'+alt.mult"></span></div>
+                            </template></div>
+                    </div>
+                </div>
+                <div class="grid grid-cols-4 gap-2"><template x-for="(set, i) in session.t2?.sets||[]"><button
+                            @click="toggleSet(set,'t2')" @contextmenu.prevent="toggleSet(set,'t2',true)"
+                            class="glass-item w-full aspect-square f-col items-center justify-center relative active:scale-95 transition"
+                            :class="[set.completed?(set.failed?'border border-red-500/40 bg-red-500/5':'border-indigo-500/50 bg-indigo-500/10 shadow-[0_0_10px_rgba(99,102,241,0.2)]'):'']">
+                            <div class="absolute top-1 right-1" @click.stop="toggleSet(set,'t2',true)">
+                                <div class="w-3 h-3 rounded-full border border-white/10 f-c text-[8px]"
+                                    :class="set.failed?'bg-red-500 border-red-500 text-white':'text-transparent'">✕
+                                </div>
+                            </div><span class="text-sm font-bold text-white mono"
+                                x-text="Math.round(set.weight)"></span><span
+                                class="text-[9px] text-slate-500 mt-1">x<span x-text="set.reps"></span></span><span
+                                x-show="set.completedAt" class="absolute bottom-1 text-[7px] text-slate-600"
+                                x-text="fmtSet(set.completedAt)"></span>
+                        </button></template></div>
             </div>
             <div x-show="session.acc?.length" class="pt-6 border-t border-white/5">
                 <h3 class="text-sm font-bold text-slate-400 mb-4 uppercase tracking-widest">Accessories</h3>
-                <div class="space-y-4"><template x-for="(acc, idx) in session.acc||[]"><div class="glass-card relative overflow-visible"><div class="f-cb mb-2 relative"><button @click="swapState.acc=swapState.acc===idx?null:idx" class="flex items-center gap-2 text-sm font-bold text-white hover:text-indigo-400 transition"><span x-text="exName(acc.selectedExercise||acc.name)"></span><svg class="w-3 h-3 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="icons.swap" /></svg></button><span class="text-[10px] bg-white/10 px-2 py-1 rounded text-slate-300" x-text="acc.reps"></span><div x-show="swapState.acc===idx" @click.outside="swapState.acc=null" class="exercise-swap-dropdown z-50 w-[calc(100%+20px)] -left-2 top-8" x-transition><div class="sticky top-0 bg-[#101012] p-2 border-b border-white/10"><input type="text" x-model="swapState.q" class="w-full bg-black/50 p-2 text-xs text-white rounded border border-white/10 focus:border-indigo-500 outline-none" placeholder="Search..." @click.stop></div><div class="overflow-y-auto max-h-40"><template x-for="alt in getAccAlts(idx)"><div class="exercise-swap-option text-sm" :class="alt.id===(acc.selectedExercise||acc.name)?'active text-indigo-400':'text-slate-300'" @click="swapAcc(idx,alt.id)"><span x-text="alt.name" class="font-bold"></span></div></template></div></div></div><div class="flex gap-2"><template x-for="n in acc.sets"><button @click="togAcc(acc.originalName,n)" class="h-8 flex-1 rounded border text-xs font-bold transition" :class="isAccDone(acc.originalName,n)?'bg-slate-200 text-black border-slate-200':'border-white/10 text-slate-500'"><span x-show="!isAccDone(acc.originalName,n)" x-text="n"></span><span x-show="isAccDone(acc.originalName,n)">✓</span></button></template></div></div></template></div>
+                <div class="space-y-4"><template x-for="(acc, idx) in session.acc||[]">
+                        <div class="glass-card relative overflow-visible">
+                            <div class="f-cb mb-2 relative"><button @click="swapState.acc=swapState.acc===idx?null:idx"
+                                    class="flex items-center gap-2 text-sm font-bold text-white hover:text-indigo-400 transition"><span
+                                        x-text="exName(acc.selectedExercise||acc.name)"></span><svg
+                                        class="w-3 h-3 text-slate-500" fill="none" viewBox="0 0 24 24"
+                                        stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            :d="icons.swap" />
+                                    </svg></button><span
+                                    class="text-[10px] bg-white/10 px-2 py-1 rounded text-slate-300"
+                                    x-text="acc.reps"></span>
+                                <div x-show="swapState.acc===idx" @click.outside="swapState.acc=null"
+                                    class="exercise-swap-dropdown z-50 w-[calc(100%+20px)] -left-2 top-8" x-transition>
+                                    <div class="sticky top-0 bg-[#101012] p-2 border-b border-white/10"><input
+                                            type="text" x-model="swapState.q"
+                                            class="w-full bg-black/50 p-2 text-xs text-white rounded border border-white/10 focus:border-indigo-500 outline-none"
+                                            placeholder="Search..." @click.stop></div>
+                                    <div class="overflow-y-auto max-h-40"><template x-for="alt in getAccAlts(idx)">
+                                            <div class="exercise-swap-option text-sm"
+                                                :class="alt.id===(acc.selectedExercise||acc.name)?'active text-indigo-400':'text-slate-300'"
+                                                @click="swapAcc(idx,alt.id)"><span x-text="alt.name"
+                                                    class="font-bold"></span></div>
+                                        </template></div>
+                                </div>
+                            </div>
+                            <div class="flex gap-2"><template x-for="n in acc.sets"><button
+                                        @click="togAcc(acc.originalName,n)"
+                                        class="h-8 flex-1 rounded border text-xs font-bold transition"
+                                        :class="isAccDone(acc.originalName,n)?'bg-slate-200 text-black border-slate-200':'border-white/10 text-slate-500'"><span
+                                            x-show="!isAccDone(acc.originalName,n)" x-text="n"></span><span
+                                            x-show="isAccDone(acc.originalName,n)">✓</span></button></template></div>
+                        </div>
+                    </template></div>
             </div>
-            <div class="glass-card"><label class="lbl">Quick Notes</label><textarea x-model="session.notes" @input="saveSess()" class="w-full bg-black/50 border border-white/10 rounded-lg p-3 text-white text-sm outline-none resize-none h-16" placeholder="Notes..."></textarea></div>
-            <div class="flex gap-3"><button @click="addSet()" class="flex-1 bg-[#1A1A1E] border border-white/10 text-white font-bold py-3 rounded-xl text-sm hover:bg-white/5">+ Add Set</button><button @click="activeModal='onerm'" class="flex-1 bg-[#1A1A1E] border border-white/10 text-white font-bold py-3 rounded-xl text-sm hover:bg-white/5">🧮 1RM Calc</button></div>
-            
-            <div x-show="zenMode" x-transition.opacity.duration.300ms class="fixed inset-0 z-[100] f-col items-center justify-center p-6 text-center" style="background:radial-gradient(circle at center,#1e1e24 0%,#000 100%)" x-cloak>
-                <div class="absolute top-6 right-6"><button @click="toggleZen()" class="p-4 bg-white/10 rounded-full text-white"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg></button></div>
+            <div class="glass-card"><label class="lbl">Quick Notes</label><textarea x-model="session.notes"
+                    @input="saveSess()"
+                    class="w-full bg-black/50 border border-white/10 rounded-lg p-3 text-white text-sm outline-none resize-none h-16"
+                    placeholder="Notes..."></textarea></div>
+            <div class="flex gap-3"><button @click="addSet()"
+                    class="flex-1 bg-[#1A1A1E] border border-white/10 text-white font-bold py-3 rounded-xl text-sm hover:bg-white/5">+
+                    Add Set</button><button @click="activeModal='onerm'"
+                    class="flex-1 bg-[#1A1A1E] border border-white/10 text-white font-bold py-3 rounded-xl text-sm hover:bg-white/5">🧮
+                    1RM Calc</button></div>
+
+            <div x-show="zenMode" x-transition.opacity.duration.300ms
+                class="fixed inset-0 z-[100] f-col items-center justify-center p-6 text-center"
+                style="background:radial-gradient(circle at center,#1e1e24 0%,#000 100%)" x-cloak>
+                <div class="absolute top-6 right-6"><button @click="toggleZen()"
+                        class="p-4 bg-white/10 rounded-full text-white"><svg class="w-6 h-6" fill="none"
+                            stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M6 18L18 6M6 6l12 12" />
+                        </svg></button></div>
                 <template x-if="getZen()">
                     <div class="w-full max-w-md space-y-8">
-                        <div class="space-y-2"><h2 class="text-sm font-bold text-indigo-400 uppercase tracking-[0.2em]" x-text="getZen().t === 'acc' ? 'Accessory' : (getZen().t === 't1' ? 'Tier 1' : 'Tier 2')"></h2><div class="text-4xl font-extrabold text-white" x-text="getZen().n"></div></div>
-                        <div class="f-c gap-6"><div class="bg-zinc-900 rounded-3xl p-6 w-40 border border-white/5"><div class="text-5xl font-mono font-bold text-white mb-2" x-text="getZen().w"></div><div class="text-xs text-zinc-500 uppercase font-bold" x-text="getZen().t === 'acc' ? 'Weight' : prefs.weightUnit"></div></div><div class="text-zinc-600 text-3xl">×</div><div class="bg-zinc-900 rounded-3xl p-6 w-40 border border-white/5"><div class="text-5xl font-mono font-bold text-white mb-2" x-text="getZen().r"></div><div class="text-xs text-zinc-500 uppercase font-bold" x-text="getZen().amrap ? 'AMRAP Target' : 'Reps'"></div></div></div>
-                        <div x-show="getZen().amrap" class="max-w-[200px] mx-auto"><label class="lbl text-yellow-500 text-center">Performed Reps</label><input type="number" x-model.number="zenAmrap" class="bg-zinc-800 border-2 border-yellow-500/50 rounded-2xl p-4 text-4xl text-center text-white w-full outline-none focus:border-yellow-400 font-mono font-bold" placeholder="?"></div>
-                        <button @click="doZen()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xl py-6 rounded-3xl shadow-[0_0_40px_-10px_rgba(79,70,229,0.5)] active:scale-95 transition-all">Complete Set</button>
+                        <div class="space-y-2">
+                            <h2 class="text-sm font-bold text-indigo-400 uppercase tracking-[0.2em]"
+                                x-text="getZen().t === 'acc' ? 'Accessory' : (getZen().t === 't1' ? 'Tier 1' : 'Tier 2')">
+                            </h2>
+                            <div class="text-4xl font-extrabold text-white" x-text="getZen().n"></div>
+                        </div>
+                        <div class="f-c gap-6">
+                            <div class="bg-zinc-900 rounded-3xl p-6 w-40 border border-white/5">
+                                <div class="text-5xl font-mono font-bold text-white mb-2" x-text="getZen().w"></div>
+                                <div class="text-xs text-zinc-500 uppercase font-bold"
+                                    x-text="getZen().t === 'acc' ? 'Weight' : prefs.weightUnit"></div>
+                            </div>
+                            <div class="text-zinc-600 text-3xl">×</div>
+                            <div class="bg-zinc-900 rounded-3xl p-6 w-40 border border-white/5">
+                                <div class="text-5xl font-mono font-bold text-white mb-2" x-text="getZen().r"></div>
+                                <div class="text-xs text-zinc-500 uppercase font-bold"
+                                    x-text="getZen().amrap ? 'AMRAP Target' : 'Reps'"></div>
+                            </div>
+                        </div>
+                        <div x-show="getZen().amrap" class="max-w-[200px] mx-auto"><label
+                                class="lbl text-yellow-500 text-center">Performed Reps</label><input type="number"
+                                x-model.number="zenAmrap"
+                                class="bg-zinc-800 border-2 border-yellow-500/50 rounded-2xl p-4 text-4xl text-center text-white w-full outline-none focus:border-yellow-400 font-mono font-bold"
+                                placeholder="?"></div>
+                        <button @click="doZen()"
+                            class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xl py-6 rounded-3xl shadow-[0_0_40px_-10px_rgba(79,70,229,0.5)] active:scale-95 transition-all">Complete
+                            Set</button>
                     </div>
                 </template>
-                <template x-if="!getZen()"><div class="text-center space-y-4"><div class="text-4xl">🎉</div><h2 class="text-2xl font-bold text-white">All Sets Complete</h2><p class="text-slate-400">Great work! Finish the session.</p><button @click="toggleZen()" class="bg-zinc-800 px-6 py-3 rounded-xl font-bold text-white">Exit Focus Mode</button></div></template>
-                <div x-show="timer.active" class="mt-12 w-full max-w-md bg-zinc-900/50 p-6 rounded-3xl border border-white/5"><div class="text-6xl font-mono font-bold text-slate-200 tabular-nums" x-text="fmt(timer.rem)"></div><div class="text-sm text-indigo-400 mt-2 font-bold uppercase tracking-widest">Resting</div><div class="flex justify-center gap-4 mt-4"><button @click="timerAdj(-10)" class="text-slate-500 hover:text-white font-bold text-xl px-4">-10s</button><button @click="timer.active=false" class="text-red-400 font-bold text-xs uppercase tracking-widest border border-red-500/30 px-3 py-1 rounded hover:bg-red-500/10">Skip</button><button @click="timerAdj(10)" class="text-slate-500 hover:text-white font-bold text-xl px-4">+10s</button></div></div>
+                <template x-if="!getZen()">
+                    <div class="text-center space-y-4">
+                        <div class="text-4xl">🎉</div>
+                        <h2 class="text-2xl font-bold text-white">All Sets Complete</h2>
+                        <p class="text-slate-400">Great work! Finish the session.</p><button @click="toggleZen()"
+                            class="bg-zinc-800 px-6 py-3 rounded-xl font-bold text-white">Exit Focus Mode</button>
+                    </div>
+                </template>
+                <div x-show="timer.active"
+                    class="mt-12 w-full max-w-md bg-zinc-900/50 p-6 rounded-3xl border border-white/5">
+                    <div class="text-6xl font-mono font-bold text-slate-200 tabular-nums" x-text="fmt(timer.rem)"></div>
+                    <div class="text-sm text-indigo-400 mt-2 font-bold uppercase tracking-widest">Resting</div>
+                    <div class="flex justify-center gap-4 mt-4"><button @click="timerAdj(-10)"
+                            class="text-slate-500 hover:text-white font-bold text-xl px-4">-10s</button><button
+                            @click="timer.active=false"
+                            class="text-red-400 font-bold text-xs uppercase tracking-widest border border-red-500/30 px-3 py-1 rounded hover:bg-red-500/10">Skip</button><button
+                            @click="timerAdj(10)"
+                            class="text-slate-500 hover:text-white font-bold text-xl px-4">+10s</button></div>
+                </div>
             </div>
         </div>
     </div>
 
     <!-- CALCULATORS -->
-    <div x-show="activeModal==='onerm'" class="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-sm p-4" x-cloak @click.self="activeModal=null">
+    <div x-show="activeModal==='onerm'"
+        class="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-sm p-4"
+        x-cloak @click.self="activeModal=null">
         <div class="bg-[#1A1A1E] w-full max-w-sm rounded-3xl p-6 border border-white/10">
             <h3 class="text-lg font-bold text-white mb-4 text-center">1RM Calculator</h3>
-            <div class="grid grid-cols-2 gap-4 mb-6"><div><label class="lbl">Weight</label><input type="number" x-model.number="calc.w" class="inp-lg"></div><div><label class="lbl">Reps</label><input type="number" x-model.number="calc.r" class="inp-lg"></div></div>
-            <div class="bg-indigo-500/10 border border-indigo-500/20 rounded-2xl p-6 text-center mb-6"><div class="text-5xl font-extrabold text-white mono" x-text="Math.round(calc.w*(1+calc.r/30))||0"></div><div class="text-xs text-slate-400 mt-2">Estimated 1RM (Epley)</div></div>
-            <div class="grid grid-cols-5 gap-2 mb-6"><template x-for="pct in [95,90,85,80,75]"><div class="bg-black/30 rounded-lg p-2 text-center"><div class="text-[10px] text-slate-500" x-text="pct+'%'"></div><div class="text-sm font-bold text-white mono" x-text="Math.round(calc.w*(1+calc.r/30)*pct/100)||0"></div></div></template></div><button @click="activeModal=null" class="btn-s">Close</button>
+            <div class="grid grid-cols-2 gap-4 mb-6">
+                <div><label class="lbl">Weight</label><input type="number" x-model.number="calc.w" class="inp-lg"></div>
+                <div><label class="lbl">Reps</label><input type="number" x-model.number="calc.r" class="inp-lg"></div>
+            </div>
+            <div class="bg-indigo-500/10 border border-indigo-500/20 rounded-2xl p-6 text-center mb-6">
+                <div class="text-5xl font-extrabold text-white mono" x-text="Math.round(calc.w*(1+calc.r/30))||0"></div>
+                <div class="text-xs text-slate-400 mt-2">Estimated 1RM (Epley)</div>
+            </div>
+            <div class="grid grid-cols-5 gap-2 mb-6"><template x-for="pct in [95,90,85,80,75]">
+                    <div class="bg-black/30 rounded-lg p-2 text-center">
+                        <div class="text-[10px] text-slate-500" x-text="pct+'%'"></div>
+                        <div class="text-sm font-bold text-white mono"
+                            x-text="Math.round(calc.w*(1+calc.r/30)*pct/100)||0"></div>
+                    </div>
+                </template></div><button @click="activeModal=null" class="btn-s">Close</button>
         </div>
     </div>
-    <div x-show="plate.open" class="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-sm p-4" x-cloak @click.self="plate.open=false">
+    <div x-show="plate.open"
+        class="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-sm p-4"
+        x-cloak @click.self="plate.open=false">
         <div class="bg-[#1A1A1E] w-full max-w-sm rounded-3xl p-6 border border-white/10">
-            <div class="text-center mb-8"><div class="text-6xl font-extrabold text-white mono tracking-tighter" x-text="plate.w"></div><div class="text-xs font-bold text-slate-500 uppercase tracking-widest mt-2">Target Load (<span x-text="prefs.weightUnit"></span>)</div></div>
-            <div class="f-c gap-1 mb-10 h-24"><div class="h-20 w-4 bg-slate-700 rounded-sm border border-slate-600"></div><template x-for="p in plate.plates"><div class="h-20 w-8 rounded f-c text-xs font-bold shadow-lg" :class="UI.colors[p]||'bg-gray-400 text-black'" x-text="p"></div></template></div>
-            <div class="text-center text-sm text-slate-400 mb-6">Per side: <span x-text="plate.plates.join(' + ')||'Empty bar'"></span></div><button @click="plate.open=false" class="btn-s">Close</button>
+            <div class="text-center mb-8">
+                <div class="text-6xl font-extrabold text-white mono tracking-tighter" x-text="plate.w"></div>
+                <div class="text-xs font-bold text-slate-500 uppercase tracking-widest mt-2">Target Load (<span
+                        x-text="prefs.weightUnit"></span>)</div>
+            </div>
+            <div class="f-c gap-1 mb-10 h-24">
+                <div class="h-20 w-4 bg-slate-700 rounded-sm border border-slate-600"></div><template
+                    x-for="p in plate.plates">
+                    <div class="h-20 w-8 rounded f-c text-xs font-bold shadow-lg"
+                        :class="UI.colors[p]||'bg-gray-400 text-black'" x-text="p"></div>
+                </template>
+            </div>
+            <div class="text-center text-sm text-slate-400 mb-6">Per side: <span
+                    x-text="plate.plates.join(' + ')||'Empty bar'"></span></div><button @click="plate.open=false"
+                class="btn-s">Close</button>
         </div>
     </div>
-    <nav x-show="view!=='setup'&&view!=='workout'" class="fixed bottom-0 w-full nav-glass pb-safe pt-2 px-6 z-40 f-cb h-20"><template x-for="item in UI.nav"><button @click="nav(item.id)" class="nav-btn" :class="view===item.id?'text-indigo-400':'text-slate-500'"><svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="item.i" /></svg><span class="text-[10px] font-bold" x-text="item.l"></span></button></template></nav>
+    <nav x-show="view!=='setup'&&view!=='workout'"
+        class="fixed bottom-0 w-full nav-glass pb-safe pt-2 px-6 z-40 f-cb h-20"><template
+            x-for="item in UI.nav"><button @click="nav(item.id)" class="nav-btn"
+                :class="view===item.id?'text-indigo-400':'text-slate-500'"><svg class="w-6 h-6" fill="none"
+                    viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="item.i" />
+                </svg><span class="text-[10px] font-bold" x-text="item.l"></span></button></template></nav>
 </body>
+
 </html>
