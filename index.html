@@ -311,9 +311,8 @@
                 }, updCache() {
                     const res = {};
                     const now = U.now();
-                    const cutoff = now - 14 * 24 * 3600 * 1000; // 14 days lookback
+                    const cutoff = now - 14 * 24 * 3600 * 1000;
 
-                    // Fatigue thresholds per muscle (higher = more capacity before fatigued)
                     const THRESHOLDS = {
                         chest: 28, quads: 35, lats: 28, glutes: 32, hams: 30,
                         tri: 20, bi: 18, frontDelt: 22, rearDelt: 20, upperChest: 25,
@@ -325,18 +324,17 @@
                         if (w.timestamp < cutoff) return;
 
                         const ageHrs = (now - w.timestamp) / 3600000;
-                        const rpeScale = w.rpe ? (0.6 + w.rpe * 0.04) : 0.85; // RPE 5=0.8, 10=1.0
+                        const rpeScale = w.rpe ? (0.6 + w.rpe * 0.04) : 0.85;
 
-                        // Process T1 - Full systemic impact
                         const procSets = (name, sets, tier) => {
                             if (!name || !sets?.length) return;
                             const mus = this.impact(name);
                             if (!Object.keys(mus).length) return;
 
-                            const baseTM = this.tms[this.baseTM(name)] || 100;
+                            const baseEx = this.baseTM(name);
+                            const baseTM = (baseEx ? this.tms[baseEx] : null) || 100;
                             const tierMult = tier === 't1' ? 1.0 : tier === 't2' ? 0.7 : 0.5;
 
-                            // Calculate volume-based fatigue
                             let setFatigue = 0;
                             let completedSets = 0;
 
@@ -346,10 +344,7 @@
 
                                 const wt = s.weight || baseTM * 0.5;
                                 const reps = s.performed || s.reps || 0;
-                                const intensity = Math.min(wt / baseTM, 1.2); // Cap at 120% TM
-
-                                // Volume load with intensity scaling
-                                // Higher intensity = exponentially more fatigue
+                                const intensity = Math.min(wt / baseTM, 1.2);
                                 const intensityFactor = Math.pow(intensity, 1.8);
                                 const volume = wt * reps;
                                 const failMult = s.failed ? 1.4 : 1.0;
@@ -357,20 +352,18 @@
                                 setFatigue += (intensityFactor * volume * failMult) / 1000;
                             });
 
-                            // Add set count fatigue (more sets = more accumulated fatigue)
                             const setCountFatigue = completedSets * 0.5;
                             const totalFatigue = (setFatigue + setCountFatigue) * tierMult * rpeScale;
 
-                            // Distribute to muscles with half-life decay
                             Object.entries(mus).forEach(([m, v]) => {
                                 const hl = DATA.halfLife[m] || 24;
                                 const decay = Math.pow(0.5, ageHrs / hl);
                                 res[m] = (res[m] || 0) + totalFatigue * v * decay;
                             });
 
-                            // CNS fatigue for compound movements (T1 only)
-                            if (tier === 't1' && DATA.muscles[this.baseTM(name)]?.cns) {
-                                const cnsFatigue = totalFatigue * DATA.muscles[this.baseTM(name)].cns;
+                            // Fixed: Safe CNS check
+                            if (tier === 't1' && baseEx && DATA.muscles[baseEx]?.cns) {
+                                const cnsFatigue = totalFatigue * DATA.muscles[baseEx].cns;
                                 const cnsDecay = Math.pow(0.5, ageHrs / DATA.halfLife.cns);
                                 res.cns = (res.cns || 0) + cnsFatigue * cnsDecay;
                             }
@@ -379,22 +372,19 @@
                         procSets(w.details?.t1, w.setDetails?.t1, 't1');
                         procSets(w.setDetails?.t2Name, w.setDetails?.t2, 't2');
 
-                        // Process accessories with proper volume estimation
                         (w.setDetails?.accessories || []).forEach(a => {
                             if (!a.completed) return;
 
                             const mus = this.impact(a.name);
                             if (!Object.keys(mus).length) return;
 
-                            // Parse rep range to get average
                             let avgReps = 10;
-                            if (a.reps) {
-                                const match = String(a.reps).match(/(\d+)/g);
-                                if (match?.length === 2) avgReps = (parseInt(match[0]) + parseInt(match[1])) / 2;
-                                else if (match?.length === 1) avgReps = parseInt(match[0]);
-                            }
+                            // Now uses saved a.reps field
+                            const repStr = a.reps || '';
+                            const match = String(repStr).match(/(\d+)/g);
+                            if (match?.length === 2) avgReps = (parseInt(match[0]) + parseInt(match[1])) / 2;
+                            else if (match?.length === 1) avgReps = parseInt(match[0]);
 
-                            // Estimate accessory fatigue: sets × reps × ~0.5 intensity factor
                             const accFatigue = a.completed * avgReps * 0.08 * rpeScale;
 
                             Object.entries(mus).forEach(([m, v]) => {
@@ -405,15 +395,12 @@
                         });
                     });
 
-                    // Convert fatigue to recovery % using muscle-specific thresholds
                     Object.keys({ ...DATA.halfLife, abs: 24, calves: 24, forearm: 18 }).forEach(m => {
                         const fatigue = res[m] || 0;
                         const threshold = THRESHOLDS[m] || 25;
-                        // 0 fatigue = 100%, threshold = ~65%, 2×threshold = ~30%, 3×threshold = 0%
                         res[m] = Math.max(0, Math.min(100, 100 * Math.exp(-fatigue / threshold)));
                     });
 
-                    // Build grouped recovery status
                     this.cache.recovery = Object.entries(DATA.groups).map(([name, ms]) => {
                         const vals = ms.map(m => res[m] ?? 100);
                         const min = Math.min(...vals);
@@ -689,7 +676,8 @@
                             <div class="relative set-timeline pl-6">
                                 <div class="absolute left-0 top-1 w-4 h-4 rounded-full f-c text-[10px]"
                                     :class="set.failed?'bg-red-500/20 text-red-400':'bg-green-500/20 text-green-400'">
-                                    <span x-text="set.failed?'✕':'✓'"></span></div>
+                                    <span x-text="set.failed?'✕':'✓'"></span>
+                                </div>
                                 <div class="glass-item f-cb">
                                     <div><span class="mono-num" x-text="set.weight"></span><span
                                             class="text-slate-500 text-xs ml-1" x-text="prefs.weightUnit"></span><span
@@ -918,7 +906,8 @@
                 <div x-show="Object.keys(prs).length>0"
                     class="flex items-center gap-1 bg-yellow-500/10 px-2 py-1 rounded-full border border-yellow-500/20">
                     <span class="text-sm">🏆</span><span class="text-xs font-bold text-yellow-400"
-                        x-text="Object.keys(prs).length"></span></div>
+                        x-text="Object.keys(prs).length"></span>
+                </div>
             </div>
         </header>
         <div class="px-6 space-y-6">
@@ -1152,7 +1141,8 @@
         </div>
         <div class="bg-[#0A0A0A] border-b border-white/5 py-2 flex justify-center gap-4 text-xs text-slate-400 mono">
             <span x-text="sessionTimerStr"></span><span class="text-slate-600">|</span><span
-                x-text="sessProg()+'% complete'"></span></div>
+                x-text="sessProg()+'% complete'"></span>
+        </div>
         <div x-show="timer.active" x-transition
             class="sticky top-24 z-20 mx-auto max-w-[280px] bg-[#1A1A1E] border border-white/10 rounded-full shadow-2xl f-cb p-1 pr-4 overflow-hidden mt-2">
             <div class="absolute inset-0 bg-indigo-600/20 origin-left transition-transform duration-1000 linear"
