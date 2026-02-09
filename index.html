@@ -59,574 +59,544 @@
         .reduce-motion .pulse-glow, .reduce-motion .shimmer { animation: none !important; }
     </style>
     <script>
-        // --- Static Data ---
-        const ICONS = { warn: 'M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z', x: 'M6 18L18 6M6 6l12 12', check: 'M5 13l4 4L19 7', trash: 'M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16', edit: 'M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z', save: 'M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4', play: 'M8 5v14l11-7z', prev: 'M15 19l-7-7 7-7', next: 'M9 5l7 7-7 7', warn2: 'M12 8v4m0 4h.01', info: 'M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z', train: 'M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10', hist: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z', set: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z', chev_down: 'M19 9l-7 7-7-7', swap: 'M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4', expand: 'M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4', search: 'M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z' };
-        const DATA = {
-            muscles: { Bench: { chest: 1, frontDelt: .6, tri: .5, cns: .3 }, OHP: { frontDelt: 1, tri: .6, upperChest: .3, cns: .4 }, Squat: { quads: 1, glutes: .8, lowBack: .6, cns: .7 }, Deadlift: { hams: 1, glutes: .9, lowBack: 1, traps: .4, grip: .6, cns: .9 }, Row: { lats: 1, bi: .7, rearDelt: .5, grip: .4, cns: .2 } },
-            halfLife: { chest: 24, frontDelt: 20, tri: 18, upperChest: 24, quads: 36, glutes: 36, lowBack: 48, hams: 36, traps: 24, grip: 24, lats: 30, bi: 18, rearDelt: 20, cns: 36 },
-            // Muscle-specific recovery capacity — how much fatigue a muscle can absorb before recovery % drops significantly
-            recoveryCapacity: { chest: 18, frontDelt: 14, tri: 12, upperChest: 18, quads: 25, glutes: 25, lowBack: 30, hams: 25, traps: 16, grip: 16, lats: 20, bi: 12, rearDelt: 14, cns: 20, abs: 10, calves: 10, forearm: 10 },
-            // Upper vs lower body progression rates (kg/lbs increment multipliers)
-            progressionRate: { Bench: 1, OHP: 1, Squat: 1, Deadlift: 1, Row: 1, upper: 0.5, lower: 1 },
-            groups: { Push: ['chest', 'frontDelt', 'tri'], Pull: ['lats', 'bi', 'rearDelt', 'traps'], Legs: ['quads', 'hams', 'glutes'], 'Core/Back': ['lowBack'], CNS: ['cns'] },
-            schemes: {
-                nsuns: { vol: [[.65, 8], [.75, 6], [.85, 4], [.85, 4], [.85, 4], [.8, 5], [.75, 6], [.7, 7], [.65, 8, '+']], heavy: [[.75, 5], [.85, 3], [.95, 1, '+'], [.9, 3], [.85, 3], [.8, 3], [.75, 5], [.7, 5], [.65, 5, '+']], dl: [[.75, 5], [.85, 3], [.95, 1, '+'], [.9, 3], [.85, 3], [.8, 3], [.75, 3], [.7, 3], [.65, 3]], t2: [[.5, 5], [.6, 6], [.7, 7], [.7, 4], [.7, 4], [.7, 4], [.7, 4], [.7, 4]] },
-                stronglifts: { std: [[1, 5], [1, 5], [1, 5], [1, 5], [1, 5, '+']], dl: [[1, 5, '+']] },
-                phul: { pow: [[.85, 5], [.85, 5], [.85, 5]], hyp: [[.65, 10], [.65, 10], [.65, 10]], vol: [[.6, 12], [.6, 12], [.6, 12]] },
-                ppl: { m5: [[.85, 5], [.85, 5], [.85, 5], [.85, 5], [.85, 5, '+']], m1: [[.9, 5, '+']], sec: [[.7, 10], [.7, 10], [.7, 10]] },
-                gzclp: { t1: [[.85, 3], [.85, 3], [.85, 3], [.85, 3], [.85, 3, '+']], t2: [[.65, 10], [.65, 10], [.65, 10]], f1: [[5, 3], [6, 2], [10, 1]], f2: [[3, 10], [3, 8], [3, 6]] },
-                '531': { w1: [[.65, 5], [.75, 5], [.85, 5, '+']], w2: [[.7, 3], [.8, 3], [.9, 3, '+']], w3: [[.75, 5], [.85, 3], [.95, 1, '+']], del: [[.4, 5], [.5, 5], [.6, 5]], bbb: Array(5).fill([.5, 10]) }
-            },
-            progs: {
-                nsuns: { name: 'nSuns LP', daysPerWeek: 5, progressionDesc: 'Linear + AMRAP', days: [{ t: 'Bench Vol', t1: 'Bench', t2: 'OHP', s: 'vol', t2s: 't2', acc: [{ name: 'Row', sets: 4, reps: '10-12' }] }, { t: 'Squat Heavy', t1: 'Squat', t2: 'Deadlift', s: 'heavy', t2s: 't2', acc: [{ name: 'Legs', sets: 4, reps: '10-12' }] }, { t: 'OHP Heavy', t1: 'OHP', t2: 'Bench', s: 'heavy', t2s: 't2', acc: [{ name: 'Pullups', sets: 4, reps: 'AMRAP' }] }, { t: 'Deadlift Heavy', t1: 'Deadlift', t2: 'Squat', s: 'dl', t2s: 't2', acc: [{ name: 'Abs', sets: 4, reps: '10-15' }] }, { t: 'Bench Heavy', t1: 'Bench', t2: 'Bench', s: 'heavy', t2s: 't2', acc: [{ name: 'Arms', sets: 4, reps: '10-15' }] }] },
-                ppl: { name: 'PPL', prog: 'lin', daysPerWeek: 6, progressionDesc: 'Linear', days: [{ t: 'Push A', t1: 'Bench', t2: 'OHP', s: 'm5', t2s: 'sec', acc: [{ name: 'Tri', sets: 3, reps: '10-15' }] }, { t: 'Pull A', t1: 'Deadlift', t2: 'Row', s: 'm1', t2s: 'sec', acc: [{ name: 'Bi', sets: 3, reps: '10-15' }] }, { t: 'Legs A', t1: 'Squat', t2: 'Deadlift', s: 'm5', t2s: 'sec', acc: [{ name: 'Legs', sets: 3, reps: '10-15' }] }, { t: 'Push B', t1: 'OHP', t2: 'Bench', s: 'm5', t2s: 'sec', acc: [{ name: 'Tri', sets: 3, reps: '10-15' }] }, { t: 'Pull B', t1: 'Row', t2: 'Deadlift', s: 'm5', t2s: 'vol', acc: [{ name: 'Bi', sets: 3, reps: '10-15' }] }, { t: 'Legs B', t1: 'Squat', t2: 'Deadlift', s: 'm5', t2s: 'sec', acc: [{ name: 'Legs', sets: 3, reps: '10-15' }] }] },
-                phul: { name: 'PHUL', prog: 'lin', daysPerWeek: 4, progressionDesc: 'Linear', days: [{ t: 'Up Pwr', t1: 'Bench', t2: 'Row', s: 'pow', t2s: 'pow', acc: [{ name: 'OHP', sets: 3, reps: '6-10' }] }, { t: 'Lo Pwr', t1: 'Squat', t2: 'Deadlift', s: 'pow', t2s: 'pow', acc: [{ name: 'Legs', sets: 3, reps: '8-12' }] }, { t: 'Up Hyp', t1: 'OHP', t2: 'Bench', s: 'hyp', t2s: 'hyp', acc: [{ name: 'Row', sets: 3, reps: '10-12' }] }, { t: 'Lo Hyp', t1: 'Deadlift', t2: 'Squat', s: 'hyp', t2s: 'hyp', acc: [{ name: 'Legs', sets: 3, reps: '10-15' }] }] },
-                stronglifts: { name: 'SL 5x5', prog: 'lin', pW: true, daysPerWeek: 3, progressionDesc: 'Linear', days: [{ t: 'A', t1: 'Squat', t2: 'Bench', s: 'std', t2s: 'std', acc: [{ name: 'Row', sets: 5, reps: '5' }] }, { t: 'B', t1: 'Squat', t2: 'OHP', s: 'std', t2s: 'std', acc: [{ name: 'DL', sets: 1, reps: '5+' }] }] },
-                gzclp: { name: 'GZCLP', prog: 'gz', daysPerWeek: 4, progressionDesc: 'Stage Failure', days: [{ t: 'D1', t1: 'Squat', t2: 'Bench', s: 't1', t2s: 't2', acc: [{ name: 'LatPD', sets: 3, reps: '10-12' }] }, { t: 'D2', t1: 'OHP', t2: 'Deadlift', s: 't1', t2s: 't2', acc: [{ name: 'Row', sets: 3, reps: '10-12' }] }, { t: 'D3', t1: 'Bench', t2: 'Squat', s: 't1', t2s: 't2', acc: [{ name: 'Tri', sets: 3, reps: '10-15' }] }, { t: 'D4', t1: 'Deadlift', t2: 'OHP', s: 't1', t2s: 't2', acc: [{ name: 'Bi', sets: 3, reps: '10-15' }] }] },
-                '531': { name: '5/3/1 BBB', prog: '531', daysPerWeek: 4, progressionDesc: 'Monthly Wave', days: [{ t: 'OHP', t1: 'OHP', t2: 'OHP', s: '531', t2s: 'bbb', acc: [{ name: 'Chins', sets: 5, reps: 'AMRAP' }] }, { t: 'DL', t1: 'Deadlift', t2: 'Deadlift', s: '531', t2s: 'bbb', acc: [{ name: 'Abs', sets: 5, reps: '10-15' }] }, { t: 'Bench', t1: 'Bench', t2: 'Bench', s: '531', t2s: 'bbb', acc: [{ name: 'Row', sets: 5, reps: '10-12' }] }, { t: 'Squat', t1: 'Squat', t2: 'Squat', s: '531', t2s: 'bbb', acc: [{ name: 'Legs', sets: 5, reps: '10-15' }] }] }
-            },
-            ui: {
-                bars: [{ weight: 45, name: 'Standard' }, { weight: 35, name: 'Womens' }, { weight: 20, name: 'Kg Std' }, { weight: 15, name: 'Kg Wm' }],
-                timers: [{ l: 'Main (T1)', k: 'restT1', m: 300 }, { l: 'Secondary (T2)', k: 'restT2', m: 180 }, { l: 'Accessory (T3)', k: 'restT3', m: 120 }],
-                opts: [{ k: 'timerSound', l: 'Timer Sound' }, { k: 'vibration', l: 'Vibration' }, { k: 'autoStartTimer', l: 'Auto-start Timer' }, { k: 'showPreviousWorkout', l: 'Show Previous Workout' }, { k: 'autoDeload', l: 'Auto-suggest Deload' }, { k: 'keepAwake', l: 'Keep Screen Awake' }, { k: 'reduceMotion', l: 'Reduce Motion' }],
-                nav: [{ id: 'dashboard', l: 'Train', i: ICONS.train }, { id: 'calendar', l: 'History', i: ICONS.hist }, { id: 'preferences', l: 'Settings', i: ICONS.set }],
-                plates: { kg: [25, 20, 15, 10, 5, 2.5, 1.25], lbs: [45, 35, 25, 10, 5, 2.5] },
-                colors: { 55: 'bg-red-700 text-white', 45: 'bg-blue-600 text-white', 35: 'bg-yellow-500 text-black', 25: 'bg-green-500 text-black', 20: 'bg-blue-600 text-white', 15: 'bg-yellow-500 text-black', 10: 'bg-white text-black', 5: 'bg-white text-black', 2.5: 'bg-red-400 text-white', 1.25: 'bg-gray-400 text-black' }
-            }
-        };
-        const ACHIEVEMENTS = [{ id: 'first', title: 'First Steps', icon: '🎯', check: h => h.length >= 1 }, { id: 'week', title: 'Week Warrior', icon: '🔥', check: h => h.length >= 7 }, { id: 'month', title: 'Monthly Master', icon: '💪', check: h => h.length >= 30 }, { id: 'century', title: 'Century Club', icon: '🏆', check: h => h.length >= 100 }, { id: 'pr1', title: 'PR Machine', icon: '📈', check: h => h.some(w => w.pr) }, { id: 'pr5', title: 'Gains Train', icon: '🚂', check: h => h.filter(w => w.pr).length >= 5 }, { id: 'vol', title: 'Volume King', icon: '👑', check: h => h.reduce((a, w) => a + (w.totalVolume || 0), 0) >= 1e5 }, { id: 'back', title: 'Comeback Kid', icon: '💫', check: h => h.length > 1 && (h[h.length - 1].timestamp - h[h.length - 2].timestamp) > 12096e5 }, { id: 'star', title: 'Five Star', icon: '✨', check: h => h.some(w => w.rating === 5) }];
-        const EX_OPTS = {
-            bench_variants: { base: 'Bench', opt: [['Bench', 1], ['Incline Bench', .85], ['Close Grip Bench', .9], ['DB Bench', .8], ['Paused Bench', .9], ['Spoto Press', .85], ['Floor Press', .9]] },
-            ohp_variants: { base: 'OHP', opt: [['OHP', 1], ['Seated OHP', .95], ['DB OHP', .85], ['Push Press', 1.1], ['Z Press', .75], ['Arnold Press', .7], ['Behind Neck Press', .8]] },
-            squat_variants: { base: 'Squat', opt: [['Squat', 1], ['Front Squat', .85], ['Pause Squat', .85], ['Box Squat', .9], ['SSB Squat', .9], ['Goblet Squat', .5], ['Tempo Squat', .8]] },
-            deadlift_variants: { base: 'Deadlift', opt: [['Deadlift', 1], ['Sumo DL', 1], ['Romanian DL', .7], ['Trap Bar DL', 1.05], ['Deficit DL', .9], ['Paused DL', .85], ['Block Pull', 1.1], ['SLDL', .7]] },
-            row_variants: { base: 'Row', opt: [['Row', 1], ['Pendlay Row', .95], ['DB Row', .85], ['Cable Row', .9], ['T-Bar Row', 1], ['Seal Row', .8], ['Chest Supported Row', .85], ['Meadows Row', .7]] },
-            triceps: { opt: [['Tri'], ['Pushdowns'], ['Skull Crushers'], ['Dips'], ['OH Tricep Ext'], ['Close Grip BP'], ['JM Press'], ['Tricep Kickbacks']] },
-            biceps: { opt: [['Bi'], ['Barbell Curl'], ['DB Curl'], ['Hammer Curl'], ['Preacher Curl'], ['Incline Curl'], ['Cable Curl'], ['Spider Curl']] },
-            vertical_pull: { opt: [['Pullups'], ['Chin-ups'], ['Lat Pulldown'], ['LatPD'], ['Neutral Pullups'], ['Chins'], ['Wide Grip Pulldown'], ['Close Grip Pulldown']] },
-            leg_accessories: { opt: [['Legs'], ['Leg Press'], ['Lunges'], ['Leg Curl'], ['Leg Ext'], ['Calf Raises'], ['Bulgarian Split'], ['Hip Thrust'], ['Hack Squat'], ['Nordic Curl']] },
-            core: { opt: [['Abs'], ['Hanging Leg Raise'], ['Cable Crunch'], ['Ab Wheel'], ['Planks'], ['Russian Twists'], ['Dead Bug'], ['Pallof Press']] },
-            arms: { opt: [['Arms'], ['Curls + Pushdowns'], ['Hammer + Dips'], ['Arm Circuit'], ['Supersets']] },
-            dl_accessory: { base: 'Deadlift', opt: [['DL', 1], ['Romanian DL', .7], ['SLDL', .7], ['Good Morning', .5], ['Back Extension', .3]] }
-        };
-        const EX_INDEX = {}; Object.entries(EX_OPTS).forEach(([k, g]) => g.opt.forEach(o => { EX_INDEX[o[0]] = { id: o[0], name: o[0], mult: o[1] || 1, groupKey: k, base: g.base } }));
-        const K = { main: 'nsuns_ultimate', prefs: 'lift_preferences', bw: 'lift_bodyweight', session: 'lift_active_session', ach: 'lift_achievements', prs: 'lift_prs', e1rmHist: 'lift_e1rm_history' };
-        const DB = { g: (k, d) => JSON.parse(localStorage.getItem(k) || "null") || d, s: (k, v) => localStorage.setItem(k, JSON.stringify(v)), d: k => localStorage.removeItem(k) };
-        const U = { now: () => Date.now(), fmt: s => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`, iso: ts => new Date(ts).toISOString().split('T')[0], rnd: (n, u, m) => m ? (u === 'kg' ? Math.round(n / 1.25) * 1.25 : Math.round(n / 2.5) * 2.5) : (u === 'kg' ? Math.round(n / 2.5) * 2.5 : Math.round(n / 5) * 5), conv: (w, f, t) => f === t ? +w : f === 'lbs' ? +w * 0.453592 : +w / 0.453592, safe: (v, d = 0) => Number.isFinite(+v) ? +v : d };
-
-        let charts = {}; // Non-reactive chart storage
-        const matchers = [
-            [/(curl|bi)/, { bi: 1, forearm: .2 }], [/(pushdown|extension|skull|tri|dip)/, { tri: 1, frontDelt: .15 }],
-            [/(pullup|chin|lat|pulldown)/, { lats: 1, bi: .5, rearDelt: .2 }], [/row/, { lats: .8, bi: .5, rearDelt: .4, traps: .3 }],
-            [/(leg|press|lunge|split)/, { quads: .7, hams: .5, glutes: .5 }], [/(ham|rdl|curl)/, { hams: .9, glutes: .4 }],
-            [/calf/, { calves: 1 }], [/(ab|core|plank|crunch)/, { abs: .8, lowBack: .2 }], [/(arm|superset)/, { tri: .5, bi: .5 }],
-            [/(shrug|trap)/, { traps: 1 }], [/(face|rear)/, { rearDelt: 1, traps: .3 }], [/(fly|cable)/, { chest: .7, frontDelt: .3 }]
-        ];
-
-        // --- IMPROVEMENT 2: Estimated 1RM helpers for trending progression ---
-        function epley1RM(weight, reps) {
-            if (reps <= 0 || weight <= 0) return 0;
-            if (reps === 1) return weight;
-            // Epley formula capped at 12 reps for accuracy
-            const effectiveReps = Math.min(reps, 12);
-            return Math.round(weight * (1 + effectiveReps / 30));
+    // --- Static Data ---
+    const ICONS = { warn: 'M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z', x: 'M6 18L18 6M6 6l12 12', check: 'M5 13l4 4L19 7', trash: 'M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16', edit: 'M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z', save: 'M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4', play: 'M8 5v14l11-7z', prev: 'M15 19l-7-7 7-7', next: 'M9 5l7 7-7 7', warn2: 'M12 8v4m0 4h.01', info: 'M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z', train: 'M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10', hist: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z', set: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z', chev_down: 'M19 9l-7 7-7-7', swap: 'M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4', expand: 'M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4', search: 'M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z' };
+    const DATA = {
+        muscles: { Bench: { chest: 1, frontDelt: .6, tri: .5, cns: .4 }, OHP: { frontDelt: 1, tri: .6, upperChest: .3, cns: .5 }, Squat: { quads: 1, glutes: .8, lowBack: .6, cns: .8 }, Deadlift: { hams: 1, glutes: .9, lowBack: 1, traps: .4, grip: .6, cns: 1.0 }, Row: { lats: 1, bi: .7, rearDelt: .5, grip: .4, cns: .3 } },
+        // UPDATED: Significantly increased recovery times (half-lives) for heavy compound groups
+        halfLife: { chest: 24, frontDelt: 20, tri: 18, upperChest: 24, quads: 48, glutes: 48, lowBack: 72, hams: 48, traps: 24, grip: 24, lats: 30, bi: 18, rearDelt: 20, cns: 60 },
+        // Muscle-specific recovery capacity — how much fatigue a muscle can absorb before recovery % drops significantly
+        recoveryCapacity: { chest: 18, frontDelt: 14, tri: 12, upperChest: 18, quads: 25, glutes: 25, lowBack: 30, hams: 25, traps: 16, grip: 16, lats: 20, bi: 12, rearDelt: 14, cns: 20, abs: 10, calves: 10, forearm: 10 },
+        // Upper vs lower body progression rates (kg/lbs increment multipliers)
+        progressionRate: { Bench: 1, OHP: 1, Squat: 1, Deadlift: 1, Row: 1, upper: 0.5, lower: 1 },
+        groups: { Push: ['chest', 'frontDelt', 'tri'], Pull: ['lats', 'bi', 'rearDelt', 'traps'], Legs: ['quads', 'hams', 'glutes'], 'Core/Back': ['lowBack'], CNS: ['cns'] },
+        schemes: {
+            nsuns: { vol: [[.65, 8], [.75, 6], [.85, 4], [.85, 4], [.85, 4], [.8, 5], [.75, 6], [.7, 7], [.65, 8, '+']], heavy: [[.75, 5], [.85, 3], [.95, 1, '+'], [.9, 3], [.85, 3], [.8, 3], [.75, 5], [.7, 5], [.65, 5, '+']], dl: [[.75, 5], [.85, 3], [.95, 1, '+'], [.9, 3], [.85, 3], [.8, 3], [.75, 3], [.7, 3], [.65, 3]], t2: [[.5, 5], [.6, 6], [.7, 7], [.7, 4], [.7, 4], [.7, 4], [.7, 4], [.7, 4]] },
+            stronglifts: { std: [[1, 5], [1, 5], [1, 5], [1, 5], [1, 5, '+']], dl: [[1, 5, '+']] },
+            phul: { pow: [[.85, 5], [.85, 5], [.85, 5]], hyp: [[.65, 10], [.65, 10], [.65, 10]], vol: [[.6, 12], [.6, 12], [.6, 12]] },
+            ppl: { m5: [[.85, 5], [.85, 5], [.85, 5], [.85, 5], [.85, 5, '+']], m1: [[.9, 5, '+']], sec: [[.7, 10], [.7, 10], [.7, 10]] },
+            gzclp: { t1: [[.85, 3], [.85, 3], [.85, 3], [.85, 3], [.85, 3, '+']], t2: [[.65, 10], [.65, 10], [.65, 10]], f1: [[5, 3], [6, 2], [10, 1]], f2: [[3, 10], [3, 8], [3, 6]] },
+            '531': { w1: [[.65, 5], [.75, 5], [.85, 5, '+']], w2: [[.7, 3], [.8, 3], [.9, 3, '+']], w3: [[.75, 5], [.85, 3], [.95, 1, '+']], del: [[.4, 5], [.5, 5], [.6, 5]], bbb: Array(5).fill([.5, 10]) }
+        },
+        progs: {
+            nsuns: { name: 'nSuns LP', daysPerWeek: 5, progressionDesc: 'Linear + AMRAP', days: [{ t: 'Bench Vol', t1: 'Bench', t2: 'OHP', s: 'vol', t2s: 't2', acc: [{ name: 'Row', sets: 4, reps: '10-12' }] }, { t: 'Squat Heavy', t1: 'Squat', t2: 'Deadlift', s: 'heavy', t2s: 't2', acc: [{ name: 'Legs', sets: 4, reps: '10-12' }] }, { t: 'OHP Heavy', t1: 'OHP', t2: 'Bench', s: 'heavy', t2s: 't2', acc: [{ name: 'Pullups', sets: 4, reps: 'AMRAP' }] }, { t: 'Deadlift Heavy', t1: 'Deadlift', t2: 'Squat', s: 'dl', t2s: 't2', acc: [{ name: 'Abs', sets: 4, reps: '10-15' }] }, { t: 'Bench Heavy', t1: 'Bench', t2: 'Bench', s: 'heavy', t2s: 't2', acc: [{ name: 'Arms', sets: 4, reps: '10-15' }] }] },
+            ppl: { name: 'PPL', prog: 'lin', daysPerWeek: 6, progressionDesc: 'Linear', days: [{ t: 'Push A', t1: 'Bench', t2: 'OHP', s: 'm5', t2s: 'sec', acc: [{ name: 'Tri', sets: 3, reps: '10-15' }] }, { t: 'Pull A', t1: 'Deadlift', t2: 'Row', s: 'm1', t2s: 'sec', acc: [{ name: 'Bi', sets: 3, reps: '10-15' }] }, { t: 'Legs A', t1: 'Squat', t2: 'Deadlift', s: 'm5', t2s: 'sec', acc: [{ name: 'Legs', sets: 3, reps: '10-15' }] }, { t: 'Push B', t1: 'OHP', t2: 'Bench', s: 'm5', t2s: 'sec', acc: [{ name: 'Tri', sets: 3, reps: '10-15' }] }, { t: 'Pull B', t1: 'Row', t2: 'Deadlift', s: 'm5', t2s: 'vol', acc: [{ name: 'Bi', sets: 3, reps: '10-15' }] }, { t: 'Legs B', t1: 'Squat', t2: 'Deadlift', s: 'm5', t2s: 'sec', acc: [{ name: 'Legs', sets: 3, reps: '10-15' }] }] },
+            phul: { name: 'PHUL', prog: 'lin', daysPerWeek: 4, progressionDesc: 'Linear', days: [{ t: 'Up Pwr', t1: 'Bench', t2: 'Row', s: 'pow', t2s: 'pow', acc: [{ name: 'OHP', sets: 3, reps: '6-10' }] }, { t: 'Lo Pwr', t1: 'Squat', t2: 'Deadlift', s: 'pow', t2s: 'pow', acc: [{ name: 'Legs', sets: 3, reps: '8-12' }] }, { t: 'Up Hyp', t1: 'OHP', t2: 'Bench', s: 'hyp', t2s: 'hyp', acc: [{ name: 'Row', sets: 3, reps: '10-12' }] }, { t: 'Lo Hyp', t1: 'Deadlift', t2: 'Squat', s: 'hyp', t2s: 'hyp', acc: [{ name: 'Legs', sets: 3, reps: '10-15' }] }] },
+            stronglifts: { name: 'SL 5x5', prog: 'lin', pW: true, daysPerWeek: 3, progressionDesc: 'Linear', days: [{ t: 'A', t1: 'Squat', t2: 'Bench', s: 'std', t2s: 'std', acc: [{ name: 'Row', sets: 5, reps: '5' }] }, { t: 'B', t1: 'Squat', t2: 'OHP', s: 'std', t2s: 'std', acc: [{ name: 'DL', sets: 1, reps: '5+' }] }] },
+            gzclp: { name: 'GZCLP', prog: 'gz', daysPerWeek: 4, progressionDesc: 'Stage Failure', days: [{ t: 'D1', t1: 'Squat', t2: 'Bench', s: 't1', t2s: 't2', acc: [{ name: 'LatPD', sets: 3, reps: '10-12' }] }, { t: 'D2', t1: 'OHP', t2: 'Deadlift', s: 't1', t2s: 't2', acc: [{ name: 'Row', sets: 3, reps: '10-12' }] }, { t: 'D3', t1: 'Bench', t2: 'Squat', s: 't1', t2s: 't2', acc: [{ name: 'Tri', sets: 3, reps: '10-15' }] }, { t: 'D4', t1: 'Deadlift', t2: 'OHP', s: 't1', t2s: 't2', acc: [{ name: 'Bi', sets: 3, reps: '10-15' }] }] },
+            '531': { name: '5/3/1 BBB', prog: '531', daysPerWeek: 4, progressionDesc: 'Monthly Wave', days: [{ t: 'OHP', t1: 'OHP', t2: 'OHP', s: '531', t2s: 'bbb', acc: [{ name: 'Chins', sets: 5, reps: 'AMRAP' }] }, { t: 'DL', t1: 'Deadlift', t2: 'Deadlift', s: '531', t2s: 'bbb', acc: [{ name: 'Abs', sets: 5, reps: '10-15' }] }, { t: 'Bench', t1: 'Bench', t2: 'Bench', s: '531', t2s: 'bbb', acc: [{ name: 'Row', sets: 5, reps: '10-12' }] }, { t: 'Squat', t1: 'Squat', t2: 'Squat', s: '531', t2s: 'bbb', acc: [{ name: 'Legs', sets: 5, reps: '10-15' }] }] }
+        },
+        ui: {
+            bars: [{ weight: 45, name: 'Standard' }, { weight: 35, name: 'Womens' }, { weight: 20, name: 'Kg Std' }, { weight: 15, name: 'Kg Wm' }],
+            timers: [{ l: 'Main (T1)', k: 'restT1', m: 300 }, { l: 'Secondary (T2)', k: 'restT2', m: 180 }, { l: 'Accessory (T3)', k: 'restT3', m: 120 }],
+            opts: [{ k: 'timerSound', l: 'Timer Sound' }, { k: 'vibration', l: 'Vibration' }, { k: 'autoStartTimer', l: 'Auto-start Timer' }, { k: 'showPreviousWorkout', l: 'Show Previous Workout' }, { k: 'autoDeload', l: 'Auto-suggest Deload' }, { k: 'keepAwake', l: 'Keep Screen Awake' }, { k: 'reduceMotion', l: 'Reduce Motion' }],
+            nav: [{ id: 'dashboard', l: 'Train', i: ICONS.train }, { id: 'calendar', l: 'History', i: ICONS.hist }, { id: 'preferences', l: 'Settings', i: ICONS.set }],
+            plates: { kg: [25, 20, 15, 10, 5, 2.5, 1.25], lbs: [45, 35, 25, 10, 5, 2.5] },
+            colors: { 55: 'bg-red-700 text-white', 45: 'bg-blue-600 text-white', 35: 'bg-yellow-500 text-black', 25: 'bg-green-500 text-black', 20: 'bg-blue-600 text-white', 15: 'bg-yellow-500 text-black', 10: 'bg-white text-black', 5: 'bg-white text-black', 2.5: 'bg-red-400 text-white', 1.25: 'bg-gray-400 text-black' }
         }
+    };
+    const ACHIEVEMENTS = [{ id: 'first', title: 'First Steps', icon: '🎯', check: h => h.length >= 1 }, { id: 'week', title: 'Week Warrior', icon: '🔥', check: h => h.length >= 7 }, { id: 'month', title: 'Monthly Master', icon: '💪', check: h => h.length >= 30 }, { id: 'century', title: 'Century Club', icon: '🏆', check: h => h.length >= 100 }, { id: 'pr1', title: 'PR Machine', icon: '📈', check: h => h.some(w => w.pr) }, { id: 'pr5', title: 'Gains Train', icon: '🚂', check: h => h.filter(w => w.pr).length >= 5 }, { id: 'vol', title: 'Volume King', icon: '👑', check: h => h.reduce((a, w) => a + (w.totalVolume || 0), 0) >= 1e5 }, { id: 'back', title: 'Comeback Kid', icon: '💫', check: h => h.length > 1 && (h[h.length - 1].timestamp - h[h.length - 2].timestamp) > 12096e5 }, { id: 'star', title: 'Five Star', icon: '✨', check: h => h.some(w => w.rating === 5) }];
+    const EX_OPTS = {
+        bench_variants: { base: 'Bench', opt: [['Bench', 1], ['Incline Bench', .85], ['Close Grip Bench', .9], ['DB Bench', .8], ['Paused Bench', .9], ['Spoto Press', .85], ['Floor Press', .9]] },
+        ohp_variants: { base: 'OHP', opt: [['OHP', 1], ['Seated OHP', .95], ['DB OHP', .85], ['Push Press', 1.1], ['Z Press', .75], ['Arnold Press', .7], ['Behind Neck Press', .8]] },
+        squat_variants: { base: 'Squat', opt: [['Squat', 1], ['Front Squat', .85], ['Pause Squat', .85], ['Box Squat', .9], ['SSB Squat', .9], ['Goblet Squat', .5], ['Tempo Squat', .8]] },
+        deadlift_variants: { base: 'Deadlift', opt: [['Deadlift', 1], ['Sumo DL', 1], ['Romanian DL', .7], ['Trap Bar DL', 1.05], ['Deficit DL', .9], ['Paused DL', .85], ['Block Pull', 1.1], ['SLDL', .7]] },
+        row_variants: { base: 'Row', opt: [['Row', 1], ['Pendlay Row', .95], ['DB Row', .85], ['Cable Row', .9], ['T-Bar Row', 1], ['Seal Row', .8], ['Chest Supported Row', .85], ['Meadows Row', .7]] },
+        triceps: { opt: [['Tri'], ['Pushdowns'], ['Skull Crushers'], ['Dips'], ['OH Tricep Ext'], ['Close Grip BP'], ['JM Press'], ['Tricep Kickbacks']] },
+        biceps: { opt: [['Bi'], ['Barbell Curl'], ['DB Curl'], ['Hammer Curl'], ['Preacher Curl'], ['Incline Curl'], ['Cable Curl'], ['Spider Curl']] },
+        vertical_pull: { opt: [['Pullups'], ['Chin-ups'], ['Lat Pulldown'], ['LatPD'], ['Neutral Pullups'], ['Chins'], ['Wide Grip Pulldown'], ['Close Grip Pulldown']] },
+        leg_accessories: { opt: [['Legs'], ['Leg Press'], ['Lunges'], ['Leg Curl'], ['Leg Ext'], ['Calf Raises'], ['Bulgarian Split'], ['Hip Thrust'], ['Hack Squat'], ['Nordic Curl']] },
+        core: { opt: [['Abs'], ['Hanging Leg Raise'], ['Cable Crunch'], ['Ab Wheel'], ['Planks'], ['Russian Twists'], ['Dead Bug'], ['Pallof Press']] },
+        arms: { opt: [['Arms'], ['Curls + Pushdowns'], ['Hammer + Dips'], ['Arm Circuit'], ['Supersets']] },
+        dl_accessory: { base: 'Deadlift', opt: [['DL', 1], ['Romanian DL', .7], ['SLDL', .7], ['Good Morning', .5], ['Back Extension', .3]] }
+    };
+    const EX_INDEX = {}; Object.entries(EX_OPTS).forEach(([k, g]) => g.opt.forEach(o => { EX_INDEX[o[0]] = { id: o[0], name: o[0], mult: o[1] || 1, groupKey: k, base: g.base } }));
+    const K = { main: 'nsuns_ultimate', prefs: 'lift_preferences', bw: 'lift_bodyweight', session: 'lift_active_session', ach: 'lift_achievements', prs: 'lift_prs', e1rmHist: 'lift_e1rm_history' };
+    const DB = { g: (k, d) => JSON.parse(localStorage.getItem(k) || "null") || d, s: (k, v) => localStorage.setItem(k, JSON.stringify(v)), d: k => localStorage.removeItem(k) };
+    const U = { now: () => Date.now(), fmt: s => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`, iso: ts => new Date(ts).toISOString().split('T')[0], rnd: (n, u, m) => m ? (u === 'kg' ? Math.round(n / 1.25) * 1.25 : Math.round(n / 2.5) * 2.5) : (u === 'kg' ? Math.round(n / 2.5) * 2.5 : Math.round(n / 5) * 5), conv: (w, f, t) => f === t ? +w : f === 'lbs' ? +w * 0.453592 : +w / 0.453592, safe: (v, d = 0) => Number.isFinite(+v) ? +v : d };
 
-        // Weighted moving average of recent e1RM values for a lift — trend-based progression
-        function trendE1RM(e1rmHistory, liftName, windowSize = 5) {
-            const entries = (e1rmHistory[liftName] || []).slice(-windowSize);
-            if (!entries.length) return 0;
-            // Linearly-weighted: most recent gets highest weight
-            let wSum = 0, wDiv = 0;
-            entries.forEach((val, i) => {
-                const w = i + 1; // 1, 2, 3...
-                wSum += val.e1rm * w;
-                wDiv += w;
-            });
-            return Math.round(wSum / wDiv);
-        }
+    let charts = {}; // Non-reactive chart storage
+    const matchers = [
+        [/(curl|bi)/, { bi: 1, forearm: .2 }], [/(pushdown|extension|skull|tri|dip)/, { tri: 1, frontDelt: .15 }],
+        [/(pullup|chin|lat|pulldown)/, { lats: 1, bi: .5, rearDelt: .2 }], [/row/, { lats: .8, bi: .5, rearDelt: .4, traps: .3 }],
+        [/(leg|press|lunge|split)/, { quads: .7, hams: .5, glutes: .5 }], [/(ham|rdl|curl)/, { hams: .9, glutes: .4 }],
+        [/calf/, { calves: 1 }], [/(ab|core|plank|crunch)/, { abs: .8, lowBack: .2 }], [/(arm|superset)/, { tri: .5, bi: .5 }],
+        [/(shrug|trap)/, { traps: 1 }], [/(face|rear)/, { rearDelt: 1, traps: .3 }], [/(fly|cable)/, { chest: .7, frontDelt: .3 }]
+    ];
 
-        // --- IMPROVEMENT 3: Effective reps / stimulus scoring ---
-        // Estimates reps-in-reserve, then scores effective (hypertrophic) reps
-        // Only the last ~5 reps before failure produce meaningful stimulus
-        function effectiveRepsScore(weight, reps, tm, failed) {
-            if (reps <= 0 || weight <= 0) return 0;
-            const intensity = Math.min(weight / (tm || weight), 1.3);
+    // --- Estimated 1RM helpers for trending progression ---
+    function epley1RM(weight, reps) {
+        if (reps <= 0 || weight <= 0) return 0;
+        if (reps === 1) return weight;
+        // Epley formula capped at 12 reps for accuracy
+        const effectiveReps = Math.min(reps, 12);
+        return Math.round(weight * (1 + effectiveReps / 30));
+    }
+
+    // Weighted moving average of recent e1RM values for a lift — trend-based progression
+    function trendE1RM(e1rmHistory, liftName, windowSize = 5) {
+        const entries = (e1rmHistory[liftName] || []).slice(-windowSize);
+        if (!entries.length) return 0;
+        // Linearly-weighted: most recent gets highest weight
+        let wSum = 0, wDiv = 0;
+        entries.forEach((val, i) => {
+            const w = i + 1; // 1, 2, 3...
+            wSum += val.e1rm * w;
+            wDiv += w;
+        });
+        return Math.round(wSum / wDiv);
+    }
+
+    // UPDATED: Effective reps / stimulus scoring
+    // Now applies much heavier penalties for high intensity to properly account for CNS fatigue
+    function effectiveRepsScore(weight, reps, tm, failed) {
+        if (reps <= 0 || weight <= 0) return 0;
+        const intensity = Math.min(weight / (tm || weight), 1.3);
+        
+        let effectiveCount;
+        // If intensity is very high (>85%), count all reps as fully stimulating
+        // This fixes the issue where heavy triples were undervalued
+        if (intensity > 0.85) {
+            effectiveCount = reps;
+        } else {
             // Estimate max reps at this weight using inverse Epley
-            const estMaxReps = intensity >= 1 ? 1 : Math.max(1, Math.round(30 * (1 / intensity - 1)));
+            const estMaxReps = Math.max(1, Math.round(30 * (1 / intensity - 1)));
             const rir = Math.max(0, estMaxReps - reps);
-            // Effective reps: reps within 5 of failure (the "stimulating reps" model)
-            const stimulatingReps = Math.min(reps, Math.max(0, 5 - rir));
-            // Failed sets count all reps as effective but add extra fatigue
-            const effectiveCount = failed ? reps : stimulatingReps;
-            // Scale by intensity squared for fatigue contribution
-            return effectiveCount * Math.pow(intensity, 1.6) * (failed ? 1.3 : 1);
+            // Effective reps: reps within 5 of failure
+            effectiveCount = Math.min(reps, Math.max(0, 5 - rir));
         }
 
-        function app() {
-            return {
-                view: 'dashboard', icons: ICONS, UI: DATA.ui, PROGRAMS: DATA.progs, ACHIEVEMENTS,
-                tms: { Bench: 0, Squat: 0, Deadlift: 0, OHP: 0, Row: 0 },
-                state: { Bench: { stage: 1 }, Squat: { stage: 1 }, Deadlift: { stage: 1 }, OHP: { stage: 1 }, Row: { stage: 1 } },
-                prs: {}, history: [], bwLog: [], achievements: [],
-                e1rmHistory: {}, // IMPROVEMENT 2: per-lift e1RM trend tracking
-                prefs: { weightUnit: 'lbs', program: 'nsuns', restT1: 180, restT2: 120, restT3: 60, timerSound: true, vibration: true, autoStartTimer: true, showPreviousWorkout: true, autoDeload: true, barWeight: 45, microplates: false, keepAwake: false, reduceMotion: false },
-                activeModal: null, session: {}, savedSession: null, timer: { active: false, start: null, dur: 0, rem: 0, pct: 0, label: 'Rest' },
-                tempBodyWeight: null, showWarmups: false, plate: { open: false, w: 0, plates: [] },
-                calc: { w: 0, r: 0 }, chartLift: 'Bench', cal: { monthName: '', days: [], offset: 0 },
-                sessionTimerStr: '0:00', deloadInfo: {}, sessionRating: 0, sessionNotes: '', sessionRPE: 7, currentAchievement: null,
-                selectedLog: null, historyFilter: 'all', previousWorkout: null, isEditingLog: false,
-                swapState: { t2: false, acc: null, q: '' }, zenMode: false, zenAmrap: null,
-                setEdit: { tier: 't1', idx: 0, weight: 0, reps: 0, performed: null, failed: false, amrap: false, completed: false },
-                setup: {}, idx: 0, pIdx: 0, week: 1, streak: 0, cache: { recovery: [], volume: [] }, wakeLock: null,
+        // Scale by intensity raised to power of 3.5 (Exponential fatigue for heavy loads)
+        return effectiveCount * Math.pow(intensity, 3.5) * (failed ? 1.5 : 1);
+    }
 
-                init() {
-                    const d = DB.g(K.main, {}), s = DB.g(K.prefs, {});
-                    Object.assign(this, { tms: d.tms || this.tms, history: d.history || [], idx: d.idx || 0, week: d.week || 1, streak: d.streak || 0, state: d.state || this.state, prefs: { ...this.prefs, ...s }, bwLog: DB.g(K.bw, []).filter(x => x.date), savedSession: DB.g(K.session), achievements: DB.g(K.ach, []), prs: DB.g(K.prs, {}), e1rmHistory: DB.g(K.e1rmHist, {}) });
-                    if (!this.prefs.barWeight) this.prefs.barWeight = this.prefs.weightUnit === 'kg' ? 20 : 45;
-                    this.applyRM();
-                    this.history.forEach(h => { h.timestamp = h.timestamp || new Date(h.date).getTime(); h.isoDate = h.isoDate || U.iso(h.timestamp); });
-                    this.pIdx = this.idx; this.updCache();
-                    if (this.savedSession?.t1) this.activeModal = 'resume'; else if (!d.tms) this.view = 'setup';
-                    window.addEventListener('pointerdown', this.unlockAudio, { once: true, passive: true });
-                    this.$nextTick(() => { this.draw(); this.calBuild(); this.chkAch() });
-                    setInterval(() => this.tick(), 1000);
-                },
-                tick() {
-                    const n = U.now();
-                    if (this.session.start) this.sessionTimerStr = U.fmt((n - this.session.start) / 1000);
-                    if (this.timer.active) {
-                        this.timer.rem = Math.max(0, this.timer.dur - Math.floor((n - this.timer.start) / 1000));
-                        this.timer.pct = this.timer.dur > 0 ? (this.timer.rem / this.timer.dur) : 0;
-                        if (this.timer.rem <= 0) { this.timer.active = false; if (this.prefs.timerSound) this.beep(); if (this.prefs.vibration && navigator.vibrate) navigator.vibrate([200, 100, 200]); }
+    function app() {
+        return {
+            view: 'dashboard', icons: ICONS, UI: DATA.ui, PROGRAMS: DATA.progs, ACHIEVEMENTS,
+            tms: { Bench: 0, Squat: 0, Deadlift: 0, OHP: 0, Row: 0 },
+            state: { Bench: { stage: 1 }, Squat: { stage: 1 }, Deadlift: { stage: 1 }, OHP: { stage: 1 }, Row: { stage: 1 } },
+            prs: {}, history: [], bwLog: [], achievements: [],
+            e1rmHistory: {}, // per-lift e1RM trend tracking
+            prefs: { weightUnit: 'lbs', program: 'nsuns', restT1: 180, restT2: 120, restT3: 60, timerSound: true, vibration: true, autoStartTimer: true, showPreviousWorkout: true, autoDeload: true, barWeight: 45, microplates: false, keepAwake: false, reduceMotion: false },
+            activeModal: null, session: {}, savedSession: null, timer: { active: false, start: null, dur: 0, rem: 0, pct: 0, label: 'Rest' },
+            tempBodyWeight: null, showWarmups: false, plate: { open: false, w: 0, plates: [] },
+            calc: { w: 0, r: 0 }, chartLift: 'Bench', cal: { monthName: '', days: [], offset: 0 },
+            sessionTimerStr: '0:00', deloadInfo: {}, sessionRating: 0, sessionNotes: '', sessionRPE: 7, currentAchievement: null,
+            selectedLog: null, historyFilter: 'all', previousWorkout: null, isEditingLog: false,
+            swapState: { t2: false, acc: null, q: '' }, zenMode: false, zenAmrap: null,
+            setEdit: { tier: 't1', idx: 0, weight: 0, reps: 0, performed: null, failed: false, amrap: false, completed: false },
+            setup: {}, idx: 0, pIdx: 0, week: 1, streak: 0, cache: { recovery: [], volume: [] }, wakeLock: null,
+
+            init() {
+                const d = DB.g(K.main, {}), s = DB.g(K.prefs, {});
+                Object.assign(this, { tms: d.tms || this.tms, history: d.history || [], idx: d.idx || 0, week: d.week || 1, streak: d.streak || 0, state: d.state || this.state, prefs: { ...this.prefs, ...s }, bwLog: DB.g(K.bw, []).filter(x => x.date), savedSession: DB.g(K.session), achievements: DB.g(K.ach, []), prs: DB.g(K.prs, {}), e1rmHistory: DB.g(K.e1rmHist, {}) });
+                if (!this.prefs.barWeight) this.prefs.barWeight = this.prefs.weightUnit === 'kg' ? 20 : 45;
+                this.applyRM();
+                this.history.forEach(h => { h.timestamp = h.timestamp || new Date(h.date).getTime(); h.isoDate = h.isoDate || U.iso(h.timestamp); });
+                this.pIdx = this.idx; this.updCache();
+                if (this.savedSession?.t1) this.activeModal = 'resume'; else if (!d.tms) this.view = 'setup';
+                window.addEventListener('pointerdown', this.unlockAudio, { once: true, passive: true });
+                this.$nextTick(() => { this.draw(); this.calBuild(); this.chkAch() });
+                setInterval(() => this.tick(), 1000);
+            },
+            tick() {
+                const n = U.now();
+                if (this.session.start) this.sessionTimerStr = U.fmt((n - this.session.start) / 1000);
+                if (this.timer.active) {
+                    this.timer.rem = Math.max(0, this.timer.dur - Math.floor((n - this.timer.start) / 1000));
+                    this.timer.pct = this.timer.dur > 0 ? (this.timer.rem / this.timer.dur) : 0;
+                    if (this.timer.rem <= 0) { this.timer.active = false; if (this.prefs.timerSound) this.beep(); if (this.prefs.vibration && navigator.vibrate) navigator.vibrate([200, 100, 200]); }
+                }
+            },
+            handleEscape() { if (this.zenMode) return this.toggleZen(); if (this.activeModal) this.activeModal = null; if (this.plate.open) this.plate.open = false; },
+            applyRM() { document.documentElement.classList.toggle('reduce-motion', !!this.prefs.reduceMotion) },
+            unlockAudio() { try { if (!window.ac) window.ac = new (window.AudioContext || window.webkitAudioContext)(); if (ac.state === 'suspended') ac.resume() } catch { } },
+            nav(v) { this.view = v; if (v === 'calendar') this.calBuild(); if (v === 'dashboard') this.$nextTick(() => this.draw()); if (v !== 'workout') this.relWake(); },
+            lifts: () => Object.keys(DATA.muscles),
+            getWk() { const p = DATA.progs[this.prefs.program], r = p.days[this.pIdx % p.days.length]; return { ...r, title: r.title || r.t, focus: r.focus || `${r.t1} + ${r.t2}` } },
+            prevSim() { const t = this.getWk().t1; return this.history.slice().reverse().find(h => h.details?.t1 === t) },
+            repLast() { const l = this.prevSim(); if (l) this.start(DATA.progs[this.prefs.program].days.find(d => d.t1 === l.details.t1)) },
+            startCust() { this.start({ title: 'Custom Workout', t1: 'Bench', t2: 'Row', s: 'vol', t2s: 't2', acc: [] }) },
+            isDeload() { return this.prefs.program === '531' && this.week % 4 === 0 },
+            chgDay(d) { const l = DATA.progs[this.prefs.program].days.length; this.pIdx = (this.pIdx + d + l) % l },
+            fmt: U.fmt, fmtSet: ts => new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            daysOff() { return this.history.length ? Math.floor((U.now() - (this.history[this.history.length - 1].timestamp || 0)) / 864e5) : 0 },
+            exInfo: id => EX_INDEX[id] ? { ...EX_INDEX[id], group: EX_OPTS[EX_INDEX[id].groupKey] } : null,
+            exAlts: id => EX_INDEX[id] ? EX_OPTS[EX_INDEX[id].groupKey].opt.map(o => ({ id: o[0], name: o[0], mult: o[1] || 1 })) : [{ id, name: id, mult: 1 }],
+            baseTM: id => EX_INDEX[id]?.base || (this.tms[id] !== undefined ? id : null),
+            exMult: id => EX_INDEX[id]?.mult || 1, exName: id => EX_INDEX[id]?.name || id,
+            getSets(sk, l, tm, tier, exOv = null) {
+                const { program: p, weightUnit: u, microplates: m } = this.prefs, actEx = exOv || l, base = this.baseTM(actEx), effTM = (base ? (this.tms[base] || tm) : tm) * this.exMult(actEx);
+                let s = [];
+                if (p === 'gzclp') {
+                    const st = this.state[l]?.stage || 1, stages = tier === 't1' ? [[5, 3], [6, 2], [10, 1]] : [[3, 10], [3, 8], [3, 6]], cfg2 = stages[Math.min(st - 1, 2)];
+                    s = Array(cfg2[0]).fill(0).map((_, i) => ({ w: tier === 't1' ? .85 : .65, r: cfg2[1], amrap: i === cfg2[0] - 1 }));
+                } else if (p === '531' && tier === 't1') {
+                    const w = this.week % 4 || 4; s = DATA.schemes['531'][w === 4 ? 'del' : `w${w}`].map(x => ({ w: x[0], r: x[1], amrap: x[2] === '+' }));
+                } else { const map = DATA.schemes[p] || DATA.schemes.nsuns; s = (map[sk] || map.vol).map(x => ({ w: x[0], r: x[1], amrap: x[2] === '+' })); }
+                return s.map(x => ({ weight: U.rnd(effTM * x.w, u, m), reps: x.r, amrap: x.amrap, completed: false, failed: false, performed: null, completedAt: null }));
+            },
+            chkDeload() { const off = this.daysOff(), lvls = [[42, 25, '6+ weeks off'], [28, 20, '4 weeks off'], [14, 10, '2 weeks off']].find(l => off >= l[0]); if (lvls && this.prefs.autoDeload) { this.deloadInfo = { needed: true, percentage: lvls[1], reason: lvls[2], protocol: 'Reduce_TMs' }; this.activeModal = 'deload'; } else this.activeModal = 'weight'; },
+            doDeload() { Object.keys(this.tms).forEach(k => { this.tms[k] = U.rnd((this.tms[k] || 0) * (1 - this.deloadInfo.percentage / 100), this.prefs.weightUnit, this.prefs.microplates) }); this.save(); this.activeModal = 'weight'; },
+            async reqWake() { if (!this.prefs.keepAwake || !('wakeLock' in navigator)) return; try { this.wakeLock = await navigator.wakeLock.request('screen'); } catch { } },
+            relWake() { this.wakeLock?.release().catch(() => { }); this.wakeLock = null; },
+            start(c) {
+                const d = c || this.getWk(), title = d.title || d.t || 'Workout', t2B = this.baseTM(d.t2), t2TM = t2B ? this.tms[t2B] : this.tms[d.t2];
+                this.session = { title, start: U.now(), acc: JSON.parse(JSON.stringify(d.acc || [])).map(a => ({ ...a, reps: a.reps || '10-12', originalName: a.name, selectedExercise: a.name })), completedAcc: {}, notes: '', dayIdx: c ? null : this.pIdx, t1: { name: d.t1, sets: this.getSets(d.s, d.t1, this.tms[d.t1], 't1') }, t2: { name: d.t2, originalName: d.t2, selectedExercise: d.t2, schemeKey: d.t2s, sets: this.getSets(d.t2s, d.t2, t2TM, 't2', d.t2) } };
+                if (this.prefs.showPreviousWorkout) { const h = this.history.slice().reverse().find(x => x.details?.t1 === d.t1); if (h) this.previousWorkout = { date: h.date, duration: h.duration, topSet: h.details?.weight, amrapResult: h.setDetails?.t1?.find(s => s.amrap)?.performed } }
+                this.saveSess(); this.view = 'workout'; this.reqWake();
+            },
+            swapT2(nEx) { if (!this.session.t2) return; const bTM = this.baseTM(nEx), tm = bTM ? this.tms[bTM] : this.tms[this.session.t2.originalName], state = this.session.t2.sets.map(s => ({ c: s.completed, f: s.failed, p: s.performed, at: s.completedAt })), nSets = this.getSets(this.session.t2.schemeKey, this.session.t2.originalName, tm, 't2', nEx); nSets.forEach((s, i) => { if (state[i]) Object.assign(s, { completed: state[i].c, failed: state[i].f, performed: state[i].p, completedAt: state[i].at }) }); this.session.t2.selectedExercise = nEx; this.session.t2.name = nEx; this.session.t2.sets = nSets; this.swapState.t2 = false; this.swapState.q = ''; this.saveSess(); },
+            swapAcc(i, n) { if (this.session.acc?.[i]) { this.session.acc[i].selectedExercise = n; this.session.acc[i].name = n; this.swapState.acc = null; this.swapState.q = ''; this.saveSess(); } },
+            getT2Alts() { const q = (this.swapState.q || '').trim().toLowerCase(), alts = this.session?.t2 ? this.exAlts(this.session.t2.originalName || this.session.t2.name) : []; return !q ? alts : alts.filter(a => (a.name || a.id).toLowerCase().includes(q) || (a.id || '').toLowerCase().includes(q)); },
+            getAccAlts(i) { const q = (this.swapState.q || '').trim().toLowerCase(), alts = this.session?.acc?.[i] ? this.exAlts(this.session.acc[i].originalName || this.session.acc[i].name) : []; return !q ? alts : alts.filter(a => (a.name || a.id).toLowerCase().includes(q) || (a.id || '').toLowerCase().includes(q)); },
+            timerStart(s, label = 'Rest') { const dur = Math.max(1, Math.floor(+s)); this.timer = { active: true, start: U.now(), dur, rem: dur, pct: 1, label }; },
+            timerAdj(d) { if (!this.timer.active) return; const e = Math.floor((U.now() - this.timer.start) / 1000), n = Math.max(5, (this.timer.dur || 0) + d); this.timer.dur = n; this.timer.rem = Math.max(0, n - e); this.timer.pct = n > 0 ? (this.timer.rem / n) : 0; },
+            amrapState: { set: null, tier: null, val: '' },
+            saveAmrap() {
+                const val = parseInt(this.amrapState.val);
+                if (!isNaN(val) && val >= 0) {
+                    this.amrapState.set.performed = val;
+                    this.toggleSet(this.amrapState.set, this.amrapState.tier);
+                    this.activeModal = null;
+                } else {
+                    alert("Please enter a valid number of reps");
+                }
+            },
+            toggleSet(s, tier, fail = false) {
+                if (fail) {
+                    s.failed = !s.failed;
+                    if (s.failed) {
+                        s.completed = true;
+                        s.completedAt = U.now();
+                        if (this.prefs.autoStartTimer) this.timerStart(+this.prefs[tier === 't1' ? 'restT1' : 'restT2'] + 60, 'Fail Rest');
                     }
-                },
-                handleEscape() { if (this.zenMode) return this.toggleZen(); if (this.activeModal) this.activeModal = null; if (this.plate.open) this.plate.open = false; },
-                applyRM() { document.documentElement.classList.toggle('reduce-motion', !!this.prefs.reduceMotion) },
-                unlockAudio() { try { if (!window.ac) window.ac = new (window.AudioContext || window.webkitAudioContext)(); if (ac.state === 'suspended') ac.resume() } catch { } },
-                nav(v) { this.view = v; if (v === 'calendar') this.calBuild(); if (v === 'dashboard') this.$nextTick(() => this.draw()); if (v !== 'workout') this.relWake(); },
-                lifts: () => Object.keys(DATA.muscles),
-                getWk() { const p = DATA.progs[this.prefs.program], r = p.days[this.pIdx % p.days.length]; return { ...r, title: r.title || r.t, focus: r.focus || `${r.t1} + ${r.t2}` } },
-                prevSim() { const t = this.getWk().t1; return this.history.slice().reverse().find(h => h.details?.t1 === t) },
-                repLast() { const l = this.prevSim(); if (l) this.start(DATA.progs[this.prefs.program].days.find(d => d.t1 === l.details.t1)) },
-                startCust() { this.start({ title: 'Custom Workout', t1: 'Bench', t2: 'Row', s: 'vol', t2s: 't2', acc: [] }) },
-                isDeload() { return this.prefs.program === '531' && this.week % 4 === 0 },
-                chgDay(d) { const l = DATA.progs[this.prefs.program].days.length; this.pIdx = (this.pIdx + d + l) % l },
-                fmt: U.fmt, fmtSet: ts => new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-                daysOff() { return this.history.length ? Math.floor((U.now() - (this.history[this.history.length - 1].timestamp || 0)) / 864e5) : 0 },
-                exInfo: id => EX_INDEX[id] ? { ...EX_INDEX[id], group: EX_OPTS[EX_INDEX[id].groupKey] } : null,
-                exAlts: id => EX_INDEX[id] ? EX_OPTS[EX_INDEX[id].groupKey].opt.map(o => ({ id: o[0], name: o[0], mult: o[1] || 1 })) : [{ id, name: id, mult: 1 }],
-                baseTM: id => EX_INDEX[id]?.base || (this.tms[id] !== undefined ? id : null),
-                exMult: id => EX_INDEX[id]?.mult || 1, exName: id => EX_INDEX[id]?.name || id,
-                getSets(sk, l, tm, tier, exOv = null) {
-                    const { program: p, weightUnit: u, microplates: m } = this.prefs, actEx = exOv || l, base = this.baseTM(actEx), effTM = (base ? (this.tms[base] || tm) : tm) * this.exMult(actEx);
-                    let s = [];
-                    if (p === 'gzclp') {
-                        const st = this.state[l]?.stage || 1, stages = tier === 't1' ? [[5, 3], [6, 2], [10, 1]] : [[3, 10], [3, 8], [3, 6]], cfg2 = stages[Math.min(st - 1, 2)];
-                        s = Array(cfg2[0]).fill(0).map((_, i) => ({ w: tier === 't1' ? .85 : .65, r: cfg2[1], amrap: i === cfg2[0] - 1 }));
-                    } else if (p === '531' && tier === 't1') {
-                        const w = this.week % 4 || 4; s = DATA.schemes['531'][w === 4 ? 'del' : `w${w}`].map(x => ({ w: x[0], r: x[1], amrap: x[2] === '+' }));
-                    } else { const map = DATA.schemes[p] || DATA.schemes.nsuns; s = (map[sk] || map.vol).map(x => ({ w: x[0], r: x[1], amrap: x[2] === '+' })); }
-                    return s.map(x => ({ weight: U.rnd(effTM * x.w, u, m), reps: x.r, amrap: x.amrap, completed: false, failed: false, performed: null, completedAt: null }));
-                },
-                chkDeload() { const off = this.daysOff(), lvls = [[42, 25, '6+ weeks off'], [28, 20, '4 weeks off'], [14, 10, '2 weeks off']].find(l => off >= l[0]); if (lvls && this.prefs.autoDeload) { this.deloadInfo = { needed: true, percentage: lvls[1], reason: lvls[2], protocol: 'Reduce_TMs' }; this.activeModal = 'deload'; } else this.activeModal = 'weight'; },
-                doDeload() { Object.keys(this.tms).forEach(k => { this.tms[k] = U.rnd((this.tms[k] || 0) * (1 - this.deloadInfo.percentage / 100), this.prefs.weightUnit, this.prefs.microplates) }); this.save(); this.activeModal = 'weight'; },
-                async reqWake() { if (!this.prefs.keepAwake || !('wakeLock' in navigator)) return; try { this.wakeLock = await navigator.wakeLock.request('screen'); } catch { } },
-                relWake() { this.wakeLock?.release().catch(() => { }); this.wakeLock = null; },
-                start(c) {
-                    const d = c || this.getWk(), title = d.title || d.t || 'Workout', t2B = this.baseTM(d.t2), t2TM = t2B ? this.tms[t2B] : this.tms[d.t2];
-                    this.session = { title, start: U.now(), acc: JSON.parse(JSON.stringify(d.acc || [])).map(a => ({ ...a, reps: a.reps || '10-12', originalName: a.name, selectedExercise: a.name })), completedAcc: {}, notes: '', dayIdx: c ? null : this.pIdx, t1: { name: d.t1, sets: this.getSets(d.s, d.t1, this.tms[d.t1], 't1') }, t2: { name: d.t2, originalName: d.t2, selectedExercise: d.t2, schemeKey: d.t2s, sets: this.getSets(d.t2s, d.t2, t2TM, 't2', d.t2) } };
-                    if (this.prefs.showPreviousWorkout) { const h = this.history.slice().reverse().find(x => x.details?.t1 === d.t1); if (h) this.previousWorkout = { date: h.date, duration: h.duration, topSet: h.details?.weight, amrapResult: h.setDetails?.t1?.find(s => s.amrap)?.performed } }
-                    this.saveSess(); this.view = 'workout'; this.reqWake();
-                },
-                swapT2(nEx) { if (!this.session.t2) return; const bTM = this.baseTM(nEx), tm = bTM ? this.tms[bTM] : this.tms[this.session.t2.originalName], state = this.session.t2.sets.map(s => ({ c: s.completed, f: s.failed, p: s.performed, at: s.completedAt })), nSets = this.getSets(this.session.t2.schemeKey, this.session.t2.originalName, tm, 't2', nEx); nSets.forEach((s, i) => { if (state[i]) Object.assign(s, { completed: state[i].c, failed: state[i].f, performed: state[i].p, completedAt: state[i].at }) }); this.session.t2.selectedExercise = nEx; this.session.t2.name = nEx; this.session.t2.sets = nSets; this.swapState.t2 = false; this.swapState.q = ''; this.saveSess(); },
-                swapAcc(i, n) { if (this.session.acc?.[i]) { this.session.acc[i].selectedExercise = n; this.session.acc[i].name = n; this.swapState.acc = null; this.swapState.q = ''; this.saveSess(); } },
-                getT2Alts() { const q = (this.swapState.q || '').trim().toLowerCase(), alts = this.session?.t2 ? this.exAlts(this.session.t2.originalName || this.session.t2.name) : []; return !q ? alts : alts.filter(a => (a.name || a.id).toLowerCase().includes(q) || (a.id || '').toLowerCase().includes(q)); },
-                getAccAlts(i) { const q = (this.swapState.q || '').trim().toLowerCase(), alts = this.session?.acc?.[i] ? this.exAlts(this.session.acc[i].originalName || this.session.acc[i].name) : []; return !q ? alts : alts.filter(a => (a.name || a.id).toLowerCase().includes(q) || (a.id || '').toLowerCase().includes(q)); },
-                timerStart(s, label = 'Rest') { const dur = Math.max(1, Math.floor(+s)); this.timer = { active: true, start: U.now(), dur, rem: dur, pct: 1, label }; },
-                timerAdj(d) { if (!this.timer.active) return; const e = Math.floor((U.now() - this.timer.start) / 1000), n = Math.max(5, (this.timer.dur || 0) + d); this.timer.dur = n; this.timer.rem = Math.max(0, n - e); this.timer.pct = n > 0 ? (this.timer.rem / n) : 0; },
-                amrapState: { set: null, tier: null, val: '' },
-                saveAmrap() {
-                    const val = parseInt(this.amrapState.val);
-                    if (!isNaN(val) && val >= 0) {
-                        this.amrapState.set.performed = val;
-                        this.toggleSet(this.amrapState.set, this.amrapState.tier);
-                        this.activeModal = null;
+                } else {
+                    if (s.amrap && (s.performed === null || s.performed === '') && !s.completed) {
+                        this.amrapState = { set: s, tier: tier, val: s.reps };
+                        this.activeModal = 'amrapInput';
+                        this.$nextTick(() => {
+                            if (this.$refs.amrapField) {
+                                this.$refs.amrapField.value = '';
+                                this.$refs.amrapField.focus();
+                            }
+                        });
+                        return;
+                    }
+
+                    s.completed = !s.completed;
+                    if (!s.completed) {
+                        s.failed = false;
+                        s.completedAt = null;
                     } else {
-                        alert("Please enter a valid number of reps");
+                        s.completedAt = U.now();
+                        if (this.prefs.autoStartTimer) this.timerStart(+this.prefs[tier === 't1' ? 'restT1' : 'restT2'] + (s.failed ? 60 : 0), tier === 't1' ? 'T1 Rest' : 'T2 Rest');
                     }
-                },
-                toggleSet(s, tier, fail = false) {
-                    if (fail) {
-                        s.failed = !s.failed;
-                        if (s.failed) {
-                            s.completed = true;
-                            s.completedAt = U.now();
-                            if (this.prefs.autoStartTimer) this.timerStart(+this.prefs[tier === 't1' ? 'restT1' : 'restT2'] + 60, 'Fail Rest');
+                }
+                this.saveSess();
+            },
+            editSet(tier, idx) { const set = tier === 't1' ? this.session?.t1?.sets?.[idx] : this.session?.t2?.sets?.[idx]; if (!set) return; this.setEdit = { tier, idx, weight: U.safe(set.weight, 0), reps: U.safe(set.reps, 0), performed: set.performed ?? null, failed: !!set.failed, amrap: !!set.amrap, completed: !!set.completed }; this.activeModal = 'setEdit'; },
+            saveSetEdit() { const set = this.setEdit.tier === 't1' ? this.session?.t1?.sets?.[this.setEdit.idx] : this.session?.t2?.sets?.[this.setEdit.idx]; if (!set) return; set.weight = U.rnd(U.safe(this.setEdit.weight, set.weight), this.prefs.weightUnit, this.prefs.microplates); set.reps = Math.max(0, Math.round(U.safe(this.setEdit.reps, set.reps))); if (set.amrap) set.performed = this.setEdit.performed === null || this.setEdit.performed === '' ? null : Math.max(0, Math.round(U.safe(this.setEdit.performed, 0))); set.failed = !!this.setEdit.failed; if (set.failed) { set.completed = true; set.completedAt = set.completedAt || U.now() } this.activeModal = null; this.saveSess(); },
+            finish() { const inc = this.getInc(); if (inc.total > 0 && !confirm(`Incomplete: ${inc.total}. Finish?`)) return; this.sessionRating = 0; this.sessionNotes = this.session.notes || ''; this.sessionRPE = 7; this.timer.active = false; this.activeModal = 'rating'; },
+            getInc() { const t1 = this.session?.t1?.sets || [], t2 = this.session?.t2?.sets || [], mr = [...t1, ...t2].filter(s => !s.completed).length; let at = 0, ad = 0; (this.session?.acc || []).forEach(a => { const on = a.originalName || a.name; for (let i = 1; i <= (a.sets || 0); i++) { at++; if (this.isAccDone(on, i)) ad++; } }); return { mainRemaining: mr, accRemaining: Math.max(0, at - ad), total: mr + Math.max(0, at - ad) }; },
+
+            // Smart progression based on e1RM trending
+            computeProgression(liftName, amrapSet, allSets, program) {
+                const u = this.prefs.weightUnit;
+                const baseInc = u === 'kg' ? 2.5 : 5;
+                const isUpper = ['Bench', 'OHP'].includes(liftName);
+                const isLower = ['Squat', 'Deadlift'].includes(liftName);
+
+                // Upper body progresses at half rate by default
+                const liftInc = isUpper ? baseInc * 0.5 : baseInc;
+
+                if (program === 'gzclp') {
+                    if (allSets.some(s => s.failed)) {
+                        const s = this.state[liftName].stage;
+                        if (s >= 3) {
+                            this.state[liftName].stage = 1;
+                            this.tms[liftName] = Math.round(this.tms[liftName] * 0.85);
+                            return { add: 0, method: 'stage_reset' };
+                        } else {
+                            this.state[liftName].stage++;
+                            return { add: 0, method: 'stage_advance' };
                         }
                     } else {
-                        if (s.amrap && (s.performed === null || s.performed === '') && !s.completed) {
-                            this.amrapState = { set: s, tier: tier, val: s.reps };
-                            this.activeModal = 'amrapInput';
-                            this.$nextTick(() => {
-                                if (this.$refs.amrapField) {
-                                    this.$refs.amrapField.value = '';
-                                    this.$refs.amrapField.focus();
-                                }
-                            });
-                            return;
-                        }
-
-                        s.completed = !s.completed;
-                        if (!s.completed) {
-                            s.failed = false;
-                            s.completedAt = null;
-                        } else {
-                            s.completedAt = U.now();
-                            if (this.prefs.autoStartTimer) this.timerStart(+this.prefs[tier === 't1' ? 'restT1' : 'restT2'] + (s.failed ? 60 : 0), tier === 't1' ? 'T1 Rest' : 'T2 Rest');
-                        }
-                    }
-                    this.saveSess();
-                },
-                editSet(tier, idx) { const set = tier === 't1' ? this.session?.t1?.sets?.[idx] : this.session?.t2?.sets?.[idx]; if (!set) return; this.setEdit = { tier, idx, weight: U.safe(set.weight, 0), reps: U.safe(set.reps, 0), performed: set.performed ?? null, failed: !!set.failed, amrap: !!set.amrap, completed: !!set.completed }; this.activeModal = 'setEdit'; },
-                saveSetEdit() { const set = this.setEdit.tier === 't1' ? this.session?.t1?.sets?.[this.setEdit.idx] : this.session?.t2?.sets?.[this.setEdit.idx]; if (!set) return; set.weight = U.rnd(U.safe(this.setEdit.weight, set.weight), this.prefs.weightUnit, this.prefs.microplates); set.reps = Math.max(0, Math.round(U.safe(this.setEdit.reps, set.reps))); if (set.amrap) set.performed = this.setEdit.performed === null || this.setEdit.performed === '' ? null : Math.max(0, Math.round(U.safe(this.setEdit.performed, 0))); set.failed = !!this.setEdit.failed; if (set.failed) { set.completed = true; set.completedAt = set.completedAt || U.now() } this.activeModal = null; this.saveSess(); },
-                finish() { const inc = this.getInc(); if (inc.total > 0 && !confirm(`Incomplete: ${inc.total}. Finish?`)) return; this.sessionRating = 0; this.sessionNotes = this.session.notes || ''; this.sessionRPE = 7; this.timer.active = false; this.activeModal = 'rating'; },
-                getInc() { const t1 = this.session?.t1?.sets || [], t2 = this.session?.t2?.sets || [], mr = [...t1, ...t2].filter(s => !s.completed).length; let at = 0, ad = 0; (this.session?.acc || []).forEach(a => { const on = a.originalName || a.name; for (let i = 1; i <= (a.sets || 0); i++) { at++; if (this.isAccDone(on, i)) ad++; } }); return { mainRemaining: mr, accRemaining: Math.max(0, at - ad), total: mr + Math.max(0, at - ad) }; },
-
-                // --- IMPROVEMENT 2: Smart progression based on e1RM trending ---
-                computeProgression(liftName, amrapSet, allSets, program) {
-                    const u = this.prefs.weightUnit;
-                    const baseInc = u === 'kg' ? 2.5 : 5;
-                    const isUpper = ['Bench', 'OHP'].includes(liftName);
-                    const isLower = ['Squat', 'Deadlift'].includes(liftName);
-
-                    // Upper body progresses at half rate by default (2026 best practice)
-                    const liftInc = isUpper ? baseInc * 0.5 : baseInc;
-
-                    // For GZCLP, use stage-based logic (unchanged)
-                    if (program === 'gzclp') {
-                        if (allSets.some(s => s.failed)) {
-                            const s = this.state[liftName].stage;
-                            if (s >= 3) {
-                                this.state[liftName].stage = 1;
-                                this.tms[liftName] = Math.round(this.tms[liftName] * 0.85);
-                                return { add: 0, method: 'stage_reset' };
-                            } else {
-                                this.state[liftName].stage++;
-                                return { add: 0, method: 'stage_advance' };
-                            }
-                        } else {
-                            this.tms[liftName] += liftInc;
-                            return { add: liftInc, method: 'gzclp_linear' };
-                        }
-                    }
-
-                    // For AMRAP-based programs, use e1RM trending
-                    if (amrapSet && amrapSet.performed != null) {
-                        const sessionE1RM = epley1RM(amrapSet.weight, amrapSet.performed);
-                        const delta = amrapSet.performed - amrapSet.reps;
-
-                        // Record this e1RM in trend history
-                        if (!this.e1rmHistory[liftName]) this.e1rmHistory[liftName] = [];
-                        this.e1rmHistory[liftName].push({ e1rm: sessionE1RM, date: U.iso(U.now()), timestamp: U.now() });
-                        // Keep last 20 entries
-                        if (this.e1rmHistory[liftName].length > 20) this.e1rmHistory[liftName] = this.e1rmHistory[liftName].slice(-20);
-
-                        const trend = trendE1RM(this.e1rmHistory, liftName);
-                        const currentTM = this.tms[liftName] || 0;
-
-                        // Conservative progression: only increase if trending e1RM supports it
-                        // TM should be ~85-90% of trending e1RM
-                        const targetTM = Math.round(trend * 0.875);
-                        const maxJump = liftInc * 2; // Never jump more than 2x base increment
-
-                        let add = 0;
-                        if (delta < 0) {
-                            // Missed target reps — suggest deload or hold
-                            // Two consecutive misses → auto-deload 10%
-                            const lastTwo = this.e1rmHistory[liftName].slice(-2);
-                            if (lastTwo.length >= 2 && lastTwo[0].e1rm <= currentTM && lastTwo[1].e1rm <= currentTM) {
-                                add = -Math.round(currentTM * 0.1);
-                                this.tms[liftName] = U.rnd(currentTM + add, u, this.prefs.microplates);
-                                return { add, method: 'auto_deload_10pct' };
-                            }
-                            // Single miss — hold TM
-                            return { add: 0, method: 'hold_missed_reps' };
-                        } else if (delta === 0) {
-                            // Exactly hit target — small progression
-                            add = Math.min(liftInc * 0.5, maxJump);
-                            // But only if trend supports it
-                            if (targetTM <= currentTM) add = 0;
-                        } else if (delta >= 1 && delta < 3) {
-                            // Beat target by 1-2 reps — standard increment
-                            add = liftInc;
-                        } else if (delta >= 3 && delta < 5) {
-                            // Beat by 3-4 — confident increase
-                            add = liftInc * 1.5;
-                        } else {
-                            // Beat by 5+ — aggressive but capped
-                            add = Math.min(liftInc * 2, maxJump);
-                        }
-
-                        // Cap so TM doesn't exceed ~90% of trending e1RM
-                        if (trend > 0) {
-                            const ceiling = Math.round(trend * 0.9);
-                            if (currentTM + add > ceiling) {
-                                add = Math.max(0, ceiling - currentTM);
-                            }
-                        }
-
-                        add = U.rnd(add, u, this.prefs.microplates);
-                        this.tms[liftName] += add;
-                        DB.s(K.e1rmHist, this.e1rmHistory);
-                        return { add, method: 'e1rm_trend' };
-                    }
-
-                    // Linear programs without AMRAP — progress if no failures
-                    if ((DATA.progs[program]?.prog === 'lin' || DATA.progs[program]?.pW) && !allSets.some(s => s.failed)) {
                         this.tms[liftName] += liftInc;
-                        return { add: liftInc, method: 'linear' };
+                        return { add: liftInc, method: 'gzclp_linear' };
                     }
+                }
 
-                    return { add: 0, method: 'none' };
-                },
+                if (amrapSet && amrapSet.performed != null) {
+                    const sessionE1RM = epley1RM(amrapSet.weight, amrapSet.performed);
+                    const delta = amrapSet.performed - amrapSet.reps;
 
-                saveFinish() {
-                    const { t1, t2 } = this.session, l = t1.name, pr = t1.sets.find(s => s.amrap), p = this.prefs.program;
+                    if (!this.e1rmHistory[liftName]) this.e1rmHistory[liftName] = [];
+                    this.e1rmHistory[liftName].push({ e1rm: sessionE1RM, date: U.iso(U.now()), timestamp: U.now() });
+                    if (this.e1rmHistory[liftName].length > 20) this.e1rmHistory[liftName] = this.e1rmHistory[liftName].slice(-20);
 
-                    // --- IMPROVEMENT 2: Use smart progression ---
-                    const progression = this.computeProgression(l, pr, t1.sets, p);
-                    const add = progression.add;
+                    const trend = trendE1RM(this.e1rmHistory, liftName);
+                    const currentTM = this.tms[liftName] || 0;
+                    const targetTM = Math.round(trend * 0.875);
+                    const maxJump = liftInc * 2;
 
-                    if (add > 0) confetti({ particleCount: 100, spread: 70, origin: { y: .6 } });
-
-                    const e1rm = pr ? epley1RM(pr.weight, pr.performed || pr.reps) : 0;
-                    const all = [...t1.sets, ...t2.sets], iso = U.iso(U.now());
-
-                    if (e1rm > (this.prs[l]?.weight || 0)) { this.prs[l] = { weight: e1rm, date: iso }; DB.s(K.prs, this.prs); }
-
-                    this.history.push({
-                        date: new Date().toLocaleDateString(), isoDate: iso, timestamp: U.now(),
-                        title: this.session.title, increase: add, pr: add > 0,
-                        progressionMethod: progression.method, // Track how we progressed
-                        duration: Math.round((U.now() - this.session.start) / 60000),
-                        rating: this.sessionRating, rpe: this.sessionRPE, notes: this.sessionNotes,
-                        totalVolume: all.reduce((a, s) => s.completed ? a + (s.weight * (s.performed || s.reps)) : a, 0),
-                        // IMPROVEMENT 3: Store effective volume (stimulus-based)
-                        effectiveVolume: all.reduce((a, s) => {
-                            if (!s.completed) return a;
-                            const tm = this.tms[this.baseTM(l)] || s.weight;
-                            return a + effectiveRepsScore(s.weight, s.performed || s.reps, tm, s.failed) * s.weight / 10;
-                        }, 0),
-                        totalSets: all.length, completedSets: all.filter(s => s.completed).length,
-                        details: { t1: l, weight: pr?.weight, est1rm: e1rm },
-                        setDetails: {
-                            t1: t1.sets, t2Name: t2.selectedExercise || t2.name, t2OriginalName: t2.originalName, t2: t2.sets,
-                            accessories: this.session.acc.map(a => ({
-                                name: a.selectedExercise || a.name, originalName: a.originalName, total: a.sets,
-                                completed: Object.keys(this.session.completedAcc).filter(k => k.startsWith(a.originalName) || k.startsWith(a.name)).length
-                            }))
+                    let add = 0;
+                    if (delta < 0) {
+                        const lastTwo = this.e1rmHistory[liftName].slice(-2);
+                        if (lastTwo.length >= 2 && lastTwo[0].e1rm <= currentTM && lastTwo[1].e1rm <= currentTM) {
+                            add = -Math.round(currentTM * 0.1);
+                            this.tms[liftName] = U.rnd(currentTM + add, u, this.prefs.microplates);
+                            return { add, method: 'auto_deload_10pct' };
                         }
-                    });
-
-                    if (this.session.dayIdx !== null) { this.idx = (this.session.dayIdx + 1) % DATA.progs[p].days.length; if (this.idx === 0) this.week++; this.pIdx = this.idx; }
-                    this.streak++; this.session = {}; this.savedSession = null; DB.d(K.session); this.activeModal = null; this.save(); this.chkAch(); this.view = 'dashboard'; this.calBuild(); this.$nextTick(() => this.draw());
-                },
-                warmups() { if (!this.session?.t1?.sets?.[0]) return []; const w = this.session.t1.sets[0].weight; return [{ w: 20, r: 10 }, { w: w * .4, r: 5 }, { w: w * .6, r: 3 }, { w: w * .8, r: 2 }].filter(x => x.w > 20) },
-                calcPlates(w) { this.plate = { open: true, w, plates: [] }; let r = (w - this.prefs.barWeight) / 2; DATA.ui.plates[this.prefs.weightUnit].forEach(p => { while (r >= p) { this.plate.plates.push(p); r -= p; } }); },
-                draw() {
-                    const line = (id, src, d, c) => {
-                        const ctx = document.getElementById(id); if (!ctx) return;
-                        if (charts[id]) charts[id].destroy();
-                        const l = src.map ? src.map(x => x.date || x) : src.labels || [], data = d || src.map(x => x.details?.est1rm || x.weight);
-                        charts[id] = new Chart(ctx, { type: 'line', data: { labels: l, datasets: [{ data, borderColor: c, backgroundColor: c + '80', tension: .3, fill: true }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: false }, scales: { x: { display: false }, y: { grid: { color: '#ffffff0d' }, ticks: { color: '#666' } } } } });
-                    };
-                    line('mainChart', this.history.filter(h => h.details?.t1 === this.chartLift), null, '#6366f1');
-                    const d = this.bwLog.slice(-30); line('bodyWeightChart', d, d.map(x => x.weight), '#3b82f6');
-                    const v = {}; this.history.slice(-20).forEach(h => { const ts = new Date(h.timestamp), k = `W${Math.ceil((((ts - new Date(ts.getFullYear(), 0, 1)) / 864e5) + 1) / 7)}`; v[k] = (v[k] || 0) + (h.totalVolume || 0); });
-                    const ctx = document.getElementById('volumeChart');
-                    if (ctx) { if (charts.vol) charts.vol.destroy(); charts.vol = new Chart(ctx, { type: 'bar', data: { labels: Object.keys(v), datasets: [{ data: Object.values(v), backgroundColor: '#10b98180' }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: false }, scales: { x: { display: false }, y: { grid: { color: '#ffffff0d' }, ticks: { color: '#666' } } } } }); }
-                },
-                impact(id) {
-                    const ex = EX_INDEX[id], lower = (id || '').toLowerCase(), accMaps = { triceps: { tri: 1, frontDelt: .15 }, biceps: { bi: 1, forearm: .2 }, vertical_pull: { lats: 1, bi: .5, rearDelt: .25, traps: .15 }, leg_accessories: { quads: .6, hams: .6, glutes: .5 }, core: { lowBack: .4, abs: .8 }, arms: { tri: .5, bi: .5 } };
-                    if (ex) { if (ex.groupKey.includes('variant') || ex.groupKey === 'dl_accessory') return DATA.muscles[ex.base] || {}; if (accMaps[ex.groupKey]) return accMaps[ex.groupKey]; }
-                    const m = matchers.find(x => x[0].test(lower)); return m ? m[1] : {};
-                },
-
-                // --- IMPROVEMENT 1: Completely rewritten recovery calculation ---
-                updCache() {
-                    const fatigue = {}; // Accumulated time-decayed fatigue per muscle
-                    const now = U.now();
-                    const cutoff = now - 14 * 864e5; // 14 days lookback
-
-                    // Step 1: Find rest gap (hours since last workout)
-                    const sortedHistory = this.history.filter(w => w.timestamp >= cutoff).sort((a, b) => a.timestamp - b.timestamp);
-                    
-                    // Build a map of rest periods between consecutive workouts
-                    const restPeriods = [];
-                    for (let i = 1; i < sortedHistory.length; i++) {
-                        restPeriods.push((sortedHistory[i].timestamp - sortedHistory[i - 1].timestamp) / 36e5);
+                        return { add: 0, method: 'hold_missed_reps' };
+                    } else if (delta === 0) {
+                        add = Math.min(liftInc * 0.5, maxJump);
+                        if (targetTM <= currentTM) add = 0;
+                    } else if (delta >= 1 && delta < 3) {
+                        add = liftInc;
+                    } else if (delta >= 3 && delta < 5) {
+                        add = liftInc * 1.5;
+                    } else {
+                        add = Math.min(liftInc * 2, maxJump);
                     }
-                    // Hours since most recent workout
-                    const hoursSinceLast = sortedHistory.length ? (now - sortedHistory[sortedHistory.length - 1].timestamp) / 36e5 : 168;
 
-                    sortedHistory.forEach(w => {
-                        const ageHrs = (now - w.timestamp) / 36e5;
-                        // RPE scaling: higher RPE = more fatigue generated
-                        const rpeScale = w.rpe ? (0.5 + w.rpe * 0.05) : 0.85; // 0.85 default ≈ RPE 7
+                    if (trend > 0) {
+                        const ceiling = Math.round(trend * 0.9);
+                        if (currentTM + add > ceiling) {
+                            add = Math.max(0, ceiling - currentTM);
+                        }
+                    }
 
-                        const procSets = (name, sets, tier) => {
-                            if (!name || !sets?.length) return;
-                            const mus = this.impact(name);
-                            if (!Object.keys(mus).length) return;
+                    add = U.rnd(add, u, this.prefs.microplates);
+                    this.tms[liftName] += add;
+                    DB.s(K.e1rmHist, this.e1rmHistory);
+                    return { add, method: 'e1rm_trend' };
+                }
 
-                            const baseLift = this.baseTM(name);
-                            const bTM = (baseLift ? this.tms[baseLift] : null) || 100;
-                            const tierFatigueMult = tier === 't1' ? 1.0 : tier === 't2' ? 0.65 : 0.4;
+                if ((DATA.progs[program]?.prog === 'lin' || DATA.progs[program]?.pW) && !allSets.some(s => s.failed)) {
+                    this.tms[liftName] += liftInc;
+                    return { add: liftInc, method: 'linear' };
+                }
 
-                            let totalStimulus = 0;
-                            sets.forEach(s => {
-                                if (!s.completed) return;
-                                const reps = s.performed || s.reps || 0;
-                                const weight = s.weight || bTM * 0.5;
+                return { add: 0, method: 'none' };
+            },
 
-                                // IMPROVEMENT 3: Use effective reps scoring instead of raw volume
-                                const effScore = effectiveRepsScore(weight, reps, bTM, s.failed);
-                                totalStimulus += effScore;
-                            });
+            saveFinish() {
+                const { t1, t2 } = this.session, l = t1.name, pr = t1.sets.find(s => s.amrap), p = this.prefs.program;
 
-                            const scaledFatigue = totalStimulus * tierFatigueMult * rpeScale;
+                const progression = this.computeProgression(l, pr, t1.sets, p);
+                const add = progression.add;
 
-                            // Apply half-life decay: fatigue decays exponentially over time
-                            Object.entries(mus).forEach(([muscle, involvement]) => {
-                                const halfLife = DATA.halfLife[muscle] || 24;
-                                // Exponential decay: fatigue * 0.5^(hours / halfLife)
-                                const decayedFatigue = scaledFatigue * involvement * Math.pow(0.5, ageHrs / halfLife);
-                                fatigue[muscle] = (fatigue[muscle] || 0) + decayedFatigue;
-                            });
+                if (add > 0) confetti({ particleCount: 100, spread: 70, origin: { y: .6 } });
 
-                            // CNS fatigue for compound T1 lifts
-                            if (tier === 't1' && baseLift && DATA.muscles[baseLift]?.cns) {
-                                const cnsFatigue = scaledFatigue * DATA.muscles[baseLift].cns * Math.pow(0.5, ageHrs / DATA.halfLife.cns);
-                                fatigue.cns = (fatigue.cns || 0) + cnsFatigue;
-                            }
-                        };
+                const e1rm = pr ? epley1RM(pr.weight, pr.performed || pr.reps) : 0;
+                const all = [...t1.sets, ...t2.sets], iso = U.iso(U.now());
 
-                        // Process T1 and T2 sets
-                        procSets(w.details?.t1, w.setDetails?.t1, 't1');
-                        procSets(w.setDetails?.t2Name, w.setDetails?.t2, 't2');
+                if (e1rm > (this.prs[l]?.weight || 0)) { this.prs[l] = { weight: e1rm, date: iso }; DB.s(K.prs, this.prs); }
 
-                        // Process accessories
-                        (w.setDetails?.accessories || []).forEach(a => {
-                            if (!a.completed) return;
-                            const mus = this.impact(a.name);
-                            if (!Object.keys(mus).length) return;
-                            const m = String(a.reps || '').match(/(\d+)/g);
-                            const avgReps = m?.length === 2 ? (+m[0] + +m[1]) / 2 : (m ? +m[0] : 10);
-                            // Accessories at moderate intensity
-                            const accFatigue = a.completed * avgReps * 0.06 * rpeScale;
-                            Object.entries(mus).forEach(([k, v]) => {
-                                const halfLife = DATA.halfLife[k] || 24;
-                                fatigue[k] = (fatigue[k] || 0) + accFatigue * v * Math.pow(0.5, ageHrs / halfLife);
-                            });
+                this.history.push({
+                    date: new Date().toLocaleDateString(), isoDate: iso, timestamp: U.now(),
+                    title: this.session.title, increase: add, pr: add > 0,
+                    progressionMethod: progression.method, 
+                    duration: Math.round((U.now() - this.session.start) / 60000),
+                    rating: this.sessionRating, rpe: this.sessionRPE, notes: this.sessionNotes,
+                    totalVolume: all.reduce((a, s) => s.completed ? a + (s.weight * (s.performed || s.reps)) : a, 0),
+                    // Store effective volume (stimulus-based)
+                    effectiveVolume: all.reduce((a, s) => {
+                        if (!s.completed) return a;
+                        const tm = this.tms[this.baseTM(l)] || s.weight;
+                        return a + effectiveRepsScore(s.weight, s.performed || s.reps, tm, s.failed) * s.weight / 10;
+                    }, 0),
+                    totalSets: all.length, completedSets: all.filter(s => s.completed).length,
+                    details: { t1: l, weight: pr?.weight, est1rm: e1rm },
+                    setDetails: {
+                        t1: t1.sets, t2Name: t2.selectedExercise || t2.name, t2OriginalName: t2.originalName, t2: t2.sets,
+                        accessories: this.session.acc.map(a => ({
+                            name: a.selectedExercise || a.name, originalName: a.originalName, total: a.sets,
+                            completed: Object.keys(this.session.completedAcc).filter(k => k.startsWith(a.originalName) || k.startsWith(a.name)).length
+                        }))
+                    }
+                });
+
+                if (this.session.dayIdx !== null) { this.idx = (this.session.dayIdx + 1) % DATA.progs[p].days.length; if (this.idx === 0) this.week++; this.pIdx = this.idx; }
+                this.streak++; this.session = {}; this.savedSession = null; DB.d(K.session); this.activeModal = null; this.save(); this.chkAch(); this.view = 'dashboard'; this.calBuild(); this.$nextTick(() => this.draw());
+            },
+            warmups() { if (!this.session?.t1?.sets?.[0]) return []; const w = this.session.t1.sets[0].weight; return [{ w: 20, r: 10 }, { w: w * .4, r: 5 }, { w: w * .6, r: 3 }, { w: w * .8, r: 2 }].filter(x => x.w > 20) },
+            calcPlates(w) { this.plate = { open: true, w, plates: [] }; let r = (w - this.prefs.barWeight) / 2; DATA.ui.plates[this.prefs.weightUnit].forEach(p => { while (r >= p) { this.plate.plates.push(p); r -= p; } }); },
+            draw() {
+                const line = (id, src, d, c) => {
+                    const ctx = document.getElementById(id); if (!ctx) return;
+                    if (charts[id]) charts[id].destroy();
+                    const l = src.map ? src.map(x => x.date || x) : src.labels || [], data = d || src.map(x => x.details?.est1rm || x.weight);
+                    charts[id] = new Chart(ctx, { type: 'line', data: { labels: l, datasets: [{ data, borderColor: c, backgroundColor: c + '80', tension: .3, fill: true }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: false }, scales: { x: { display: false }, y: { grid: { color: '#ffffff0d' }, ticks: { color: '#666' } } } } });
+                };
+                line('mainChart', this.history.filter(h => h.details?.t1 === this.chartLift), null, '#6366f1');
+                const d = this.bwLog.slice(-30); line('bodyWeightChart', d, d.map(x => x.weight), '#3b82f6');
+                const v = {}; this.history.slice(-20).forEach(h => { const ts = new Date(h.timestamp), k = `W${Math.ceil((((ts - new Date(ts.getFullYear(), 0, 1)) / 864e5) + 1) / 7)}`; v[k] = (v[k] || 0) + (h.totalVolume || 0); });
+                const ctx = document.getElementById('volumeChart');
+                if (ctx) { if (charts.vol) charts.vol.destroy(); charts.vol = new Chart(ctx, { type: 'bar', data: { labels: Object.keys(v), datasets: [{ data: Object.values(v), backgroundColor: '#10b98180' }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: false }, scales: { x: { display: false }, y: { grid: { color: '#ffffff0d' }, ticks: { color: '#666' } } } } }); }
+            },
+            impact(id) {
+                const ex = EX_INDEX[id], lower = (id || '').toLowerCase(), accMaps = { triceps: { tri: 1, frontDelt: .15 }, biceps: { bi: 1, forearm: .2 }, vertical_pull: { lats: 1, bi: .5, rearDelt: .25, traps: .15 }, leg_accessories: { quads: .6, hams: .6, glutes: .5 }, core: { lowBack: .4, abs: .8 }, arms: { tri: .5, bi: .5 } };
+                if (ex) { if (ex.groupKey.includes('variant') || ex.groupKey === 'dl_accessory') return DATA.muscles[ex.base] || {}; if (accMaps[ex.groupKey]) return accMaps[ex.groupKey]; }
+                const m = matchers.find(x => x[0].test(lower)); return m ? m[1] : {};
+            },
+
+            // --- REWRITTEN Recovery Calculation ---
+            updCache() {
+                const fatigue = {}; // Accumulated time-decayed fatigue per muscle
+                const now = U.now();
+                const cutoff = now - 14 * 864e5; // 14 days lookback
+
+                const sortedHistory = this.history.filter(w => w.timestamp >= cutoff).sort((a, b) => a.timestamp - b.timestamp);
+                
+                // Hours since most recent workout
+                const hoursSinceLast = sortedHistory.length ? (now - sortedHistory[sortedHistory.length - 1].timestamp) / 36e5 : 168;
+
+                sortedHistory.forEach(w => {
+                    const ageHrs = (now - w.timestamp) / 36e5;
+                    // RPE scaling: Higher RPE = more stress
+                    const rpeScale = w.rpe ? (0.5 + w.rpe * 0.1) : 0.9; 
+
+                    const procSets = (name, sets, tier) => {
+                        if (!name || !sets?.length) return;
+                        const mus = this.impact(name);
+                        if (!Object.keys(mus).length) return;
+
+                        const baseLift = this.baseTM(name);
+                        const bTM = (baseLift ? this.tms[baseLift] : null) || 100;
+                        
+                        // Fatigue multiplier per tier. T1 is now significantly higher (1.5x)
+                        // to reflect the neural cost of heavy compound lifts
+                        const tierFatigueMult = tier === 't1' ? 1.5 : tier === 't2' ? 0.75 : 0.4;
+
+                        let totalStimulus = 0;
+                        sets.forEach(s => {
+                            if (!s.completed) return;
+                            const reps = s.performed || s.reps || 0;
+                            const weight = s.weight || bTM * 0.5;
+
+                            // Use the updated scoring function which penalizes heavy weights
+                            const effScore = effectiveRepsScore(weight, reps, bTM, s.failed);
+                            totalStimulus += effScore;
+                        });
+
+                        const scaledFatigue = totalStimulus * tierFatigueMult * rpeScale;
+
+                        // Apply half-life decay
+                        Object.entries(mus).forEach(([muscle, involvement]) => {
+                            const halfLife = DATA.halfLife[muscle] || 24;
+                            const decayedFatigue = scaledFatigue * involvement * Math.pow(0.5, ageHrs / halfLife);
+                            fatigue[muscle] = (fatigue[muscle] || 0) + decayedFatigue;
+                        });
+
+                        // CNS fatigue for compound T1 lifts
+                        if (tier === 't1' && baseLift && DATA.muscles[baseLift]?.cns) {
+                            const cnsFatigue = scaledFatigue * DATA.muscles[baseLift].cns * Math.pow(0.5, ageHrs / DATA.halfLife.cns);
+                            fatigue.cns = (fatigue.cns || 0) + cnsFatigue;
+                        }
+                    };
+
+                    procSets(w.details?.t1, w.setDetails?.t1, 't1');
+                    procSets(w.setDetails?.t2Name, w.setDetails?.t2, 't2');
+
+                    (w.setDetails?.accessories || []).forEach(a => {
+                        if (!a.completed) return;
+                        const mus = this.impact(a.name);
+                        if (!Object.keys(mus).length) return;
+                        const m = String(a.reps || '').match(/(\d+)/g);
+                        const avgReps = m?.length === 2 ? (+m[0] + +m[1]) / 2 : (m ? +m[0] : 10);
+                        const accFatigue = a.completed * avgReps * 0.08 * rpeScale;
+                        Object.entries(mus).forEach(([k, v]) => {
+                            const halfLife = DATA.halfLife[k] || 24;
+                            fatigue[k] = (fatigue[k] || 0) + accFatigue * v * Math.pow(0.5, ageHrs / halfLife);
                         });
                     });
+                });
 
-                    // Step 2: Convert accumulated fatigue to recovery percentage
-                    // Use a sigmoid-like curve centered around the muscle's recovery capacity
-                    // This gives a smooth 0-100% range that's intuitive
-                    const allMuscles = { ...DATA.halfLife, abs: 24, calves: 24, forearm: 18 };
-                    const recoveryMap = {};
+                // Map accumuluated fatigue to recovery percentage
+                const allMuscles = { ...DATA.halfLife, abs: 24, calves: 24, forearm: 18 };
+                const recoveryMap = {};
 
-                    Object.keys(allMuscles).forEach(muscle => {
-                        const f = fatigue[muscle] || 0;
-                        const capacity = DATA.recoveryCapacity[muscle] || 15;
+                Object.keys(allMuscles).forEach(muscle => {
+                    const f = fatigue[muscle] || 0;
+                    const capacity = DATA.recoveryCapacity[muscle] || 15;
 
-                        // Rest bonus: muscles recover faster with more rest
-                        // After 48+ hours, apply a recovery bonus that accelerates decay
-                        const restBonus = hoursSinceLast > 48 ? 1 + (hoursSinceLast - 48) * 0.005 : 1;
+                    // Rest bonus: accelerate recovery if >48h rest
+                    const restBonus = hoursSinceLast > 48 ? 1 + (hoursSinceLast - 48) * 0.005 : 1;
+                    const adjustedFatigue = f / restBonus;
 
-                        // Adjusted fatigue after rest bonus
-                        const adjustedFatigue = f / restBonus;
+                    const ratio = adjustedFatigue / capacity;
+                    const recovery = Math.round(100 / (1 + Math.pow(ratio, 1.5)));
 
-                        // Sigmoid mapping: recovery% = 100 / (1 + (fatigue/capacity)^1.5)
-                        // This gives: 0 fatigue → 100%, capacity fatigue → ~41%, 2x capacity → ~18%
-                        const ratio = adjustedFatigue / capacity;
-                        const recovery = Math.round(100 / (1 + Math.pow(ratio, 1.5)));
+                    recoveryMap[muscle] = Math.max(0, Math.min(100, recovery));
+                });
 
-                        recoveryMap[muscle] = Math.max(0, Math.min(100, recovery));
-                    });
+                this.cache.recovery = Object.entries(DATA.groups).map(([name, muscles]) => {
+                    const vals = muscles.map(m => recoveryMap[m] ?? 100);
+                    const avg = Math.round(vals.reduce((a, b) => a + b, 0) / vals.length);
+                    const min = Math.min(...vals);
 
-                    // Step 3: Build muscle group recovery summary
-                    this.cache.recovery = Object.entries(DATA.groups).map(([name, muscles]) => {
-                        const vals = muscles.map(m => recoveryMap[m] ?? 100);
-                        const avg = Math.round(vals.reduce((a, b) => a + b, 0) / vals.length);
-                        const min = Math.min(...vals);
+                    let status;
+                    if (min >= 75) status = 'Ready';
+                    else if (min >= 45) status = 'Recovering';
+                    else status = 'Fatigued';
 
-                        // Status based on minimum muscle in group (weakest link)
-                        let status;
-                        if (min >= 75) status = 'Ready';
-                        else if (min >= 45) status = 'Recovering';
-                        else status = 'Fatigued';
+                    return {
+                        name,
+                        recovery: avg,
+                        min: min,
+                        status,
+                        muscles: muscles.map(m => ({ name: m, recovery: recoveryMap[m] ?? 100 }))
+                    };
+                });
+                this.cache.recoveryMap = recoveryMap;
+            },
 
-                        return {
-                            name,
-                            recovery: avg,
-                            min: min,
-                            status,
-                            // Provide per-muscle detail for tooltips/expanded view
-                            muscles: muscles.map(m => ({ name: m, recovery: recoveryMap[m] ?? 100 }))
-                        };
-                    });
-
-                    // Store raw recovery map for other uses
-                    this.cache.recoveryMap = recoveryMap;
-                },
-
-                calBuild() {
-                    const n = new Date(); n.setMonth(n.getMonth() + this.cal.offset); this.cal.monthName = n.toLocaleString('default', { month: 'long', year: 'numeric' });
-                    const y = n.getFullYear(), m = n.getMonth(), d = new Date(y, m, 1).getDay(), ld = new Date(y, m + 1, 0).getDate();
-                    const logDates = new Set(this.history.map(h => U.iso(h.timestamp)));
-                    this.cal.days = [...Array(d).fill({}), ...[...Array(ld).keys()].map(i => { const iso = U.iso(new Date(y, m, i + 1)); return { num: i + 1, isToday: new Date().getDate() === i + 1 && !this.cal.offset, hasLog: logDates.has(iso) }; })];
-                },
-                chkAch() { ACHIEVEMENTS.forEach(a => { if (!this.achievements.includes(a.id) && a.check(this.history)) { this.achievements.push(a.id); this.currentAchievement = a; this.activeModal = 'achievement'; DB.s(K.ach, this.achievements); } }); },
-                saveSess() { if (this.session?.start) DB.s(K.session, this.session); },
-                save() { DB.s(K.main, { tms: this.tms, history: this.history, idx: this.idx, week: this.week, streak: this.streak, state: this.state }); this.updCache(); },
-                savePrefs() { DB.s(K.prefs, this.prefs); },
-                togUnit(newUnit) { if (newUnit === this.prefs.weightUnit) return; if (confirm(`Convert weights?`)) { const from = this.prefs.weightUnit; Object.keys(this.tms).forEach(k => this.tms[k] = U.rnd(U.conv(this.tms[k], from, newUnit), newUnit, this.prefs.microplates)); Object.keys(this.prs).forEach(k => { if (this.prs[k]) this.prs[k].weight = Math.round(U.conv(this.prs[k].weight, from, newUnit)); }); this.history.forEach(h => { h.increase = 0; if (h.details) h.details.weight = Math.round(U.conv(h.details.weight, from, newUnit)); h.totalVolume = Math.round(U.conv(h.totalVolume, from, newUnit)); if (h.effectiveVolume) h.effectiveVolume = Math.round(U.conv(h.effectiveVolume, from, newUnit)); }); this.bwLog.forEach(b => b.weight = U.conv(b.weight, from, newUnit)); this.prefs.barWeight = newUnit === 'kg' ? 20 : 45; } this.prefs.weightUnit = newUnit; this.savePrefs(); this.save(); DB.s(K.bw, this.bwLog); DB.s(K.prs, this.prs); this.$nextTick(() => { this.draw(); }); },
-                finSetup() { if (Object.values(this.setup).some(v => v > 0)) { Object.keys(this.setup).forEach(k => this.tms[k] = U.rnd(this.setup[k] * .9, this.prefs.weightUnit)); this.save(); this.savePrefs(); this.view = 'dashboard'; } },
-                resume() { this.session = this.savedSession; if (this.session?.t2 && !this.session.t2.originalName) this.session.t2.originalName = this.session.t2.name; if (this.session?.acc) this.session.acc.forEach(acc => { if (!acc.originalName) acc.originalName = acc.name; }); if (!this.session.completedAcc) this.session.completedAcc = {}; this.activeModal = null; this.view = 'workout'; this.reqWake(); },
-                logBW() { if (this.tempBodyWeight) { this.bwLog.push({ date: U.now(), weight: this.tempBodyWeight }); DB.s(K.bw, this.bwLog); } this.activeModal = null; this.start(); },
-                getBW(t) { const w = this.bwLog.map(x => x.weight); return !w.length ? '-' : t === 'last' ? w[w.length - 1].toFixed(1) : t === 'min' ? Math.min(...w).toFixed(1) : Math.max(...w).toFixed(1); },
-                fmtVol: v => v > 1e6 ? (v / 1e6).toFixed(1) + 'M' : v > 1e3 ? (v / 1e3).toFixed(0) + 'K' : v, fmtVolS: v => v ? v > 1e3 ? (v / 1e3).toFixed(1) + 'k' : v : '-',
-                avgDur() { const l = this.history.filter(h => h.duration); return l.length ? Math.round(l.reduce((a, b) => a + b.duration, 0) / l.length) : '-'; },
-                sessProg() { const t = this.session.t1?.sets, t2 = this.session.t2?.sets; return t ? Math.round((t.filter(s => s.completed).length + (t2 ? t2.filter(s => s.completed).length : 0)) / (t.length + (t2 ? t2.length : 0)) * 100) : 0; },
-                estDur() { const w = this.getWk(), s = (w.s ? 9 : 0) + (w.t2s ? 8 : 0) + (w.acc ? w.acc.length * 3 : 0); return Math.round(s * 2.5); },
-                timeAgo(ts) { const d = Math.floor((U.now() - ts) / 6e4); return d < 60 ? d + 'm ago' : Math.floor(d / 60) + 'h ago'; },
-                togAcc(n, i) { const k = `${n}-${i}`; this.session.completedAcc[k] = !this.session.completedAcc[k]; this.saveSess(); if (this.session.completedAcc[k] && this.prefs.autoStartTimer) this.timerStart(+this.prefs.restT3); },
-                isAccDone(n, i) { return !!this.session?.completedAcc?.[`${n}-${i}`]; },
-                addSet() { this.session.t1.sets.push({ ...this.session.t1.sets[this.session.t1.sets.length - 1], completed: false, failed: false, completedAt: null, performed: null }); },
-                export() { const d = {}; Object.values(K).forEach(k => d[k] = DB.g(k)); d.version = 2; const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(d)], { type: 'application/json' })); a.download = `lift_backup_${U.iso(U.now())}.json`; a.click(); },
-                import(e) { const r = new FileReader(); r.onload = ev => { try { const d = JSON.parse(ev.target.result); Object.keys(d).forEach(k => { if (k !== 'version') DB.s(k, d[k]) }); location.reload(); } catch { alert('Invalid file'); } }; r.readAsText(e.target.files[0]); },
-                reset() { if (confirm('Reset EVERYTHING?')) { localStorage.clear(); location.reload(); } },
-                histFilt() { const l = this.history.slice().reverse(); return this.historyFilter !== 'all' ? l.filter(h => h.details?.t1 === this.historyFilter).slice(0, 50) : l.slice(0, 50); },
-                showDay(day) { const n = new Date(); n.setMonth(n.getMonth() + this.cal.offset); const l = this.history.find(h => h.isoDate === U.iso(new Date(n.getFullYear(), n.getMonth(), day.num).getTime())); if (l) this.openLog(l); },
-                openLog(l) { this.selectedLog = l; this.isEditingLog = false; this.activeModal = 'detail'; },
-                delLog() { if (confirm('Delete log?')) { this.history = this.history.filter(h => h.timestamp !== this.selectedLog.timestamp); this.save(); this.activeModal = null; this.calBuild(); this.$nextTick(() => this.draw()); } },
-                saveLog() { const idx = this.history.findIndex(h => h.timestamp === this.selectedLog.timestamp); if (idx !== -1) { Object.assign(this.history[idx], { notes: this.selectedLog.notes, duration: parseInt(this.selectedLog.duration) || 0, rating: parseInt(this.selectedLog.rating) || 0 }); this.save(); this.isEditingLog = false; this.$nextTick(() => this.draw()); } },
-                beep() { if (!window.ac) window.ac = new (window.AudioContext || window.webkitAudioContext); const o = ac.createOscillator(), g = ac.createGain(); o.connect(g); g.connect(ac.destination); o.frequency.value = 800; g.gain.exponentialRampToValueAtTime(1e-5, ac.currentTime + .5); o.start(); o.stop(ac.currentTime + .5); },
-                toggleZen() { this.zenMode = !this.zenMode; document.body.style.overflow = this.zenMode ? 'hidden' : ''; },
-                getZen() {
-                    if (!this.session) return null;
-                    if (this.session.t1?.sets) { const s = this.session.t1.sets.find(x => !x.completed); if (s) return { t: 't1', n: this.session.t1.name, w: s.weight, r: s.reps, amrap: s.amrap, s, i: this.session.t1.sets.indexOf(s) } }
-                    if (this.session.t2?.sets) { const s = this.session.t2.sets.find(x => !x.completed); if (s) return { t: 't2', n: this.session.t2.selectedExercise || this.session.t2.name, w: s.weight, r: s.reps, amrap: false, s, i: this.session.t2.sets.indexOf(s) } }
-                    if (this.session.acc) { for (const a of this.session.acc) { const on = a.originalName || a.name; for (let i = 1; i <= a.sets; i++) { if (!this.isAccDone(on, i)) return { t: 'acc', n: a.selectedExercise || a.name, w: '-', r: (a.reps || '10-12'), amrap: false, on, i }; } } } return null;
-                },
-                doZen() { const z = this.getZen(); if (!z) return; if (z.t === 'acc') this.togAcc(z.on, z.i); else { if (z.s.amrap) { if (this.zenAmrap === null || this.zenAmrap === '') return alert('Enter reps'); z.s.performed = this.zenAmrap; this.zenAmrap = null; } this.toggleSet(z.s, z.t); } },
-                cancel() { if (confirm('Cancel workout?')) { this.session = {}; this.savedSession = null; DB.d(K.session); this.timer.active = false; this.view = 'dashboard'; this.relWake(); this.$nextTick(() => this.draw()); } }
-            }
+            calBuild() {
+                const n = new Date(); n.setMonth(n.getMonth() + this.cal.offset); this.cal.monthName = n.toLocaleString('default', { month: 'long', year: 'numeric' });
+                const y = n.getFullYear(), m = n.getMonth(), d = new Date(y, m, 1).getDay(), ld = new Date(y, m + 1, 0).getDate();
+                const logDates = new Set(this.history.map(h => U.iso(h.timestamp)));
+                this.cal.days = [...Array(d).fill({}), ...[...Array(ld).keys()].map(i => { const iso = U.iso(new Date(y, m, i + 1)); return { num: i + 1, isToday: new Date().getDate() === i + 1 && !this.cal.offset, hasLog: logDates.has(iso) }; })];
+            },
+            chkAch() { ACHIEVEMENTS.forEach(a => { if (!this.achievements.includes(a.id) && a.check(this.history)) { this.achievements.push(a.id); this.currentAchievement = a; this.activeModal = 'achievement'; DB.s(K.ach, this.achievements); } }); },
+            saveSess() { if (this.session?.start) DB.s(K.session, this.session); },
+            save() { DB.s(K.main, { tms: this.tms, history: this.history, idx: this.idx, week: this.week, streak: this.streak, state: this.state }); this.updCache(); },
+            savePrefs() { DB.s(K.prefs, this.prefs); },
+            togUnit(newUnit) { if (newUnit === this.prefs.weightUnit) return; if (confirm(`Convert weights?`)) { const from = this.prefs.weightUnit; Object.keys(this.tms).forEach(k => this.tms[k] = U.rnd(U.conv(this.tms[k], from, newUnit), newUnit, this.prefs.microplates)); Object.keys(this.prs).forEach(k => { if (this.prs[k]) this.prs[k].weight = Math.round(U.conv(this.prs[k].weight, from, newUnit)); }); this.history.forEach(h => { h.increase = 0; if (h.details) h.details.weight = Math.round(U.conv(h.details.weight, from, newUnit)); h.totalVolume = Math.round(U.conv(h.totalVolume, from, newUnit)); if (h.effectiveVolume) h.effectiveVolume = Math.round(U.conv(h.effectiveVolume, from, newUnit)); }); this.bwLog.forEach(b => b.weight = U.conv(b.weight, from, newUnit)); this.prefs.barWeight = newUnit === 'kg' ? 20 : 45; } this.prefs.weightUnit = newUnit; this.savePrefs(); this.save(); DB.s(K.bw, this.bwLog); DB.s(K.prs, this.prs); this.$nextTick(() => { this.draw(); }); },
+            finSetup() { if (Object.values(this.setup).some(v => v > 0)) { Object.keys(this.setup).forEach(k => this.tms[k] = U.rnd(this.setup[k] * .9, this.prefs.weightUnit)); this.save(); this.savePrefs(); this.view = 'dashboard'; } },
+            resume() { this.session = this.savedSession; if (this.session?.t2 && !this.session.t2.originalName) this.session.t2.originalName = this.session.t2.name; if (this.session?.acc) this.session.acc.forEach(acc => { if (!acc.originalName) acc.originalName = acc.name; }); if (!this.session.completedAcc) this.session.completedAcc = {}; this.activeModal = null; this.view = 'workout'; this.reqWake(); },
+            logBW() { if (this.tempBodyWeight) { this.bwLog.push({ date: U.now(), weight: this.tempBodyWeight }); DB.s(K.bw, this.bwLog); } this.activeModal = null; this.start(); },
+            getBW(t) { const w = this.bwLog.map(x => x.weight); return !w.length ? '-' : t === 'last' ? w[w.length - 1].toFixed(1) : t === 'min' ? Math.min(...w).toFixed(1) : Math.max(...w).toFixed(1); },
+            fmtVol: v => v > 1e6 ? (v / 1e6).toFixed(1) + 'M' : v > 1e3 ? (v / 1e3).toFixed(0) + 'K' : v, fmtVolS: v => v ? v > 1e3 ? (v / 1e3).toFixed(1) + 'k' : v : '-',
+            avgDur() { const l = this.history.filter(h => h.duration); return l.length ? Math.round(l.reduce((a, b) => a + b.duration, 0) / l.length) : '-'; },
+            sessProg() { const t = this.session.t1?.sets, t2 = this.session.t2?.sets; return t ? Math.round((t.filter(s => s.completed).length + (t2 ? t2.filter(s => s.completed).length : 0)) / (t.length + (t2 ? t2.length : 0)) * 100) : 0; },
+            estDur() { const w = this.getWk(), s = (w.s ? 9 : 0) + (w.t2s ? 8 : 0) + (w.acc ? w.acc.length * 3 : 0); return Math.round(s * 2.5); },
+            timeAgo(ts) { const d = Math.floor((U.now() - ts) / 6e4); return d < 60 ? d + 'm ago' : Math.floor(d / 60) + 'h ago'; },
+            togAcc(n, i) { const k = `${n}-${i}`; this.session.completedAcc[k] = !this.session.completedAcc[k]; this.saveSess(); if (this.session.completedAcc[k] && this.prefs.autoStartTimer) this.timerStart(+this.prefs.restT3); },
+            isAccDone(n, i) { return !!this.session?.completedAcc?.[`${n}-${i}`]; },
+            addSet() { this.session.t1.sets.push({ ...this.session.t1.sets[this.session.t1.sets.length - 1], completed: false, failed: false, completedAt: null, performed: null }); },
+            export() { const d = {}; Object.values(K).forEach(k => d[k] = DB.g(k)); d.version = 2; const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(d)], { type: 'application/json' })); a.download = `lift_backup_${U.iso(U.now())}.json`; a.click(); },
+            import(e) { const r = new FileReader(); r.onload = ev => { try { const d = JSON.parse(ev.target.result); Object.keys(d).forEach(k => { if (k !== 'version') DB.s(k, d[k]) }); location.reload(); } catch { alert('Invalid file'); } }; r.readAsText(e.target.files[0]); },
+            reset() { if (confirm('Reset EVERYTHING?')) { localStorage.clear(); location.reload(); } },
+            histFilt() { const l = this.history.slice().reverse(); return this.historyFilter !== 'all' ? l.filter(h => h.details?.t1 === this.historyFilter).slice(0, 50) : l.slice(0, 50); },
+            showDay(day) { const n = new Date(); n.setMonth(n.getMonth() + this.cal.offset); const l = this.history.find(h => h.isoDate === U.iso(new Date(n.getFullYear(), n.getMonth(), day.num).getTime())); if (l) this.openLog(l); },
+            openLog(l) { this.selectedLog = l; this.isEditingLog = false; this.activeModal = 'detail'; },
+            delLog() { if (confirm('Delete log?')) { this.history = this.history.filter(h => h.timestamp !== this.selectedLog.timestamp); this.save(); this.activeModal = null; this.calBuild(); this.$nextTick(() => this.draw()); } },
+            saveLog() { const idx = this.history.findIndex(h => h.timestamp === this.selectedLog.timestamp); if (idx !== -1) { Object.assign(this.history[idx], { notes: this.selectedLog.notes, duration: parseInt(this.selectedLog.duration) || 0, rating: parseInt(this.selectedLog.rating) || 0 }); this.save(); this.isEditingLog = false; this.$nextTick(() => this.draw()); } },
+            beep() { if (!window.ac) window.ac = new (window.AudioContext || window.webkitAudioContext); const o = ac.createOscillator(), g = ac.createGain(); o.connect(g); g.connect(ac.destination); o.frequency.value = 800; g.gain.exponentialRampToValueAtTime(1e-5, ac.currentTime + .5); o.start(); o.stop(ac.currentTime + .5); },
+            toggleZen() { this.zenMode = !this.zenMode; document.body.style.overflow = this.zenMode ? 'hidden' : ''; },
+            getZen() {
+                if (!this.session) return null;
+                if (this.session.t1?.sets) { const s = this.session.t1.sets.find(x => !x.completed); if (s) return { t: 't1', n: this.session.t1.name, w: s.weight, r: s.reps, amrap: s.amrap, s, i: this.session.t1.sets.indexOf(s) } }
+                if (this.session.t2?.sets) { const s = this.session.t2.sets.find(x => !x.completed); if (s) return { t: 't2', n: this.session.t2.selectedExercise || this.session.t2.name, w: s.weight, r: s.reps, amrap: false, s, i: this.session.t2.sets.indexOf(s) } }
+                if (this.session.acc) { for (const a of this.session.acc) { const on = a.originalName || a.name; for (let i = 1; i <= a.sets; i++) { if (!this.isAccDone(on, i)) return { t: 'acc', n: a.selectedExercise || a.name, w: '-', r: (a.reps || '10-12'), amrap: false, on, i }; } } } return null;
+            },
+            doZen() { const z = this.getZen(); if (!z) return; if (z.t === 'acc') this.togAcc(z.on, z.i); else { if (z.s.amrap) { if (this.zenAmrap === null || this.zenAmrap === '') return alert('Enter reps'); z.s.performed = this.zenAmrap; this.zenAmrap = null; } this.toggleSet(z.s, z.t); } },
+            cancel() { if (confirm('Cancel workout?')) { this.session = {}; this.savedSession = null; DB.d(K.session); this.timer.active = false; this.view = 'dashboard'; this.relWake(); this.$nextTick(() => this.draw()); } }
         }
-    </script>
+    }
+</script>
 </head>
 
 <body x-data="app()" x-init="init()" @keydown.window.escape="handleEscape"
