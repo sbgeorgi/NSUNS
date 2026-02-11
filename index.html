@@ -60,7 +60,8 @@
     </style>
     <script>
         const ICONS = { warn: 'M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z', x: 'M6 18L18 6M6 6l12 12', check: 'M5 13l4 4L19 7', trash: 'M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16', edit: 'M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z', save: 'M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4', play: 'M8 5v14l11-7z', prev: 'M15 19l-7-7 7-7', next: 'M9 5l7 7-7 7', warn2: 'M12 8v4m0 4h.01', info: 'M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z', train: 'M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10', hist: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z', set: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z', chev_down: 'M19 9l-7 7-7-7', swap: 'M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4', expand: 'M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4', search: 'M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z' };
-        const DATA = { muscles: { Bench: { chest: 1, frontDelt: .7, tri: .7, cns: .4 }, OHP: { frontDelt: 1, tri: .6, upperChest: .4, traps: .3, cns: .5 }, Squat: { quads: 1, glutes: .7, lowBack: .6, hams: .4, cns: .8 }, Deadlift: { hams: 1, glutes: .9, lowBack: 1, traps: .5, grip: .8, cns: 1 }, Row: { lats: 1, bi: .6, rearDelt: .6, grip: .6, cns: .3 } }, halfLife: { chest: 36, upperChest: 36, frontDelt: 24, rearDelt: 18, tri: 18, bi: 18, lats: 30, traps: 24, quads: 48, hams: 48, glutes: 48, calves: 28, lowBack: 56, cns: 60, abs: 20, grip: 18, forearm: 18 }, recoveryCapacity: { chest: 20, upperChest: 20, frontDelt: 15, rearDelt: 12, tri: 15, bi: 15, lats: 25, traps: 20, quads: 30, hams: 25, glutes: 30, calves: 35, lowBack: 25, cns: 25, abs: 40, grip: 15, forearm: 15 }, programCapacityScale: { nsuns: 1.4, ppl: 1.3, phul: 1.1, stronglifts: .9, gzclp: 1, '531': 1 }, progressionRate: { Bench: 1, OHP: 1, Squat: 1, Deadlift: 1, Row: 1, upper: .5, lower: 1 }, groups: { Push: ['chest', 'frontDelt', 'tri', 'upperChest'], Pull: ['lats', 'bi', 'rearDelt', 'traps'], Legs: ['quads', 'hams', 'glutes', 'calves'], 'Core/Back': ['lowBack', 'abs'], CNS: ['cns'] }, compoundAccessories: new Set(['Row', 'Pendlay Row', 'DB Row', 'Cable Row', 'T-Bar Row', 'Seal Row', 'Chest Supported Row', 'Meadows Row', 'Pullups', 'Chin-ups', 'Lat Pulldown', 'LatPD', 'Neutral Pullups', 'Chins', 'Wide Grip Pulldown', 'Close Grip Pulldown', 'Dips', 'Close Grip BP', 'Leg Press', 'Lunges', 'Bulgarian Split', 'Hip Thrust', 'Hack Squat', 'Nordic Curl', 'Good Morning', 'OHP', 'Seated OHP', 'DB OHP', 'Push Press', 'DL', 'Romanian DL', 'SLDL']), schemes: { nsuns: { vol: [[.65, 8], [.75, 6], [.85, 4], [.85, 4], [.85, 4], [.8, 5], [.75, 6], [.7, 7], [.65, 8, '+']], heavy: [[.75, 5], [.85, 3], [.95, 1, '+'], [.9, 3], [.85, 3], [.8, 3], [.75, 5], [.7, 5], [.65, 5, '+']], dl: [[.75, 5], [.85, 3], [.95, 1, '+'], [.9, 3], [.85, 3], [.8, 3], [.75, 3], [.7, 3], [.65, 3]], t2: [[.5, 5], [.6, 6], [.7, 7], [.7, 4], [.7, 4], [.7, 4], [.7, 4], [.7, 4]] }, stronglifts: { std: [[1, 5], [1, 5], [1, 5], [1, 5], [1, 5, '+']], dl: [[1, 5, '+']] }, phul: { pow: [[.85, 5], [.85, 5], [.85, 5]], hyp: [[.65, 10], [.65, 10], [.65, 10]], vol: [[.6, 12], [.6, 12], [.6, 12]] }, ppl: { m5: [[.85, 5], [.85, 5], [.85, 5], [.85, 5], [.85, 5, '+']], m1: [[.9, 5, '+']], sec: [[.7, 10], [.7, 10], [.7, 10]] }, gzclp: { t1: [[.85, 3], [.85, 3], [.85, 3], [.85, 3], [.85, 3, '+']], t2: [[.65, 10], [.65, 10], [.65, 10]], f1: [[5, 3], [6, 2], [10, 1]], f2: [[3, 10], [3, 8], [3, 6]] }, '531': { w1: [[.65, 5], [.75, 5], [.85, 5, '+']], w2: [[.7, 3], [.8, 3], [.9, 3, '+']], w3: [[.75, 5], [.85, 3], [.95, 1, '+']], del: [[.4, 5], [.5, 5], [.6, 5]], bbb: Array(5).fill([.5, 10]) } }, progs: { nsuns: { name: 'nSuns LP', daysPerWeek: 5, progressionDesc: 'Linear + AMRAP', days: [{ t: 'Bench Vol', t1: 'Bench', t2: 'OHP', s: 'vol', t2s: 't2', acc: [{ name: 'Row', sets: 4, reps: '10-12' }] }, { t: 'Squat Heavy', t1: 'Squat', t2: 'Deadlift', s: 'heavy', t2s: 't2', acc: [{ name: 'Legs', sets: 4, reps: '10-12' }] }, { t: 'OHP Heavy', t1: 'OHP', t2: 'Bench', s: 'heavy', t2s: 't2', acc: [{ name: 'Pullups', sets: 4, reps: 'AMRAP' }] }, { t: 'Deadlift Heavy', t1: 'Deadlift', t2: 'Squat', s: 'dl', t2s: 't2', acc: [{ name: 'Abs', sets: 4, reps: '10-15' }] }, { t: 'Bench Heavy', t1: 'Bench', t2: 'Bench', s: 'heavy', t2s: 't2', acc: [{ name: 'Arms', sets: 4, reps: '10-15' }] }] }, ppl: { name: 'PPL', prog: 'lin', daysPerWeek: 6, progressionDesc: 'Linear', days: [{ t: 'Push A', t1: 'Bench', t2: 'OHP', s: 'm5', t2s: 'sec', acc: [{ name: 'Tri', sets: 3, reps: '10-15' }] }, { t: 'Pull A', t1: 'Deadlift', t2: 'Row', s: 'm1', t2s: 'sec', acc: [{ name: 'Bi', sets: 3, reps: '10-15' }] }, { t: 'Legs A', t1: 'Squat', t2: 'Deadlift', s: 'm5', t2s: 'sec', acc: [{ name: 'Legs', sets: 3, reps: '10-15' }] }, { t: 'Push B', t1: 'OHP', t2: 'Bench', s: 'm5', t2s: 'sec', acc: [{ name: 'Tri', sets: 3, reps: '10-15' }] }, { t: 'Pull B', t1: 'Row', t2: 'Deadlift', s: 'm5', t2s: 'vol', acc: [{ name: 'Bi', sets: 3, reps: '10-15' }] }, { t: 'Legs B', t1: 'Squat', t2: 'Deadlift', s: 'm5', t2s: 'sec', acc: [{ name: 'Legs', sets: 3, reps: '10-15' }] }] }, phul: { name: 'PHUL', prog: 'lin', daysPerWeek: 4, progressionDesc: 'Linear', days: [{ t: 'Up Pwr', t1: 'Bench', t2: 'Row', s: 'pow', t2s: 'pow', acc: [{ name: 'OHP', sets: 3, reps: '6-10' }] }, { t: 'Lo Pwr', t1: 'Squat', t2: 'Deadlift', s: 'pow', t2s: 'pow', acc: [{ name: 'Legs', sets: 3, reps: '8-12' }] }, { t: 'Up Hyp', t1: 'OHP', t2: 'Bench', s: 'hyp', t2s: 'hyp', acc: [{ name: 'Row', sets: 3, reps: '10-12' }] }, { t: 'Lo Hyp', t1: 'Deadlift', t2: 'Squat', s: 'hyp', t2s: 'hyp', acc: [{ name: 'Legs', sets: 3, reps: '10-15' }] }] }, stronglifts: { name: 'SL 5x5', prog: 'lin', pW: true, daysPerWeek: 3, progressionDesc: 'Linear', days: [{ t: 'A', t1: 'Squat', t2: 'Bench', s: 'std', t2s: 'std', acc: [{ name: 'Row', sets: 5, reps: '5' }] }, { t: 'B', t1: 'Squat', t2: 'OHP', s: 'std', t2s: 'std', acc: [{ name: 'DL', sets: 1, reps: '5+' }] }] }, gzclp: { name: 'GZCLP', prog: 'gz', daysPerWeek: 4, progressionDesc: 'Stage Failure', days: [{ t: 'D1', t1: 'Squat', t2: 'Bench', s: 't1', t2s: 't2', acc: [{ name: 'LatPD', sets: 3, reps: '10-12' }] }, { t: 'D2', t1: 'OHP', t2: 'Deadlift', s: 't1', t2s: 't2', acc: [{ name: 'Row', sets: 3, reps: '10-12' }] }, { t: 'D3', t1: 'Bench', t2: 'Squat', s: 't1', t2s: 't2', acc: [{ name: 'Tri', sets: 3, reps: '10-15' }] }, { t: 'D4', t1: 'Deadlift', t2: 'OHP', s: 't1', t2s: 't2', acc: [{ name: 'Bi', sets: 3, reps: '10-15' }] }] }, "531": { name: '5/3/1 BBB', prog: '531', daysPerWeek: 4, progressionDesc: 'Monthly Wave', days: [{ t: 'OHP', t1: 'OHP', t2: 'OHP', s: '531', t2s: 'bbb', acc: [{ name: 'Chins', sets: 5, reps: 'AMRAP' }] }, { t: 'DL', t1: 'Deadlift', t2: 'Deadlift', s: '531', t2s: 'bbb', acc: [{ name: 'Abs', sets: 5, reps: '10-15' }] }, { t: 'Bench', t1: 'Bench', t2: 'Bench', s: '531', t2s: 'bbb', acc: [{ name: 'Row', sets: 5, reps: '10-12' }] }, { t: 'Squat', t1: 'Squat', t2: 'Squat', s: '531', t2s: 'bbb', acc: [{ name: 'Legs', sets: 5, reps: '10-15' }] }] } }, ui: { bars: [{ weight: 45, name: 'Standard' }, { weight: 35, name: 'Womens' }, { weight: 20, name: 'Kg Std' }, { weight: 15, name: 'Kg Wm' }], timers: [{ l: 'Main (T1)', k: 'restT1', m: 300 }, { l: 'Secondary (T2)', k: 'restT2', m: 180 }, { l: 'Accessory (T3)', k: 'restT3', m: 120 }], opts: [{ k: 'timerSound', l: 'Timer Sound' }, { k: 'vibration', l: 'Vibration' }, { k: 'autoStartTimer', l: 'Auto-start Timer' }, { k: 'showPreviousWorkout', l: 'Show Previous Workout' }, { k: 'autoDeload', l: 'Auto-suggest Deload' }, { k: 'keepAwake', l: 'Keep Screen Awake' }, { k: 'reduceMotion', l: 'Reduce Motion' }], nav: [{ id: 'dashboard', l: 'Train', i: ICONS.train }, { id: 'calendar', l: 'History', i: ICONS.hist }, { id: 'preferences', l: 'Settings', i: ICONS.set }], plates: { kg: [25, 20, 15, 10, 5, 2.5, 1.25], lbs: [45, 35, 25, 10, 5, 2.5] }, colors: { 55: 'bg-red-700 text-white', 45: 'bg-blue-600 text-white', 35: 'bg-yellow-500 text-black', 25: 'bg-green-500 text-black', 20: 'bg-blue-600 text-white', 15: 'bg-yellow-500 text-black', 10: 'bg-white text-black', 5: 'bg-white text-black', 2.5: 'bg-red-400 text-white', 1.25: 'bg-gray-400 text-black' } } };
+        // FIX: Adjusted CNS HalfLife (60->48) and Capacity (25->50) to fix the stuck recovery bug. Also increased LowBack capacity.
+        const DATA = { muscles: { Bench: { chest: 1, frontDelt: .7, tri: .7, cns: .4 }, OHP: { frontDelt: 1, tri: .6, upperChest: .4, traps: .3, cns: .5 }, Squat: { quads: 1, glutes: .7, lowBack: .6, hams: .4, cns: .8 }, Deadlift: { hams: 1, glutes: .9, lowBack: 1, traps: .5, grip: .8, cns: 1 }, Row: { lats: 1, bi: .6, rearDelt: .6, grip: .6, cns: .3 } }, halfLife: { chest: 36, upperChest: 36, frontDelt: 24, rearDelt: 18, tri: 18, bi: 18, lats: 30, traps: 24, quads: 48, hams: 48, glutes: 48, calves: 28, lowBack: 56, cns: 48, abs: 20, grip: 18, forearm: 18 }, recoveryCapacity: { chest: 20, upperChest: 20, frontDelt: 15, rearDelt: 12, tri: 15, bi: 15, lats: 25, traps: 20, quads: 30, hams: 25, glutes: 30, calves: 35, lowBack: 35, cns: 50, abs: 40, grip: 15, forearm: 15 }, programCapacityScale: { nsuns: 1.4, ppl: 1.3, phul: 1.1, stronglifts: .9, gzclp: 1, '531': 1 }, progressionRate: { Bench: 1, OHP: 1, Squat: 1, Deadlift: 1, Row: 1, upper: .5, lower: 1 }, groups: { Push: ['chest', 'frontDelt', 'tri', 'upperChest'], Pull: ['lats', 'bi', 'rearDelt', 'traps'], Legs: ['quads', 'hams', 'glutes', 'calves'], 'Core/Back': ['lowBack', 'abs'], CNS: ['cns'] }, compoundAccessories: new Set(['Row', 'Pendlay Row', 'DB Row', 'Cable Row', 'T-Bar Row', 'Seal Row', 'Chest Supported Row', 'Meadows Row', 'Pullups', 'Chin-ups', 'Lat Pulldown', 'LatPD', 'Neutral Pullups', 'Chins', 'Wide Grip Pulldown', 'Close Grip Pulldown', 'Dips', 'Close Grip BP', 'Leg Press', 'Lunges', 'Bulgarian Split', 'Hip Thrust', 'Hack Squat', 'Nordic Curl', 'Good Morning', 'OHP', 'Seated OHP', 'DB OHP', 'Push Press', 'DL', 'Romanian DL', 'SLDL']), schemes: { nsuns: { vol: [[.65, 8], [.75, 6], [.85, 4], [.85, 4], [.85, 4], [.8, 5], [.75, 6], [.7, 7], [.65, 8, '+']], heavy: [[.75, 5], [.85, 3], [.95, 1, '+'], [.9, 3], [.85, 3], [.8, 3], [.75, 5], [.7, 5], [.65, 5, '+']], dl: [[.75, 5], [.85, 3], [.95, 1, '+'], [.9, 3], [.85, 3], [.8, 3], [.75, 3], [.7, 3], [.65, 3]], t2: [[.5, 5], [.6, 6], [.7, 7], [.7, 4], [.7, 4], [.7, 4], [.7, 4], [.7, 4]] }, stronglifts: { std: [[1, 5], [1, 5], [1, 5], [1, 5], [1, 5, '+']], dl: [[1, 5, '+']] }, phul: { pow: [[.85, 5], [.85, 5], [.85, 5]], hyp: [[.65, 10], [.65, 10], [.65, 10]], vol: [[.6, 12], [.6, 12], [.6, 12]] }, ppl: { m5: [[.85, 5], [.85, 5], [.85, 5], [.85, 5], [.85, 5, '+']], m1: [[.9, 5, '+']], sec: [[.7, 10], [.7, 10], [.7, 10]] }, gzclp: { t1: [[.85, 3], [.85, 3], [.85, 3], [.85, 3], [.85, 3, '+']], t2: [[.65, 10], [.65, 10], [.65, 10]], f1: [[5, 3], [6, 2], [10, 1]], f2: [[3, 10], [3, 8], [3, 6]] }, '531': { w1: [[.65, 5], [.75, 5], [.85, 5, '+']], w2: [[.7, 3], [.8, 3], [.9, 3, '+']], w3: [[.75, 5], [.85, 3], [.95, 1, '+']], del: [[.4, 5], [.5, 5], [.6, 5]], bbb: Array(5).fill([.5, 10]) } }, progs: { nsuns: { name: 'nSuns LP', daysPerWeek: 5, progressionDesc: 'Linear + AMRAP', days: [{ t: 'Bench Vol', t1: 'Bench', t2: 'OHP', s: 'vol', t2s: 't2', acc: [{ name: 'Row', sets: 4, reps: '10-12' }] }, { t: 'Squat Heavy', t1: 'Squat', t2: 'Deadlift', s: 'heavy', t2s: 't2', acc: [{ name: 'Legs', sets: 4, reps: '10-12' }] }, { t: 'OHP Heavy', t1: 'OHP', t2: 'Bench', s: 'heavy', t2s: 't2', acc: [{ name: 'Pullups', sets: 4, reps: 'AMRAP' }] }, { t: 'Deadlift Heavy', t1: 'Deadlift', t2: 'Squat', s: 'dl', t2s: 't2', acc: [{ name: 'Abs', sets: 4, reps: '10-15' }] }, { t: 'Bench Heavy', t1: 'Bench', t2: 'Bench', s: 'heavy', t2s: 't2', acc: [{ name: 'Arms', sets: 4, reps: '10-15' }] }] }, ppl: { name: 'PPL', prog: 'lin', daysPerWeek: 6, progressionDesc: 'Linear', days: [{ t: 'Push A', t1: 'Bench', t2: 'OHP', s: 'm5', t2s: 'sec', acc: [{ name: 'Tri', sets: 3, reps: '10-15' }] }, { t: 'Pull A', t1: 'Deadlift', t2: 'Row', s: 'm1', t2s: 'sec', acc: [{ name: 'Bi', sets: 3, reps: '10-15' }] }, { t: 'Legs A', t1: 'Squat', t2: 'Deadlift', s: 'm5', t2s: 'sec', acc: [{ name: 'Legs', sets: 3, reps: '10-15' }] }, { t: 'Push B', t1: 'OHP', t2: 'Bench', s: 'm5', t2s: 'sec', acc: [{ name: 'Tri', sets: 3, reps: '10-15' }] }, { t: 'Pull B', t1: 'Row', t2: 'Deadlift', s: 'm5', t2s: 'vol', acc: [{ name: 'Bi', sets: 3, reps: '10-15' }] }, { t: 'Legs B', t1: 'Squat', t2: 'Deadlift', s: 'm5', t2s: 'sec', acc: [{ name: 'Legs', sets: 3, reps: '10-15' }] }] }, phul: { name: 'PHUL', prog: 'lin', daysPerWeek: 4, progressionDesc: 'Linear', days: [{ t: 'Up Pwr', t1: 'Bench', t2: 'Row', s: 'pow', t2s: 'pow', acc: [{ name: 'OHP', sets: 3, reps: '6-10' }] }, { t: 'Lo Pwr', t1: 'Squat', t2: 'Deadlift', s: 'pow', t2s: 'pow', acc: [{ name: 'Legs', sets: 3, reps: '8-12' }] }, { t: 'Up Hyp', t1: 'OHP', t2: 'Bench', s: 'hyp', t2s: 'hyp', acc: [{ name: 'Row', sets: 3, reps: '10-12' }] }, { t: 'Lo Hyp', t1: 'Deadlift', t2: 'Squat', s: 'hyp', t2s: 'hyp', acc: [{ name: 'Legs', sets: 3, reps: '10-15' }] }] }, stronglifts: { name: 'SL 5x5', prog: 'lin', pW: true, daysPerWeek: 3, progressionDesc: 'Linear', days: [{ t: 'A', t1: 'Squat', t2: 'Bench', s: 'std', t2s: 'std', acc: [{ name: 'Row', sets: 5, reps: '5' }] }, { t: 'B', t1: 'Squat', t2: 'OHP', s: 'std', t2s: 'std', acc: [{ name: 'DL', sets: 1, reps: '5+' }] }] }, gzclp: { name: 'GZCLP', prog: 'gz', daysPerWeek: 4, progressionDesc: 'Stage Failure', days: [{ t: 'D1', t1: 'Squat', t2: 'Bench', s: 't1', t2s: 't2', acc: [{ name: 'LatPD', sets: 3, reps: '10-12' }] }, { t: 'D2', t1: 'OHP', t2: 'Deadlift', s: 't1', t2s: 't2', acc: [{ name: 'Row', sets: 3, reps: '10-12' }] }, { t: 'D3', t1: 'Bench', t2: 'Squat', s: 't1', t2s: 't2', acc: [{ name: 'Tri', sets: 3, reps: '10-15' }] }, { t: 'D4', t1: 'Deadlift', t2: 'OHP', s: 't1', t2s: 't2', acc: [{ name: 'Bi', sets: 3, reps: '10-15' }] }] }, "531": { name: '5/3/1 BBB', prog: '531', daysPerWeek: 4, progressionDesc: 'Monthly Wave', days: [{ t: 'OHP', t1: 'OHP', t2: 'OHP', s: '531', t2s: 'bbb', acc: [{ name: 'Chins', sets: 5, reps: 'AMRAP' }] }, { t: 'DL', t1: 'Deadlift', t2: 'Deadlift', s: '531', t2s: 'bbb', acc: [{ name: 'Abs', sets: 5, reps: '10-15' }] }, { t: 'Bench', t1: 'Bench', t2: 'Bench', s: '531', t2s: 'bbb', acc: [{ name: 'Row', sets: 5, reps: '10-12' }] }, { t: 'Squat', t1: 'Squat', t2: 'Squat', s: '531', t2s: 'bbb', acc: [{ name: 'Legs', sets: 5, reps: '10-15' }] }] } }, ui: { bars: [{ weight: 45, name: 'Standard' }, { weight: 35, name: 'Womens' }, { weight: 20, name: 'Kg Std' }, { weight: 15, name: 'Kg Wm' }], timers: [{ l: 'Main (T1)', k: 'restT1', m: 300 }, { l: 'Secondary (T2)', k: 'restT2', m: 180 }, { l: 'Accessory (T3)', k: 'restT3', m: 120 }], opts: [{ k: 'timerSound', l: 'Timer Sound' }, { k: 'vibration', l: 'Vibration' }, { k: 'autoStartTimer', l: 'Auto-start Timer' }, { k: 'showPreviousWorkout', l: 'Show Previous Workout' }, { k: 'autoDeload', l: 'Auto-suggest Deload' }, { k: 'keepAwake', l: 'Keep Screen Awake' }, { k: 'reduceMotion', l: 'Reduce Motion' }], nav: [{ id: 'dashboard', l: 'Train', i: ICONS.train }, { id: 'calendar', l: 'History', i: ICONS.hist }, { id: 'preferences', l: 'Settings', i: ICONS.set }], plates: { kg: [25, 20, 15, 10, 5, 2.5, 1.25], lbs: [45, 35, 25, 10, 5, 2.5] }, colors: { 55: 'bg-red-700 text-white', 45: 'bg-blue-600 text-white', 35: 'bg-yellow-500 text-black', 25: 'bg-green-500 text-black', 20: 'bg-blue-600 text-white', 15: 'bg-yellow-500 text-black', 10: 'bg-white text-black', 5: 'bg-white text-black', 2.5: 'bg-red-400 text-white', 1.25: 'bg-gray-400 text-black' } } };
         const ACHIEVEMENTS = [{ id: 'first', title: 'First Steps', icon: '🎯', check: h => h.length >= 1 }, { id: 'week', title: 'Week Warrior', icon: '🔥', check: h => h.length >= 7 }, { id: 'month', title: 'Monthly Master', icon: '💪', check: h => h.length >= 30 }, { id: 'century', title: 'Century Club', icon: '🏆', check: h => h.length >= 100 }, { id: 'pr1', title: 'PR Machine', icon: '📈', check: h => h.some(w => w.pr) }, { id: 'pr5', title: 'Gains Train', icon: '🚂', check: h => h.filter(w => w.pr).length >= 5 }, { id: 'vol', title: 'Volume King', icon: '👑', check: h => h.reduce((a, w) => a + (w.totalVolume || 0), 0) >= 1e5 }, { id: 'back', title: 'Comeback Kid', icon: '💫', check: h => h.length > 1 && (h[h.length - 1].timestamp - h[h.length - 2].timestamp) > 12096e5 }, { id: 'star', title: 'Five Star', icon: '✨', check: h => h.some(w => w.rating === 5) }];
         const EX_OPTS = { bench_variants: { base: 'Bench', opt: [['Bench', 1], ['Incline Bench', .85], ['Close Grip Bench', .9], ['DB Bench', .8], ['Paused Bench', .9], ['Spoto Press', .85], ['Floor Press', .9]] }, ohp_variants: { base: 'OHP', opt: [['OHP', 1], ['Seated OHP', .95], ['DB OHP', .85], ['Push Press', 1.1], ['Z Press', .75], ['Arnold Press', .7], ['Behind Neck Press', .8]] }, squat_variants: { base: 'Squat', opt: [['Squat', 1], ['Front Squat', .85], ['Pause Squat', .85], ['Box Squat', .9], ['SSB Squat', .9], ['Goblet Squat', .5], ['Tempo Squat', .8]] }, deadlift_variants: { base: 'Deadlift', opt: [['Deadlift', 1], ['Sumo DL', 1], ['Romanian DL', .7], ['Trap Bar DL', 1.05], ['Deficit DL', .9], ['Paused DL', .85], ['Block Pull', 1.1], ['SLDL', .7]] }, row_variants: { base: 'Row', opt: [['Row', 1], ['Pendlay Row', .95], ['DB Row', .85], ['Cable Row', .9], ['T-Bar Row', 1], ['Seal Row', .8], ['Chest Supported Row', .85], ['Meadows Row', .7]] }, triceps: { opt: [['Tri'], ['Pushdowns'], ['Skull Crushers'], ['Dips'], ['OH Tricep Ext'], ['Close Grip BP'], ['JM Press'], ['Tricep Kickbacks']] }, biceps: { opt: [['Bi'], ['Barbell Curl'], ['DB Curl'], ['Hammer Curl'], ['Preacher Curl'], ['Incline Curl'], ['Cable Curl'], ['Spider Curl']] }, vertical_pull: { opt: [['Pullups'], ['Chin-ups'], ['Lat Pulldown'], ['LatPD'], ['Neutral Pullups'], ['Chins'], ['Wide Grip Pulldown'], ['Close Grip Pulldown']] }, leg_accessories: { opt: [['Legs'], ['Leg Press'], ['Lunges'], ['Leg Curl'], ['Leg Ext'], ['Calf Raises'], ['Bulgarian Split'], ['Hip Thrust'], ['Hack Squat'], ['Nordic Curl']] }, core: { opt: [['Abs'], ['Hanging Leg Raise'], ['Cable Crunch'], ['Ab Wheel'], ['Planks'], ['Russian Twists'], ['Dead Bug'], ['Pallof Press']] }, arms: { opt: [['Arms'], ['Curls + Pushdowns'], ['Hammer + Dips'], ['Arm Circuit'], ['Supersets']] }, dl_accessory: { base: 'Deadlift', opt: [['DL', 1], ['Romanian DL', .7], ['SLDL', .7], ['Good Morning', .5], ['Back Extension', .3]] } };
         const EX_INDEX = {}; Object.entries(EX_OPTS).forEach(([k, g]) => g.opt.forEach(o => { EX_INDEX[o[0]] = { id: o[0], name: o[0], mult: o[1] || 1, groupKey: k, base: g.base } }));
@@ -72,7 +73,8 @@
 
         function epley1RM(w, r) { if (r <= 0 || w <= 0) return 0; if (r === 1) return w; return Math.round(w * (1 + Math.min(r, 12) / 30)) }
         function trendE1RM(h, l, w = 5) { const e = (h[l] || []).slice(-w); if (!e.length) return 0; let s = 0, d = 0; e.forEach((v, i) => { s += v.e1rm * (i + 1); d += i + 1 }); return Math.round(s / d) }
-        function calculateSetFatigue(w, r, tm, f, hr) { if (r <= 0 || w <= 0) return 0; const ref = tm > 0 ? tm : w, i = Math.min(w / ref, 1.25); return r * Math.pow(i, 3) * 2.0 * ((f && !hr) ? 1.3 : 1.0) }
+        // FIX: Reduced the multiplier from 2.0 to 1.2 to prevent excessive fatigue calculation for high volume programs like nSuns
+        function calculateSetFatigue(w, r, tm, f, hr) { if (r <= 0 || w <= 0) return 0; const ref = tm > 0 ? tm : w, i = Math.min(w / ref, 1.25); return r * Math.pow(i, 3) * 1.2 * ((f && !hr) ? 1.3 : 1.0) }
 
         function app() {
             return {
@@ -160,6 +162,7 @@
 
 <body x-data="app()" x-init="init()" @keydown.window.escape="handleEscape"
     class="antialiased h-screen overflow-hidden text-slate-200">
+    <!-- FIX: Added viewBox and fill/stroke attributes to all SVG icons to fix broken imports/rendering -->
     <div x-show="activeModal" class="modal-bg" x-transition x-cloak>
         <template x-if="activeModal==='resume'">
             <div class="glass-panel text-center">
@@ -187,7 +190,7 @@
         <template x-if="activeModal==='deload'">
             <div class="glass-panel border-orange-500/30 text-center">
                 <div class="w-16 h-16 mx-auto mb-4 bg-orange-500/20 rounded-full f-c"><svg
-                        class="w-8 h-8 text-orange-400">
+                        class="w-8 h-8 text-orange-400" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="icons.warn" />
                     </svg></div>
                 <h3 class="text-xl font-bold text-white">Deload Recommended</h3>
@@ -202,7 +205,8 @@
             <div class="glass-panel" @click.outside="activeModal=null">
                 <div class="f-cb mb-6">
                     <h3 class="text-xl font-bold text-white">Edit Set</h3><button @click="activeModal=null"
-                        class="text-slate-500 hover:text-white"><svg class="w-6 h-6">
+                        class="text-slate-500 hover:text-white"><svg class="w-6 h-6" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="icons.x" />
                         </svg></button>
                 </div>
@@ -230,7 +234,7 @@
             <div class="glass-panel overflow-y-auto max-h-[85vh] no-scrollbar">
                 <div class="f-cb mb-6 border-b border-white/5 pb-4">
                     <h3 class="text-xl font-bold text-white">Key</h3><button @click="activeModal=null"><svg
-                            class="w-6 h-6 text-slate-500">
+                            class="w-6 h-6 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="icons.x" />
                         </svg></button>
                 </div>
@@ -305,27 +309,28 @@
                     </div>
                     <div class="f-g2" x-data="{e:false}"><template x-if="!isEditingLog">
                             <div class="f-g2"><button @click="delLog()" class="btn-icon text-red-400"><svg
-                                        class="icon-sm">
+                                        class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                             :d="icons.trash" />
                                     </svg></button><button @click="isEditingLog=true"
-                                    class="btn-icon text-blue-400"><svg class="icon-sm">
+                                    class="btn-icon text-blue-400"><svg class="icon-sm" viewBox="0 0 24 24" fill="none"
+                                        stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                             :d="icons.edit" />
                                     </svg></button></div>
                         </template>
                         <template x-if="isEditingLog">
                             <div class="f-g2"><button @click="saveLog()" class="btn-icon text-green-400"><svg
-                                        class="icon-sm">
+                                        class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                             :d="icons.save" />
                                     </svg></button><button @click="isEditingLog=false" class="btn-icon"><svg
-                                        class="icon-sm">
+                                        class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                             :d="icons.x" />
                                     </svg></button></div>
                         </template><button @click="activeModal=null" class="btn-icon" x-show="!isEditingLog"><svg
-                                class="w-6 h-6">
+                                class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="icons.x" />
                             </svg></button>
                     </div>
@@ -495,7 +500,8 @@
         <div class="px-6 space-y-6">
             <div x-show="daysOff()>=7&&prefs.autoDeload"
                 class="rounded-2xl p-4 f-g2 bg-orange-500/10 border border-orange-500/20">
-                <div class="w-10 h-10 bg-orange-500/20 rounded-full f-c shrink-0"><svg class="w-5 h-5 text-orange-400">
+                <div class="w-10 h-10 bg-orange-500/20 rounded-full f-c shrink-0"><svg class="w-5 h-5 text-orange-400"
+                        viewBox="0 0 24 24" fill="none" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="icons.warn2" />
                     </svg></div>
                 <div>
@@ -524,7 +530,7 @@
                 <div class="relative z-10">
                     <div class="f-cb mb-4"><button @click="chgDay(-1)"
                             class="w-8 h-8 rounded-full bg-white/5 f-c text-slate-400 active:scale-95 hover:bg-white/10"><svg
-                                class="w-4 h-4">
+                                class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="icons.prev" />
                             </svg></button>
                         <div class="text-center f-col gap-1">
@@ -535,7 +541,7 @@
                                 class="px-1.5 py-0.5 rounded bg-indigo-600 text-[9px] font-bold text-white">Next</div>
                         </div><button @click="chgDay(1)"
                             class="w-8 h-8 rounded-full bg-white/5 f-c text-slate-400 active:scale-95 hover:bg-white/10"><svg
-                                class="w-4 h-4">
+                                class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="icons.next" />
                             </svg></button>
                     </div>
@@ -548,7 +554,7 @@
                         <div class="mt-6 f-cb">
                             <div class="f-g2 text-sm font-bold text-white"><span
                                     class="bg-indigo-600 rounded-full w-8 h-8 f-c pulse-glow"><svg
-                                        class="w-4 h-4 ml-0.5" fill="currentColor">
+                                        class="w-4 h-4 ml-0.5" viewBox="0 0 24 24" fill="currentColor" stroke="none">
                                         <path :d="icons.play" />
                                     </svg></span><span>Start</span></div><button @click.stop="pIdx=idx"
                                 x-show="pIdx!==idx"
@@ -640,10 +646,11 @@
                                 <p class="text-[10px] text-indigo-400 mt-1" x-text="p.progressionDesc"></p>
                             </div>
                             <div x-show="prefs.program===k" class="w-6 h-6 bg-indigo-600 rounded-full f-c text-white">
-                                <svg class="w-4 h-4">
+                                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3"
                                         :d="icons.check" />
-                                </svg></div>
+                                </svg>
+                            </div>
                         </div>
                     </template></div>
             </div>
@@ -740,10 +747,12 @@
                 <div class="f-cb mb-4">
                     <h3 class="font-bold text-white" x-text="cal.monthName"></h3>
                     <div class="f-g2"><button @click="cal.offset--;calBuild()"
-                            class="p-1 hover:text-white text-slate-500"><svg class="icon-sm">
+                            class="p-1 hover:text-white text-slate-500"><svg class="icon-sm" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="icons.prev" />
                             </svg></button><button @click="cal.offset++;calBuild()"
-                            class="p-1 hover:text-white text-slate-500"><svg class="icon-sm">
+                            class="p-1 hover:text-white text-slate-500"><svg class="icon-sm" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="icons.next" />
                             </svg></button></div>
                 </div>
@@ -778,7 +787,8 @@
                                 </div>
                                 <div class="f-g2">
                                     <div x-show="l.rating" class="text-xs" x-text="'⭐'.repeat(l.rating)"></div><svg
-                                        class="w-4 h-4 text-slate-600">
+                                        class="w-4 h-4 text-slate-600" viewBox="0 0 24 24" fill="none"
+                                        stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                             :d="icons.next" />
                                     </svg>
@@ -805,17 +815,18 @@
         <div class="sticky top-0 bg-black/90 backdrop-blur-md border-b border-white/5 p-4 f-cb z-30"><button
                 @click="cancel()" class="text-slate-400 text-sm font-bold">Cancel</button>
             <div class="flex gap-4"><button @click="toggleZen()" class="text-indigo-400 hover:text-white"><svg
-                        class="icon-sm">
+                        class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="icons.expand" />
                     </svg></button><button @click="activeModal='info'" class="text-slate-500 hover:text-white"><svg
-                        class="icon-sm">
+                        class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="icons.info" />
                     </svg></button></div><button @click="finish()"
                 class="bg-indigo-600 px-4 py-1.5 rounded-full text-xs font-bold text-white shadow-lg">Finish</button>
         </div>
         <div class="bg-[#0A0A0A] border-b border-white/5 py-2 flex justify-center gap-4 text-xs text-slate-400 mono">
             <span x-text="sessionTimerStr"></span><span class="text-slate-600">|</span><span
-                x-text="sessProg()+'%'"></span></div>
+                x-text="sessProg()+'%'"></span>
+        </div>
         <div x-show="timer.active" x-transition
             class="sticky top-24 z-20 mx-auto max-w-[280px] bg-[#1A1A1E] border border-white/10 rounded-full shadow-2xl f-cb p-1 pr-4 overflow-hidden mt-2">
             <div class="absolute inset-0 bg-indigo-600/20 origin-left transition-transform duration-1000 linear"
@@ -854,7 +865,8 @@
             <div class="bg-indigo-900/10 border border-indigo-500/20 rounded-2xl overflow-hidden"><button
                     @click="showWarmups=!showWarmups" class="w-full f-cb p-3"><span
                         class="text-xs font-bold text-indigo-400 uppercase tracking-widest">Warm-up</span><svg
-                        class="w-4 h-4 text-indigo-400 transition" :class="showWarmups?'rotate-180':''">
+                        class="w-4 h-4 text-indigo-400 transition" :class="showWarmups?'rotate-180':''"
+                        viewBox="0 0 24 24" fill="none" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="icons.chev_down" />
                     </svg></button>
                 <div x-show="showWarmups" x-collapse class="px-3 pb-3 grid grid-cols-4 gap-2"><template
@@ -892,7 +904,7 @@
                                     @click="toggleSet(s,'t1')" class="w-10 h-10 rounded-lg border f-c transition"
                                     :class="s.completed?(s.failed?'bg-red-500 border-red-500 text-white':'bg-green-500 border-green-500 text-black'):'border-white/10'"><span
                                         x-show="s.completed&&s.failed">✕</span><svg x-show="s.completed&&!s.failed"
-                                        class="icon-sm">
+                                        class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3"
                                             :d="icons.check" />
                                     </svg></button></div>
@@ -905,7 +917,7 @@
                     <div class="f-cb mb-3"><button @click="swapState.t2=!swapState.t2"
                             class="f-g2 text-lg font-bold text-slate-300 hover:text-white transition"><span
                                 x-text="exName(session.t2?.selectedExercise||session.t2?.name)"></span><svg
-                                class="w-4 h-4 text-indigo-500">
+                                class="w-4 h-4 text-indigo-500" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="icons.swap" />
                             </svg></button><span
                             class="text-[10px] px-2 py-1 rounded bg-white/5 border border-white/10 text-slate-400 uppercase font-bold">T2</span>
@@ -947,7 +959,8 @@
                             <div class="f-cb mb-2 relative"><button @click="swapState.acc=swapState.acc===i?null:i"
                                     class="f-g2 text-sm font-bold text-white hover:text-indigo-400"><span
                                         x-text="exName(a.selectedExercise||a.name)"></span><svg
-                                        class="w-3 h-3 text-slate-500">
+                                        class="w-3 h-3 text-slate-500" viewBox="0 0 24 24" fill="none"
+                                        stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                             :d="icons.swap" />
                                     </svg></button><span
@@ -982,7 +995,8 @@
             <div x-show="zenMode" x-transition.opacity
                 class="fixed inset-0 z-[100] f-col items-center justify-center p-6 text-center bg-[#101012]" x-cloak>
                 <div class="absolute top-6 right-6"><button @click="toggleZen()"
-                        class="p-4 bg-white/10 rounded-full text-white"><svg class="w-6 h-6">
+                        class="p-4 bg-white/10 rounded-full text-white"><svg class="w-6 h-6" viewBox="0 0 24 24"
+                            fill="none" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="icons.x" />
                         </svg></button></div><template x-if="getZen()">
                     <div class="w-full max-w-md space-y-8">
@@ -1035,7 +1049,7 @@
     <nav x-show="view!=='setup'&&view!=='workout'"
         class="fixed bottom-0 w-full nav-glass pb-safe pt-2 px-6 z-40 f-cb h-20"><template x-for="n in UI.nav"><button
                 @click="nav(n.id)" class="nav-btn" :class="view===n.id?'text-indigo-400':'text-slate-500'"><svg
-                    class="w-6 h-6">
+                    class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="n.i" />
                 </svg><span class="text-[10px] font-bold" x-text="n.l"></span></button></template></nav>
 </body>
