@@ -3,19 +3,20 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport"
-        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="theme-color" content="#000000">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <title>LIFT ULTIMATE</title>
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>LIFT ULTIMATE 2026</title>
+    
+    <!-- Dependencies -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/collapse@3.13.3/dist/cdn.min.js"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/cdn.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap"
-        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+
     <style type="text/tailwindcss">
         @layer components {
             .f-c { @apply flex items-center justify-center; }
@@ -46,9 +47,12 @@
         .no-scrollbar::-webkit-scrollbar { display: none; }
         [x-cloak] { display: none !important; }
         .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
-        .cal-day { aspect-ratio: 1; @apply f-c text-xs font-bold rounded-lg text-[#555]; }
+        .cal-day { aspect-ratio: 1; @apply f-c text-xs font-bold rounded-lg text-[#555] transition-colors; }
         .cal-today { @apply text-white bg-[#222] border border-[#444]; }
         .cal-active { @apply bg-indigo-500/15 text-indigo-400 border border-indigo-500/40 relative; }
+        .cal-hot1 { @apply bg-indigo-500/20 text-indigo-300 border border-indigo-500/30; }
+        .cal-hot2 { @apply bg-indigo-500/50 text-white border border-indigo-500/60; }
+        .cal-hot3 { @apply bg-indigo-400 text-black border border-indigo-400 font-extrabold; }
         .pulse-glow { animation: pg 2s ease-in-out infinite; }
         @keyframes pg { 0%, 100% { box-shadow: 0 0 15px rgba(99,102,241,0.3) } 50% { box-shadow: 0 0 25px rgba(99,102,241,0.6) } }
         .shimmer { background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent); background-size: 200% 100%; animation: sh 2s infinite; }
@@ -58,33 +62,65 @@
         .nav-glass { background: rgba(0,0,0,0.9); backdrop-filter: blur(20px); border-top: 1px solid rgba(255,255,255,0.08); }
         .reduce-motion .pulse-glow, .reduce-motion .shimmer { animation: none !important; }
     </style>
+
     <script>
-        const ICONS = { warn: 'M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z', x: 'M6 18L18 6M6 6l12 12', check: 'M5 13l4 4L19 7', trash: 'M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16', edit: 'M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z', save: 'M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4', play: 'M8 5v14l11-7z', prev: 'M15 19l-7-7 7-7', next: 'M9 5l7 7-7 7', warn2: 'M12 8v4m0 4h.01', info: 'M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z', train: 'M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10', hist: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z', set: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z', chev_down: 'M19 9l-7 7-7-7', swap: 'M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4', expand: 'M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4', search: 'M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z' };
-        // FIX: Adjusted CNS HalfLife (60->48) and Capacity (25->50) to fix the stuck recovery bug. Also increased LowBack capacity.
-        const DATA = { muscles: { Bench: { chest: 1, frontDelt: .7, tri: .7, cns: .4 }, OHP: { frontDelt: 1, tri: .6, upperChest: .4, traps: .3, cns: .5 }, Squat: { quads: 1, glutes: .7, lowBack: .6, hams: .4, cns: .8 }, Deadlift: { hams: 1, glutes: .9, lowBack: 1, traps: .5, grip: .8, cns: 1 }, Row: { lats: 1, bi: .6, rearDelt: .6, grip: .6, cns: .3 } }, halfLife: { chest: 36, upperChest: 36, frontDelt: 24, rearDelt: 18, tri: 18, bi: 18, lats: 30, traps: 24, quads: 48, hams: 48, glutes: 48, calves: 28, lowBack: 56, cns: 48, abs: 20, grip: 18, forearm: 18 }, recoveryCapacity: { chest: 20, upperChest: 20, frontDelt: 15, rearDelt: 12, tri: 15, bi: 15, lats: 25, traps: 20, quads: 30, hams: 25, glutes: 30, calves: 35, lowBack: 35, cns: 50, abs: 40, grip: 15, forearm: 15 }, programCapacityScale: { nsuns: 1.4, ppl: 1.3, phul: 1.1, stronglifts: .9, gzclp: 1, '531': 1 }, progressionRate: { Bench: 1, OHP: 1, Squat: 1, Deadlift: 1, Row: 1, upper: .5, lower: 1 }, groups: { Push: ['chest', 'frontDelt', 'tri', 'upperChest'], Pull: ['lats', 'bi', 'rearDelt', 'traps'], Legs: ['quads', 'hams', 'glutes', 'calves'], 'Core/Back': ['lowBack', 'abs'], CNS: ['cns'] }, compoundAccessories: new Set(['Row', 'Pendlay Row', 'DB Row', 'Cable Row', 'T-Bar Row', 'Seal Row', 'Chest Supported Row', 'Meadows Row', 'Pullups', 'Chin-ups', 'Lat Pulldown', 'LatPD', 'Neutral Pullups', 'Chins', 'Wide Grip Pulldown', 'Close Grip Pulldown', 'Dips', 'Close Grip BP', 'Leg Press', 'Lunges', 'Bulgarian Split', 'Hip Thrust', 'Hack Squat', 'Nordic Curl', 'Good Morning', 'OHP', 'Seated OHP', 'DB OHP', 'Push Press', 'DL', 'Romanian DL', 'SLDL']), schemes: { nsuns: { vol: [[.65, 8], [.75, 6], [.85, 4], [.85, 4], [.85, 4], [.8, 5], [.75, 6], [.7, 7], [.65, 8, '+']], heavy: [[.75, 5], [.85, 3], [.95, 1, '+'], [.9, 3], [.85, 3], [.8, 3], [.75, 5], [.7, 5], [.65, 5, '+']], dl: [[.75, 5], [.85, 3], [.95, 1, '+'], [.9, 3], [.85, 3], [.8, 3], [.75, 3], [.7, 3], [.65, 3]], t2: [[.5, 5], [.6, 6], [.7, 7], [.7, 4], [.7, 4], [.7, 4], [.7, 4], [.7, 4]] }, stronglifts: { std: [[1, 5], [1, 5], [1, 5], [1, 5], [1, 5, '+']], dl: [[1, 5, '+']] }, phul: { pow: [[.85, 5], [.85, 5], [.85, 5]], hyp: [[.65, 10], [.65, 10], [.65, 10]], vol: [[.6, 12], [.6, 12], [.6, 12]] }, ppl: { m5: [[.85, 5], [.85, 5], [.85, 5], [.85, 5], [.85, 5, '+']], m1: [[.9, 5, '+']], sec: [[.7, 10], [.7, 10], [.7, 10]] }, gzclp: { t1: [[.85, 3], [.85, 3], [.85, 3], [.85, 3], [.85, 3, '+']], t2: [[.65, 10], [.65, 10], [.65, 10]], f1: [[5, 3], [6, 2], [10, 1]], f2: [[3, 10], [3, 8], [3, 6]] }, '531': { w1: [[.65, 5], [.75, 5], [.85, 5, '+']], w2: [[.7, 3], [.8, 3], [.9, 3, '+']], w3: [[.75, 5], [.85, 3], [.95, 1, '+']], del: [[.4, 5], [.5, 5], [.6, 5]], bbb: Array(5).fill([.5, 10]) } }, progs: { nsuns: { name: 'nSuns LP', daysPerWeek: 5, progressionDesc: 'Linear + AMRAP', days: [{ t: 'Bench Vol', t1: 'Bench', t2: 'OHP', s: 'vol', t2s: 't2', acc: [{ name: 'Row', sets: 4, reps: '10-12' }] }, { t: 'Squat Heavy', t1: 'Squat', t2: 'Deadlift', s: 'heavy', t2s: 't2', acc: [{ name: 'Legs', sets: 4, reps: '10-12' }] }, { t: 'OHP Heavy', t1: 'OHP', t2: 'Bench', s: 'heavy', t2s: 't2', acc: [{ name: 'Pullups', sets: 4, reps: 'AMRAP' }] }, { t: 'Deadlift Heavy', t1: 'Deadlift', t2: 'Squat', s: 'dl', t2s: 't2', acc: [{ name: 'Abs', sets: 4, reps: '10-15' }] }, { t: 'Bench Heavy', t1: 'Bench', t2: 'Bench', s: 'heavy', t2s: 't2', acc: [{ name: 'Arms', sets: 4, reps: '10-15' }] }] }, ppl: { name: 'PPL', prog: 'lin', daysPerWeek: 6, progressionDesc: 'Linear', days: [{ t: 'Push A', t1: 'Bench', t2: 'OHP', s: 'm5', t2s: 'sec', acc: [{ name: 'Tri', sets: 3, reps: '10-15' }] }, { t: 'Pull A', t1: 'Deadlift', t2: 'Row', s: 'm1', t2s: 'sec', acc: [{ name: 'Bi', sets: 3, reps: '10-15' }] }, { t: 'Legs A', t1: 'Squat', t2: 'Deadlift', s: 'm5', t2s: 'sec', acc: [{ name: 'Legs', sets: 3, reps: '10-15' }] }, { t: 'Push B', t1: 'OHP', t2: 'Bench', s: 'm5', t2s: 'sec', acc: [{ name: 'Tri', sets: 3, reps: '10-15' }] }, { t: 'Pull B', t1: 'Row', t2: 'Deadlift', s: 'm5', t2s: 'vol', acc: [{ name: 'Bi', sets: 3, reps: '10-15' }] }, { t: 'Legs B', t1: 'Squat', t2: 'Deadlift', s: 'm5', t2s: 'sec', acc: [{ name: 'Legs', sets: 3, reps: '10-15' }] }] }, phul: { name: 'PHUL', prog: 'lin', daysPerWeek: 4, progressionDesc: 'Linear', days: [{ t: 'Up Pwr', t1: 'Bench', t2: 'Row', s: 'pow', t2s: 'pow', acc: [{ name: 'OHP', sets: 3, reps: '6-10' }] }, { t: 'Lo Pwr', t1: 'Squat', t2: 'Deadlift', s: 'pow', t2s: 'pow', acc: [{ name: 'Legs', sets: 3, reps: '8-12' }] }, { t: 'Up Hyp', t1: 'OHP', t2: 'Bench', s: 'hyp', t2s: 'hyp', acc: [{ name: 'Row', sets: 3, reps: '10-12' }] }, { t: 'Lo Hyp', t1: 'Deadlift', t2: 'Squat', s: 'hyp', t2s: 'hyp', acc: [{ name: 'Legs', sets: 3, reps: '10-15' }] }] }, stronglifts: { name: 'SL 5x5', prog: 'lin', pW: true, daysPerWeek: 3, progressionDesc: 'Linear', days: [{ t: 'A', t1: 'Squat', t2: 'Bench', s: 'std', t2s: 'std', acc: [{ name: 'Row', sets: 5, reps: '5' }] }, { t: 'B', t1: 'Squat', t2: 'OHP', s: 'std', t2s: 'std', acc: [{ name: 'DL', sets: 1, reps: '5+' }] }] }, gzclp: { name: 'GZCLP', prog: 'gz', daysPerWeek: 4, progressionDesc: 'Stage Failure', days: [{ t: 'D1', t1: 'Squat', t2: 'Bench', s: 't1', t2s: 't2', acc: [{ name: 'LatPD', sets: 3, reps: '10-12' }] }, { t: 'D2', t1: 'OHP', t2: 'Deadlift', s: 't1', t2s: 't2', acc: [{ name: 'Row', sets: 3, reps: '10-12' }] }, { t: 'D3', t1: 'Bench', t2: 'Squat', s: 't1', t2s: 't2', acc: [{ name: 'Tri', sets: 3, reps: '10-15' }] }, { t: 'D4', t1: 'Deadlift', t2: 'OHP', s: 't1', t2s: 't2', acc: [{ name: 'Bi', sets: 3, reps: '10-15' }] }] }, "531": { name: '5/3/1 BBB', prog: '531', daysPerWeek: 4, progressionDesc: 'Monthly Wave', days: [{ t: 'OHP', t1: 'OHP', t2: 'OHP', s: '531', t2s: 'bbb', acc: [{ name: 'Chins', sets: 5, reps: 'AMRAP' }] }, { t: 'DL', t1: 'Deadlift', t2: 'Deadlift', s: '531', t2s: 'bbb', acc: [{ name: 'Abs', sets: 5, reps: '10-15' }] }, { t: 'Bench', t1: 'Bench', t2: 'Bench', s: '531', t2s: 'bbb', acc: [{ name: 'Row', sets: 5, reps: '10-12' }] }, { t: 'Squat', t1: 'Squat', t2: 'Squat', s: '531', t2s: 'bbb', acc: [{ name: 'Legs', sets: 5, reps: '10-15' }] }] } }, ui: { bars: [{ weight: 45, name: 'Standard' }, { weight: 35, name: 'Womens' }, { weight: 20, name: 'Kg Std' }, { weight: 15, name: 'Kg Wm' }], timers: [{ l: 'Main (T1)', k: 'restT1', m: 300 }, { l: 'Secondary (T2)', k: 'restT2', m: 180 }, { l: 'Accessory (T3)', k: 'restT3', m: 120 }], opts: [{ k: 'timerSound', l: 'Timer Sound' }, { k: 'vibration', l: 'Vibration' }, { k: 'autoStartTimer', l: 'Auto-start Timer' }, { k: 'showPreviousWorkout', l: 'Show Previous Workout' }, { k: 'autoDeload', l: 'Auto-suggest Deload' }, { k: 'keepAwake', l: 'Keep Screen Awake' }, { k: 'reduceMotion', l: 'Reduce Motion' }], nav: [{ id: 'dashboard', l: 'Train', i: ICONS.train }, { id: 'calendar', l: 'History', i: ICONS.hist }, { id: 'preferences', l: 'Settings', i: ICONS.set }], plates: { kg: [25, 20, 15, 10, 5, 2.5, 1.25], lbs: [45, 35, 25, 10, 5, 2.5] }, colors: { 55: 'bg-red-700 text-white', 45: 'bg-blue-600 text-white', 35: 'bg-yellow-500 text-black', 25: 'bg-green-500 text-black', 20: 'bg-blue-600 text-white', 15: 'bg-yellow-500 text-black', 10: 'bg-white text-black', 5: 'bg-white text-black', 2.5: 'bg-red-400 text-white', 1.25: 'bg-gray-400 text-black' } } };
-        const ACHIEVEMENTS = [{ id: 'first', title: 'First Steps', icon: '🎯', check: h => h.length >= 1 }, { id: 'week', title: 'Week Warrior', icon: '🔥', check: h => h.length >= 7 }, { id: 'month', title: 'Monthly Master', icon: '💪', check: h => h.length >= 30 }, { id: 'century', title: 'Century Club', icon: '🏆', check: h => h.length >= 100 }, { id: 'pr1', title: 'PR Machine', icon: '📈', check: h => h.some(w => w.pr) }, { id: 'pr5', title: 'Gains Train', icon: '🚂', check: h => h.filter(w => w.pr).length >= 5 }, { id: 'vol', title: 'Volume King', icon: '👑', check: h => h.reduce((a, w) => a + (w.totalVolume || 0), 0) >= 1e5 }, { id: 'back', title: 'Comeback Kid', icon: '💫', check: h => h.length > 1 && (h[h.length - 1].timestamp - h[h.length - 2].timestamp) > 12096e5 }, { id: 'star', title: 'Five Star', icon: '✨', check: h => h.some(w => w.rating === 5) }];
+        const ICONS = { warn: 'M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z', x: 'M6 18L18 6M6 6l12 12', check: 'M5 13l4 4L19 7', trash: 'M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16', edit: 'M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z', save: 'M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4', play: 'M8 5v14l11-7z', prev: 'M15 19l-7-7 7-7', next: 'M9 5l7 7-7 7', warn2: 'M12 8v4m0 4h.01', info: 'M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z', train: 'M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10', hist: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z', set: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z', chev_down: 'M19 9l-7 7-7-7', swap: 'M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4', expand: 'M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4', search: 'M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z', trophy: 'M12 15l-2 5h4l-2-5zm0 0a7 7 0 01-7-7V4h14v4a7 7 0 01-7 7zM5 4H3v2a3 3 0 003 3m10-5h2v2a3 3 0 01-3 3', target: 'M12 2a10 10 0 110 20 10 10 0 010-20zm0 4a6 6 0 100 12 6 6 0 000-12zm0 4a2 2 0 110 4 2 2 0 010-4z', clock: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z', trendUp: 'M13 7h8m0 0v8m0-8l-8 8-4-4-6 6', trendDown: 'M13 17h8m0 0V9m0 8l-8-8-4 4-6-6', copy: 'M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3', bookmark: 'M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z', zap: 'M13 10V3L4 14h7v7l9-11h-7z', bar_chart: 'M9 19V13a1 1 0 00-1-1H5a1 1 0 00-1 1v6m6 0H4m6 0h4m0 0V9a1 1 0 00-1-1h-3a1 1 0 00-1 1v10m6 0V7a1 1 0 00-1-1h-3a1 1 0 00-1 1v12m6 0h-4m4 0h1a1 1 0 001-1V11a1 1 0 00-1-1h-3a1 1 0 00-1 1v8', note: 'M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z' };
+        
+        const DATA = { muscles: { Bench: { chest: 1, frontDelt: .7, tri: .7, cns: .4 }, OHP: { frontDelt: 1, tri: .6, upperChest: .4, traps: .3, cns: .5 }, Squat: { quads: 1, glutes: .7, lowBack: .6, hams: .4, cns: .8 }, Deadlift: { hams: 1, glutes: .9, lowBack: 1, traps: .5, grip: .8, cns: 1 }, Row: { lats: 1, bi: .6, rearDelt: .6, grip: .6, cns: .3 } }, halfLife: { chest: 36, upperChest: 36, frontDelt: 24, rearDelt: 18, tri: 18, bi: 18, lats: 30, traps: 24, quads: 48, hams: 48, glutes: 48, calves: 28, lowBack: 56, cns: 48, abs: 20, grip: 18, forearm: 18 }, recoveryCapacity: { chest: 20, upperChest: 20, frontDelt: 15, rearDelt: 12, tri: 15, bi: 15, lats: 25, traps: 20, quads: 30, hams: 25, glutes: 30, calves: 35, lowBack: 35, cns: 50, abs: 40, grip: 15, forearm: 15 }, programCapacityScale: { nsuns: 1.4, ppl: 1.3, phul: 1.1, stronglifts: .9, gzclp: 1, '531': 1 }, progressionRate: { Bench: 1, OHP: 1, Squat: 1, Deadlift: 1, Row: 1, upper: .5, lower: 1 }, groups: { Push: ['chest', 'frontDelt', 'tri', 'upperChest'], Pull: ['lats', 'bi', 'rearDelt', 'traps'], Legs: ['quads', 'hams', 'glutes', 'calves'], 'Core/Back': ['lowBack', 'abs'], CNS: ['cns'] }, compoundAccessories: new Set(['Row', 'Pendlay Row', 'DB Row', 'Cable Row', 'T-Bar Row', 'Seal Row', 'Chest Supported Row', 'Meadows Row', 'Pullups', 'Chin-ups', 'Lat Pulldown', 'LatPD', 'Neutral Pullups', 'Chins', 'Wide Grip Pulldown', 'Close Grip Pulldown', 'Dips', 'Close Grip BP', 'Leg Press', 'Lunges', 'Bulgarian Split', 'Hip Thrust', 'Hack Squat', 'Nordic Curl', 'Good Morning', 'OHP', 'Seated OHP', 'DB OHP', 'Push Press', 'DL', 'Romanian DL', 'SLDL']), schemes: { nsuns: { vol: [[.65, 8], [.75, 6], [.85, 4], [.85, 4], [.85, 4], [.8, 5], [.75, 6], [.7, 7], [.65, 8, '+']], heavy: [[.75, 5], [.85, 3], [.95, 1, '+'], [.9, 3], [.85, 3], [.8, 3], [.75, 5], [.7, 5], [.65, 5, '+']], dl: [[.75, 5], [.85, 3], [.95, 1, '+'], [.9, 3], [.85, 3], [.8, 3], [.75, 3], [.7, 3], [.65, 3]], t2: [[.5, 5], [.6, 6], [.7, 7], [.7, 4], [.7, 4], [.7, 4], [.7, 4], [.7, 4]] }, stronglifts: { std: [[1, 5], [1, 5], [1, 5], [1, 5], [1, 5, '+']], dl: [[1, 5, '+']] }, phul: { pow: [[.85, 5], [.85, 5], [.85, 5]], hyp: [[.65, 10], [.65, 10], [.65, 10]], vol: [[.6, 12], [.6, 12], [.6, 12]] }, ppl: { m5: [[.85, 5], [.85, 5], [.85, 5], [.85, 5], [.85, 5, '+']], m1: [[.9, 5, '+']], sec: [[.7, 10], [.7, 10], [.7, 10]] }, gzclp: { t1: [[.85, 3], [.85, 3], [.85, 3], [.85, 3], [.85, 3, '+']], t2: [[.65, 10], [.65, 10], [.65, 10]], f1: [[5, 3], [6, 2], [10, 1]], f2: [[3, 10], [3, 8], [3, 6]] }, '531': { w1: [[.65, 5], [.75, 5], [.85, 5, '+']], w2: [[.7, 3], [.8, 3], [.9, 3, '+']], w3: [[.75, 5], [.85, 3], [.95, 1, '+']], del: [[.4, 5], [.5, 5], [.6, 5]], bbb: Array(5).fill([.5, 10]) } }, progs: { nsuns: { name: 'nSuns LP', daysPerWeek: 5, progressionDesc: 'Linear + AMRAP', days: [{ t: 'Bench Vol', t1: 'Bench', t2: 'OHP', s: 'vol', t2s: 't2', acc: [{ name: 'Row', sets: 4, reps: '10-12' }] }, { t: 'Squat Heavy', t1: 'Squat', t2: 'Deadlift', s: 'heavy', t2s: 't2', acc: [{ name: 'Legs', sets: 4, reps: '10-12' }] }, { t: 'OHP Heavy', t1: 'OHP', t2: 'Bench', s: 'heavy', t2s: 't2', acc: [{ name: 'Pullups', sets: 4, reps: 'AMRAP' }] }, { t: 'Deadlift Heavy', t1: 'Deadlift', t2: 'Squat', s: 'dl', t2s: 't2', acc: [{ name: 'Abs', sets: 4, reps: '10-15' }] }, { t: 'Bench Heavy', t1: 'Bench', t2: 'Bench', s: 'heavy', t2s: 't2', acc: [{ name: 'Arms', sets: 4, reps: '10-15' }] }] }, ppl: { name: 'PPL', prog: 'lin', daysPerWeek: 6, progressionDesc: 'Linear', days: [{ t: 'Push A', t1: 'Bench', t2: 'OHP', s: 'm5', t2s: 'sec', acc: [{ name: 'Tri', sets: 3, reps: '10-15' }] }, { t: 'Pull A', t1: 'Deadlift', t2: 'Row', s: 'm1', t2s: 'sec', acc: [{ name: 'Bi', sets: 3, reps: '10-15' }] }, { t: 'Legs A', t1: 'Squat', t2: 'Deadlift', s: 'm5', t2s: 'sec', acc: [{ name: 'Legs', sets: 3, reps: '10-15' }] }, { t: 'Push B', t1: 'OHP', t2: 'Bench', s: 'm5', t2s: 'sec', acc: [{ name: 'Tri', sets: 3, reps: '10-15' }] }, { t: 'Pull B', t1: 'Row', t2: 'Deadlift', s: 'm5', t2s: 'vol', acc: [{ name: 'Bi', sets: 3, reps: '10-15' }] }, { t: 'Legs B', t1: 'Squat', t2: 'Deadlift', s: 'm5', t2s: 'sec', acc: [{ name: 'Legs', sets: 3, reps: '10-15' }] }] }, phul: { name: 'PHUL', prog: 'lin', daysPerWeek: 4, progressionDesc: 'Linear', days: [{ t: 'Up Pwr', t1: 'Bench', t2: 'Row', s: 'pow', t2s: 'pow', acc: [{ name: 'OHP', sets: 3, reps: '6-10' }] }, { t: 'Lo Pwr', t1: 'Squat', t2: 'Deadlift', s: 'pow', t2s: 'pow', acc: [{ name: 'Legs', sets: 3, reps: '8-12' }] }, { t: 'Up Hyp', t1: 'OHP', t2: 'Bench', s: 'hyp', t2s: 'hyp', acc: [{ name: 'Row', sets: 3, reps: '10-12' }] }, { t: 'Lo Hyp', t1: 'Deadlift', t2: 'Squat', s: 'hyp', t2s: 'hyp', acc: [{ name: 'Legs', sets: 3, reps: '10-15' }] }] }, stronglifts: { name: 'SL 5x5', prog: 'lin', pW: true, daysPerWeek: 3, progressionDesc: 'Linear', days: [{ t: 'A', t1: 'Squat', t2: 'Bench', s: 'std', t2s: 'std', acc: [{ name: 'Row', sets: 5, reps: '5' }] }, { t: 'B', t1: 'Squat', t2: 'OHP', s: 'std', t2s: 'std', acc: [{ name: 'DL', sets: 1, reps: '5+' }] }] }, gzclp: { name: 'GZCLP', prog: 'gz', daysPerWeek: 4, progressionDesc: 'Stage Failure', days: [{ t: 'D1', t1: 'Squat', t2: 'Bench', s: 't1', t2s: 't2', acc: [{ name: 'LatPD', sets: 3, reps: '10-12' }] }, { t: 'D2', t1: 'OHP', t2: 'Deadlift', s: 't1', t2s: 't2', acc: [{ name: 'Row', sets: 3, reps: '10-12' }] }, { t: 'D3', t1: 'Bench', t2: 'Squat', s: 't1', t2s: 't2', acc: [{ name: 'Tri', sets: 3, reps: '10-15' }] }, { t: 'D4', t1: 'Deadlift', t2: 'OHP', s: 't1', t2s: 't2', acc: [{ name: 'Bi', sets: 3, reps: '10-15' }] }] }, "531": { name: '5/3/1 BBB', prog: '531', daysPerWeek: 4, progressionDesc: 'Monthly Wave', days: [{ t: 'OHP', t1: 'OHP', t2: 'OHP', s: '531', t2s: 'bbb', acc: [{ name: 'Chins', sets: 5, reps: 'AMRAP' }] }, { t: 'DL', t1: 'Deadlift', t2: 'Deadlift', s: '531', t2s: 'bbb', acc: [{ name: 'Abs', sets: 5, reps: '10-15' }] }, { t: 'Bench', t1: 'Bench', t2: 'Bench', s: '531', t2s: 'bbb', acc: [{ name: 'Row', sets: 5, reps: '10-12' }] }, { t: 'Squat', t1: 'Squat', t2: 'Squat', s: '531', t2s: 'bbb', acc: [{ name: 'Legs', sets: 5, reps: '10-15' }] }] } }, ui: { bars: [{ weight: 45, name: 'Standard' }, { weight: 35, name: 'Womens' }, { weight: 20, name: 'Kg Std' }, { weight: 15, name: 'Kg Wm' }], timers: [{ l: 'Main (T1)', k: 'restT1', m: 300 }, { l: 'Secondary (T2)', k: 'restT2', m: 180 }, { l: 'Accessory (T3)', k: 'restT3', m: 120 }], opts: [{ k: 'timerSound', l: 'Timer Sound' }, { k: 'vibration', l: 'Vibration' }, { k: 'autoStartTimer', l: 'Auto-start Timer' }, { k: 'showPreviousWorkout', l: 'Show Previous Workout' }, { k: 'autoDeload', l: 'Auto-suggest Deload' }, { k: 'keepAwake', l: 'Keep Screen Awake' }, { k: 'reduceMotion', l: 'Reduce Motion' }, { k: 'showETR', l: 'Show Est. Time Remaining' }, { k: 'heatmapCalendar', l: 'Heatmap Calendar' }], nav: [{ id: 'dashboard', l: 'Train', i: ICONS.train }, { id: 'records', l: 'PRs', i: ICONS.trophy }, { id: 'calendar', l: 'History', i: ICONS.hist }, { id: 'preferences', l: 'Settings', i: ICONS.set }], plates: { kg: [25, 20, 15, 10, 5, 2.5, 1.25], lbs: [45, 35, 25, 10, 5, 2.5] }, colors: { 55: 'bg-red-700 text-white', 45: 'bg-blue-600 text-white', 35: 'bg-yellow-500 text-black', 25: 'bg-green-500 text-black', 20: 'bg-blue-600 text-white', 15: 'bg-yellow-500 text-black', 10: 'bg-white text-black', 5: 'bg-white text-black', 2.5: 'bg-red-400 text-white', 1.25: 'bg-gray-400 text-black' } } };
+        const ACHIEVEMENTS = [{ id: 'first', title: 'First Steps', icon: '🎯', check: h => h.length >= 1 }, { id: 'week', title: 'Week Warrior', icon: '🔥', check: h => h.length >= 7 }, { id: 'month', title: 'Monthly Master', icon: '💪', check: h => h.length >= 30 }, { id: 'century', title: 'Century Club', icon: '🏆', check: h => h.length >= 100 }, { id: 'pr1', title: 'PR Machine', icon: '📈', check: h => h.some(w => w.pr) }, { id: 'pr5', title: 'Gains Train', icon: '🚂', check: h => h.filter(w => w.pr).length >= 5 }, { id: 'vol', title: 'Volume King', icon: '👑', check: h => h.reduce((a, w) => a + (w.totalVolume || 0), 0) >= 1e5 }, { id: 'back', title: 'Comeback Kid', icon: '💫', check: h => h.length > 1 && (h[h.length - 1].timestamp - h[h.length - 2].timestamp) > 12096e5 }, { id: 'star', title: 'Five Star', icon: '✨', check: h => h.some(w => w.rating === 5) }, { id: 'streak10', title: 'Consistency', icon: '🔗', check: (h, s) => s >= 10 }, { id: 'tonnage50k', title: 'Iron Mover', icon: '🏋️', check: h => h.some(w => (w.totalVolume || 0) >= 50000) }, { id: 'dawn', title: 'Early Bird', icon: '🌅', check: h => h.some(w => { const hr = new Date(w.timestamp).getHours(); return hr >= 4 && hr < 7 }) }];
         const EX_OPTS = { bench_variants: { base: 'Bench', opt: [['Bench', 1], ['Incline Bench', .85], ['Close Grip Bench', .9], ['DB Bench', .8], ['Paused Bench', .9], ['Spoto Press', .85], ['Floor Press', .9]] }, ohp_variants: { base: 'OHP', opt: [['OHP', 1], ['Seated OHP', .95], ['DB OHP', .85], ['Push Press', 1.1], ['Z Press', .75], ['Arnold Press', .7], ['Behind Neck Press', .8]] }, squat_variants: { base: 'Squat', opt: [['Squat', 1], ['Front Squat', .85], ['Pause Squat', .85], ['Box Squat', .9], ['SSB Squat', .9], ['Goblet Squat', .5], ['Tempo Squat', .8]] }, deadlift_variants: { base: 'Deadlift', opt: [['Deadlift', 1], ['Sumo DL', 1], ['Romanian DL', .7], ['Trap Bar DL', 1.05], ['Deficit DL', .9], ['Paused DL', .85], ['Block Pull', 1.1], ['SLDL', .7]] }, row_variants: { base: 'Row', opt: [['Row', 1], ['Pendlay Row', .95], ['DB Row', .85], ['Cable Row', .9], ['T-Bar Row', 1], ['Seal Row', .8], ['Chest Supported Row', .85], ['Meadows Row', .7]] }, triceps: { opt: [['Tri'], ['Pushdowns'], ['Skull Crushers'], ['Dips'], ['OH Tricep Ext'], ['Close Grip BP'], ['JM Press'], ['Tricep Kickbacks']] }, biceps: { opt: [['Bi'], ['Barbell Curl'], ['DB Curl'], ['Hammer Curl'], ['Preacher Curl'], ['Incline Curl'], ['Cable Curl'], ['Spider Curl']] }, vertical_pull: { opt: [['Pullups'], ['Chin-ups'], ['Lat Pulldown'], ['LatPD'], ['Neutral Pullups'], ['Chins'], ['Wide Grip Pulldown'], ['Close Grip Pulldown']] }, leg_accessories: { opt: [['Legs'], ['Leg Press'], ['Lunges'], ['Leg Curl'], ['Leg Ext'], ['Calf Raises'], ['Bulgarian Split'], ['Hip Thrust'], ['Hack Squat'], ['Nordic Curl']] }, core: { opt: [['Abs'], ['Hanging Leg Raise'], ['Cable Crunch'], ['Ab Wheel'], ['Planks'], ['Russian Twists'], ['Dead Bug'], ['Pallof Press']] }, arms: { opt: [['Arms'], ['Curls + Pushdowns'], ['Hammer + Dips'], ['Arm Circuit'], ['Supersets']] }, dl_accessory: { base: 'Deadlift', opt: [['DL', 1], ['Romanian DL', .7], ['SLDL', .7], ['Good Morning', .5], ['Back Extension', .3]] } };
         const EX_INDEX = {}; Object.entries(EX_OPTS).forEach(([k, g]) => g.opt.forEach(o => { EX_INDEX[o[0]] = { id: o[0], name: o[0], mult: o[1] || 1, groupKey: k, base: g.base } }));
-        const K = { main: 'nsuns_ultimate', prefs: 'lift_preferences', bw: 'lift_bodyweight', session: 'lift_active_session', ach: 'lift_achievements', prs: 'lift_prs', e1rmHist: 'lift_e1rm_history' };
+        // REVERTED KEYS TO ENSURE BACKWARD COMPATIBILITY
+        const K = { main: 'nsuns_ultimate', prefs: 'lift_preferences', bw: 'lift_bodyweight', session: 'lift_active_session', ach: 'lift_achievements', prs: 'lift_prs', e1rmHist: 'lift_e1rm_history', templates: 'lift_templates', exNotes: 'lift_exercise_notes', tonnageGoal: 'lift_tonnage_goal' };
         const DB = { g: (k, d) => JSON.parse(localStorage.getItem(k) || "null") || d, s: (k, v) => localStorage.setItem(k, JSON.stringify(v)), d: k => localStorage.removeItem(k) };
         const U = { now: () => Date.now(), fmt: s => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`, iso: ts => new Date(ts).toISOString().split('T')[0], rnd: (n, u, m) => m ? (u === 'kg' ? Math.round(n / 1.25) * 1.25 : Math.round(n / 2.5) * 2.5) : (u === 'kg' ? Math.round(n / 2.5) * 2.5 : Math.round(n / 5) * 5), conv: (w, f, t) => f === t ? +w : f === 'lbs' ? +w * 0.453592 : +w / 0.453592, safe: (v, d = 0) => Number.isFinite(+v) ? +v : d };
         let charts = {};
         const matchers = [[/(curl|bi|spider|preacher)/i, { bi: 1, forearm: .3, grip: .2 }], [/(pushdown|extension|skull|tri|dip|kickback)/i, { tri: 1, frontDelt: .2 }], [/(pullup|chin|lat|pulldown)/i, { lats: 1, bi: .5, rearDelt: .3, grip: .4, traps: .2 }], [/(row|t-bar|seal)/i, { lats: .8, bi: .5, rearDelt: .5, traps: .4, grip: .6 }], [/(leg|press|lunge|split|squat)/i, { quads: .7, hams: .5, glutes: .6 }], [/(ham|rdl|stiff|good morning)/i, { hams: 1, glutes: .5, lowBack: .6 }], [/(calf|raise)/i, { calves: 1 }], [/(ab|core|plank|crunch|hanging|russian|dead bug)/i, { abs: 1, lowBack: .2 }], [/(arm|superset)/i, { tri: .5, bi: .5, forearm: .2 }], [/(shrug|trap|face)/i, { traps: 1, rearDelt: .5 }], [/(rear|reverse|fly)/i, { rearDelt: 1, traps: .3 }], [/(chest|fly|cable|pec)/i, { chest: .8, frontDelt: .2 }]];
 
         function epley1RM(w, r) { if (r <= 0 || w <= 0) return 0; if (r === 1) return w; return Math.round(w * (1 + Math.min(r, 12) / 30)) }
+        function brzycki1RM(w, r) { if (r <= 0 || w <= 0) return 0; if (r === 1) return w; return Math.round(w * 36 / (37 - Math.min(r, 12))) }
+        function lombardi1RM(w, r) { if (r <= 0 || w <= 0) return 0; if (r === 1) return w; return Math.round(w * Math.pow(Math.min(r, 12), 0.1)) }
         function trendE1RM(h, l, w = 5) { const e = (h[l] || []).slice(-w); if (!e.length) return 0; let s = 0, d = 0; e.forEach((v, i) => { s += v.e1rm * (i + 1); d += i + 1 }); return Math.round(s / d) }
-        // FIX: Reduced the multiplier from 2.0 to 1.2 to prevent excessive fatigue calculation for high volume programs like nSuns
         function calculateSetFatigue(w, r, tm, f, hr) { if (r <= 0 || w <= 0) return 0; const ref = tm > 0 ? tm : w, i = Math.min(w / ref, 1.25); return r * Math.pow(i, 3) * 1.2 * ((f && !hr) ? 1.3 : 1.0) }
 
         function app() {
             return {
-                view: 'dashboard', icons: ICONS, UI: DATA.ui, PROGRAMS: DATA.progs, ACHIEVEMENTS, tms: { Bench: 0, Squat: 0, Deadlift: 0, OHP: 0, Row: 0 }, state: { Bench: { stage: 1 }, Squat: { stage: 1 }, Deadlift: { stage: 1 }, OHP: { stage: 1 }, Row: { stage: 1 } }, prs: {}, history: [], bwLog: [], achievements: [], e1rmHistory: {}, prefs: { weightUnit: 'lbs', program: 'nsuns', restT1: 180, restT2: 120, restT3: 60, timerSound: true, vibration: true, autoStartTimer: true, showPreviousWorkout: true, autoDeload: true, barWeight: 45, microplates: false, keepAwake: false, reduceMotion: false }, activeModal: null, session: {}, savedSession: null, timer: { active: false, start: null, dur: 0, rem: 0, pct: 0, label: 'Rest' }, tempBodyWeight: null, showWarmups: false, plate: { open: false, w: 0, plates: [] }, calc: { w: 0, r: 0 }, chartLift: 'Bench', cal: { monthName: '', days: [], offset: 0 }, sessionTimerStr: '0:00', deloadInfo: {}, sessionRating: 0, sessionNotes: '', sessionRPE: 7, currentAchievement: null, selectedLog: null, historyFilter: 'all', previousWorkout: null, isEditingLog: false, swapState: { t2: false, acc: null, q: '' }, zenMode: false, zenAmrap: null, setEdit: { tier: 't1', idx: 0, weight: 0, reps: 0, performed: null, failed: false, amrap: false, completed: false }, setup: {}, idx: 0, pIdx: 0, week: 1, streak: 0, cache: { recovery: [], volume: [] }, wakeLock: null,
-                init() { const d = DB.g(K.main, {}), s = DB.g(K.prefs, {}); Object.assign(this, { tms: d.tms || this.tms, history: d.history || [], idx: d.idx || 0, week: d.week || 1, streak: d.streak || 0, state: d.state || this.state, prefs: { ...this.prefs, ...s }, bwLog: DB.g(K.bw, []).filter(x => x.date), savedSession: DB.g(K.session), achievements: DB.g(K.ach, []), prs: DB.g(K.prs, {}), e1rmHistory: DB.g(K.e1rmHist, {}) }); if (!this.prefs.barWeight) this.prefs.barWeight = this.prefs.weightUnit === 'kg' ? 20 : 45; this.applyRM(); this.history.forEach(h => { h.timestamp = h.timestamp || new Date(h.date).getTime(); h.isoDate = h.isoDate || U.iso(h.timestamp) }); this.pIdx = this.idx; this.updCache(); if (this.savedSession?.t1) this.activeModal = 'resume'; else if (!d.tms) this.view = 'setup'; window.addEventListener('pointerdown', this.unlockAudio, { once: true, passive: true }); this.$nextTick(() => { this.draw(); this.calBuild(); this.chkAch() }); setInterval(() => this.tick(), 1000) },
-                tick() { const n = U.now(); if (this.session.start) this.sessionTimerStr = U.fmt((n - this.session.start) / 1000); if (this.timer.active) { this.timer.rem = Math.max(0, this.timer.dur - Math.floor((n - this.timer.start) / 1000)); this.timer.pct = this.timer.dur > 0 ? (this.timer.rem / this.timer.dur) : 0; if (this.timer.rem <= 0) { this.timer.active = false; if (this.prefs.timerSound) this.beep(); if (this.prefs.vibration && navigator.vibrate) navigator.vibrate([200, 100, 200]) } } },
+                view: 'dashboard', icons: ICONS, UI: DATA.ui, PROGRAMS: DATA.progs, ACHIEVEMENTS, tms: { Bench: 0, Squat: 0, Deadlift: 0, OHP: 0, Row: 0 }, state: { Bench: { stage: 1 }, Squat: { stage: 1 }, Deadlift: { stage: 1 }, OHP: { stage: 1 }, Row: { stage: 1 } }, prs: {}, history: [], bwLog: [], achievements: [], e1rmHistory: {}, templates: [], exerciseNotes: {}, tonnageGoal: 0, prefs: { weightUnit: 'lbs', program: 'nsuns', restT1: 180, restT2: 120, restT3: 60, timerSound: true, vibration: true, autoStartTimer: true, showPreviousWorkout: true, autoDeload: true, barWeight: 45, microplates: false, keepAwake: false, reduceMotion: false, showETR: true, heatmapCalendar: true }, activeModal: null, session: {}, savedSession: null, timer: { active: false, start: null, dur: 0, rem: 0, pct: 0, label: 'Rest' }, tempBodyWeight: null, showWarmups: false, plate: { open: false, w: 0, plates: [] }, calc: { w: 0, r: 0 }, chartLift: 'Bench', cal: { monthName: '', days: [], offset: 0 }, sessionTimerStr: '0:00', deloadInfo: {}, sessionRating: 0, sessionNotes: '', sessionRPE: 7, currentAchievement: null, selectedLog: null, historyFilter: 'all', previousWorkout: null, isEditingLog: false, swapState: { t2: false, acc: null, q: '' }, zenMode: false, zenAmrap: null, setEdit: { tier: 't1', idx: 0, weight: 0, reps: 0, performed: null, failed: false, amrap: false, completed: false, rpe: null }, setup: {}, idx: 0, pIdx: 0, week: 1, streak: 0, cache: { recovery: [], volume: [], recoveryMap: {} }, wakeLock: null, recoveryExpanded: null, sessionVolume: 0, restTimes: [], bwGoal: null, templateName: '', showExNoteModal: false, exNoteTarget: '', exNoteText: '', calSummary: {}, freqData: {}, longestStreak: 0, compareMode: false, batchAdjust: 0,
+                init() {
+                    const d = DB.g(K.main, {}), s = DB.g(K.prefs, {});
+                    Object.assign(this, { tms: d.tms || this.tms, history: d.history || [], idx: d.idx || 0, week: d.week || 1, streak: d.streak || 0, state: d.state || this.state, prefs: { ...this.prefs, ...s }, bwLog: DB.g(K.bw, []).filter(x => x.date), savedSession: DB.g(K.session), achievements: DB.g(K.ach, []), prs: DB.g(K.prs, {}), e1rmHistory: DB.g(K.e1rmHist, {}), templates: DB.g(K.templates, []), exerciseNotes: DB.g(K.exNotes, {}), tonnageGoal: DB.g(K.tonnageGoal, 0) });
+                    if (!this.prefs.barWeight) this.prefs.barWeight = this.prefs.weightUnit === 'kg' ? 20 : 45;
+                    this.applyRM();
+                    this.history.forEach(h => { h.timestamp = h.timestamp || new Date(h.date).getTime(); h.isoDate = h.isoDate || U.iso(h.timestamp) });
+                    this.pIdx = this.idx;
+                    this.computeLongestStreak();
+                    this.computeFrequency();
+                    this.updCache();
+                    if (this.savedSession?.t1) this.activeModal = 'resume'; else if (!d.tms) this.view = 'setup';
+                    window.addEventListener('pointerdown', this.unlockAudio, { once: true, passive: true });
+                    this.$nextTick(() => { this.draw(); this.calBuild(); this.chkAch() });
+                    setInterval(() => this.tick(), 1000);
+                },
+                tick() {
+                    const n = U.now();
+                    if (this.session.start) {
+                        this.sessionTimerStr = U.fmt((n - this.session.start) / 1000);
+                        this.computeSessionVolume();
+                    }
+                    if (this.timer.active) {
+                        this.timer.rem = Math.max(0, this.timer.dur - Math.floor((n - this.timer.start) / 1000));
+                        this.timer.pct = this.timer.dur > 0 ? (this.timer.rem / this.timer.dur) : 0;
+                        if (this.timer.rem <= 0) {
+                            this.timer.active = false;
+                            if (this.prefs.timerSound) this.beep();
+                            if (this.prefs.vibration && navigator.vibrate) navigator.vibrate([200, 100, 200]);
+                        }
+                    }
+                },
                 handleEscape() { if (this.zenMode) return this.toggleZen(); if (this.activeModal) this.activeModal = null; if (this.plate.open) this.plate.open = false },
                 applyRM() { document.documentElement.classList.toggle('reduce-motion', !!this.prefs.reduceMotion) },
                 unlockAudio() { try { if (!window.ac) window.ac = new (window.AudioContext || window.webkitAudioContext)(); if (ac.state === 'suspended') ac.resume() } catch { } },
-                nav(v) { this.view = v; if (v === 'calendar') this.calBuild(); if (v === 'dashboard') this.$nextTick(() => this.draw()); if (v !== 'workout') this.relWake() },
+                nav(v) { this.view = v; if (v === 'calendar') this.calBuild(); if (v === 'dashboard') this.$nextTick(() => this.draw()); if (v === 'records') this.$nextTick(() => this.drawPRCharts()); if (v !== 'workout') this.relWake() },
                 lifts: () => Object.keys(DATA.muscles),
                 getWk() { const p = DATA.progs[this.prefs.program], r = p.days[this.pIdx % p.days.length]; return { ...r, title: r.title || r.t, focus: r.focus || `${r.t1} + ${r.t2}` } },
                 prevSim() { const t = this.getWk().t1; return this.history.slice().reverse().find(h => h.details?.t1 === t) },
@@ -98,34 +134,182 @@
                 exAlts: id => EX_INDEX[id] ? EX_OPTS[EX_INDEX[id].groupKey].opt.map(o => ({ id: o[0], name: o[0], mult: o[1] || 1 })) : [{ id, name: id, mult: 1 }],
                 baseTM: id => EX_INDEX[id]?.base || (this.tms[id] !== undefined ? id : null),
                 exMult: id => EX_INDEX[id]?.mult || 1, exName: id => EX_INDEX[id]?.name || id,
-                getSets(sk, l, tm, tier, exOv = null) { const { program: p, weightUnit: u, microplates: m } = this.prefs, actEx = exOv || l, base = this.baseTM(actEx), effTM = (base ? (this.tms[base] || tm) : tm) * this.exMult(actEx); let s = []; if (p === 'gzclp') { const st = this.state[l]?.stage || 1, stages = tier === 't1' ? [[5, 3], [6, 2], [10, 1]] : [[3, 10], [3, 8], [3, 6]], cfg2 = stages[Math.min(st - 1, 2)]; s = Array(cfg2[0]).fill(0).map((_, i) => ({ w: tier === 't1' ? .85 : .65, r: cfg2[1], amrap: i === cfg2[0] - 1 })) } else if (p === '531' && tier === 't1') { const w = this.week % 4 || 4; s = DATA.schemes['531'][w === 4 ? 'del' : `w${w}`].map(x => ({ w: x[0], r: x[1], amrap: x[2] === '+' })) } else { const map = DATA.schemes[p] || DATA.schemes.nsuns; s = (map[sk] || map.vol).map(x => ({ w: x[0], r: x[1], amrap: x[2] === '+' })) } return s.map(x => ({ weight: U.rnd(effTM * x.w, u, m), reps: x.r, amrap: x.amrap, completed: false, failed: false, performed: null, completedAt: null })) },
+                getSets(sk, l, tm, tier, exOv = null) { const { program: p, weightUnit: u, microplates: m } = this.prefs, actEx = exOv || l, base = this.baseTM(actEx), effTM = (base ? (this.tms[base] || tm) : tm) * this.exMult(actEx); let s = []; if (p === 'gzclp') { const st = this.state[l]?.stage || 1, stages = tier === 't1' ? [[5, 3], [6, 2], [10, 1]] : [[3, 10], [3, 8], [3, 6]], cfg2 = stages[Math.min(st - 1, 2)]; s = Array(cfg2[0]).fill(0).map((_, i) => ({ w: tier === 't1' ? .85 : .65, r: cfg2[1], amrap: i === cfg2[0] - 1 })) } else if (p === '531' && tier === 't1') { const w = this.week % 4 || 4; s = DATA.schemes['531'][w === 4 ? 'del' : `w${w}`].map(x => ({ w: x[0], r: x[1], amrap: x[2] === '+' })) } else { const map = DATA.schemes[p] || DATA.schemes.nsuns; s = (map[sk] || map.vol).map(x => ({ w: x[0], r: x[1], amrap: x[2] === '+' })) } return s.map(x => ({ weight: U.rnd(effTM * x.w, u, m), reps: x.r, amrap: x.amrap, completed: false, failed: false, performed: null, completedAt: null, rpe: null })) },
                 chkDeload() { const off = this.daysOff(), lvls = [[42, 25, '6+ weeks off'], [28, 20, '4 weeks off'], [14, 10, '2 weeks off']].find(l => off >= l[0]); if (lvls && this.prefs.autoDeload) { this.deloadInfo = { needed: true, percentage: lvls[1], reason: lvls[2], protocol: 'Reduce_TMs' }; this.activeModal = 'deload' } else this.activeModal = 'weight' },
                 doDeload() { Object.keys(this.tms).forEach(k => { this.tms[k] = U.rnd((this.tms[k] || 0) * (1 - this.deloadInfo.percentage / 100), this.prefs.weightUnit, this.prefs.microplates) }); this.save(); this.activeModal = 'weight' },
                 async reqWake() { if (!this.prefs.keepAwake || !('wakeLock' in navigator)) return; try { this.wakeLock = await navigator.wakeLock.request('screen') } catch { } },
                 relWake() { this.wakeLock?.release().catch(() => { }); this.wakeLock = null },
-                start(c) { const d = c || this.getWk(), title = d.title || d.t || 'Workout', t2B = this.baseTM(d.t2), t2TM = t2B ? this.tms[t2B] : this.tms[d.t2]; this.session = { title, start: U.now(), acc: JSON.parse(JSON.stringify(d.acc || [])).map(a => ({ ...a, reps: a.reps || '10-12', originalName: a.name, selectedExercise: a.name })), completedAcc: {}, notes: '', dayIdx: c ? null : this.pIdx, t1: { name: d.t1, sets: this.getSets(d.s, d.t1, this.tms[d.t1], 't1') }, t2: { name: d.t2, originalName: d.t2, selectedExercise: d.t2, schemeKey: d.t2s, sets: this.getSets(d.t2s, d.t2, t2TM, 't2', d.t2) } }; if (this.prefs.showPreviousWorkout) { const h = this.history.slice().reverse().find(x => x.details?.t1 === d.t1); if (h) this.previousWorkout = { date: h.date, duration: h.duration, topSet: h.details?.weight, amrapResult: h.setDetails?.t1?.find(s => s.amrap)?.performed } } this.saveSess(); this.view = 'workout'; this.reqWake() },
-                swapT2(nEx) { if (!this.session.t2) return; const bTM = this.baseTM(nEx), tm = bTM ? this.tms[bTM] : this.tms[this.session.t2.originalName], state = this.session.t2.sets.map(s => ({ c: s.completed, f: s.failed, p: s.performed, at: s.completedAt })), nSets = this.getSets(this.session.t2.schemeKey, this.session.t2.originalName, tm, 't2', nEx); nSets.forEach((s, i) => { if (state[i]) Object.assign(s, { completed: state[i].c, failed: state[i].f, performed: state[i].p, completedAt: state[i].at }) }); this.session.t2.selectedExercise = nEx; this.session.t2.name = nEx; this.session.t2.sets = nSets; this.swapState.t2 = false; this.swapState.q = ''; this.saveSess() },
+                start(c) {
+                    const d = c || this.getWk(), title = d.title || d.t || 'Workout', t2B = this.baseTM(d.t2), t2TM = t2B ? this.tms[t2B] : this.tms[d.t2];
+                    this.session = { title, start: U.now(), acc: JSON.parse(JSON.stringify(d.acc || [])).map(a => ({ ...a, reps: a.reps || '10-12', originalName: a.name, selectedExercise: a.name })), completedAcc: {}, notes: '', dayIdx: c ? null : this.pIdx, t1: { name: d.t1, sets: this.getSets(d.s, d.t1, this.tms[d.t1], 't1') }, t2: { name: d.t2, originalName: d.t2, selectedExercise: d.t2, schemeKey: d.t2s, sets: this.getSets(d.t2s, d.t2, t2TM, 't2', d.t2) } };
+                    if (this.prefs.showPreviousWorkout) { const h = this.history.slice().reverse().find(x => x.details?.t1 === d.t1); if (h) this.previousWorkout = { date: h.date, duration: h.duration, topSet: h.details?.weight, amrapResult: h.setDetails?.t1?.find(s => s.amrap)?.performed, totalVolume: h.totalVolume } }
+                    this.sessionVolume = 0;
+                    this.restTimes = [];
+                    this.saveSess(); this.view = 'workout'; this.reqWake();
+                },
+                swapT2(nEx) { if (!this.session.t2) return; const bTM = this.baseTM(nEx), tm = bTM ? this.tms[bTM] : this.tms[this.session.t2.originalName], state = this.session.t2.sets.map(s => ({ c: s.completed, f: s.failed, p: s.performed, at: s.completedAt, rpe: s.rpe })), nSets = this.getSets(this.session.t2.schemeKey, this.session.t2.originalName, tm, 't2', nEx); nSets.forEach((s, i) => { if (state[i]) Object.assign(s, { completed: state[i].c, failed: state[i].f, performed: state[i].p, completedAt: state[i].at, rpe: state[i].rpe }) }); this.session.t2.selectedExercise = nEx; this.session.t2.name = nEx; this.session.t2.sets = nSets; this.swapState.t2 = false; this.swapState.q = ''; this.saveSess() },
                 swapAcc(i, n) { if (this.session.acc?.[i]) { this.session.acc[i].selectedExercise = n; this.session.acc[i].name = n; this.swapState.acc = null; this.swapState.q = ''; this.saveSess() } },
                 getT2Alts() { const q = (this.swapState.q || '').trim().toLowerCase(), alts = this.session?.t2 ? this.exAlts(this.session.t2.originalName || this.session.t2.name) : []; return !q ? alts : alts.filter(a => (a.name || a.id).toLowerCase().includes(q) || (a.id || '').toLowerCase().includes(q)) },
                 getAccAlts(i) { const q = (this.swapState.q || '').trim().toLowerCase(), alts = this.session?.acc?.[i] ? this.exAlts(this.session.acc[i].originalName || this.session.acc[i].name) : []; return !q ? alts : alts.filter(a => (a.name || a.id).toLowerCase().includes(q) || (a.id || '').toLowerCase().includes(q)) },
-                timerStart(s, label = 'Rest') { const dur = Math.max(1, Math.floor(+s)); this.timer = { active: true, start: U.now(), dur, rem: dur, pct: 1, label } },
+                timerStart(s, label = 'Rest') { const dur = Math.max(1, Math.floor(+s)); this.timer = { active: true, start: U.now(), dur, rem: dur, pct: 1, label }; this.restTimes.push({ started: U.now(), target: dur }) },
                 timerAdj(d) { if (!this.timer.active) return; const e = Math.floor((U.now() - this.timer.start) / 1000), n = Math.max(5, (this.timer.dur || 0) + d); this.timer.dur = n; this.timer.rem = Math.max(0, n - e); this.timer.pct = n > 0 ? (this.timer.rem / n) : 0 },
                 amrapState: { set: null, tier: null, val: '' },
                 saveAmrap() { const val = parseInt(this.amrapState.val); if (!isNaN(val) && val >= 0) { this.amrapState.set.performed = val; this.toggleSet(this.amrapState.set, this.amrapState.tier); this.activeModal = null } else alert("Please enter a valid number of reps") },
-                toggleSet(s, tier, fail = false) { if (fail) { s.failed = !s.failed; if (s.failed) { s.completed = true; s.completedAt = U.now(); if (this.prefs.autoStartTimer) this.timerStart(+this.prefs[tier === 't1' ? 'restT1' : 'restT2'] + 60, 'Fail Rest') } } else { if (s.amrap && (s.performed === null || s.performed === '') && !s.completed) { this.amrapState = { set: s, tier: tier, val: s.reps }; this.activeModal = 'amrapInput'; this.$nextTick(() => { if (this.$refs.amrapField) { this.$refs.amrapField.value = ''; this.$refs.amrapField.focus() } }); return } s.completed = !s.completed; if (!s.completed) { s.failed = false; s.completedAt = null } else { s.completedAt = U.now(); if (this.prefs.autoStartTimer) this.timerStart(+this.prefs[tier === 't1' ? 'restT1' : 'restT2'] + (s.failed ? 60 : 0), tier === 't1' ? 'T1 Rest' : 'T2 Rest') } } this.saveSess() },
-                editSet(tier, idx) { const set = tier === 't1' ? this.session?.t1?.sets?.[idx] : this.session?.t2?.sets?.[idx]; if (!set) return; this.setEdit = { tier, idx, weight: U.safe(set.weight, 0), reps: U.safe(set.reps, 0), performed: set.performed ?? null, failed: !!set.failed, amrap: !!set.amrap, completed: !!set.completed }; this.activeModal = 'setEdit' },
-                saveSetEdit() { const set = this.setEdit.tier === 't1' ? this.session?.t1?.sets?.[this.setEdit.idx] : this.session?.t2?.sets?.[this.setEdit.idx]; if (!set) return; set.weight = U.rnd(U.safe(this.setEdit.weight, set.weight), this.prefs.weightUnit, this.prefs.microplates); set.reps = Math.max(0, Math.round(U.safe(this.setEdit.reps, set.reps))); if (set.amrap) set.performed = this.setEdit.performed === null || this.setEdit.performed === '' ? null : Math.max(0, Math.round(U.safe(this.setEdit.performed, 0))); set.failed = !!this.setEdit.failed; if (set.failed) { set.completed = true; set.completedAt = set.completedAt || U.now() } this.activeModal = null; this.saveSess() },
+                toggleSet(s, tier, fail = false) {
+                    if (fail) { s.failed = !s.failed; if (s.failed) { s.completed = true; s.completedAt = U.now(); if (this.prefs.autoStartTimer) this.timerStart(+this.prefs[tier === 't1' ? 'restT1' : 'restT2'] + 60, 'Fail Rest') } }
+                    else {
+                        if (s.amrap && (s.performed === null || s.performed === '') && !s.completed) { this.amrapState = { set: s, tier: tier, val: s.reps }; this.activeModal = 'amrapInput'; this.$nextTick(() => { if (this.$refs.amrapField) { this.$refs.amrapField.value = ''; this.$refs.amrapField.focus() } }); return }
+                        s.completed = !s.completed; if (!s.completed) { s.failed = false; s.completedAt = null } else { s.completedAt = U.now(); if (this.prefs.autoStartTimer) this.timerStart(+this.prefs[tier === 't1' ? 'restT1' : 'restT2'] + (s.failed ? 60 : 0), tier === 't1' ? 'T1 Rest' : 'T2 Rest') }
+                    }
+                    this.computeSessionVolume();
+                    this.saveSess();
+                },
+                setSetRPE(s, rpe) { s.rpe = rpe; this.saveSess() },
+                editSet(tier, idx) { const set = tier === 't1' ? this.session?.t1?.sets?.[idx] : this.session?.t2?.sets?.[idx]; if (!set) return; this.setEdit = { tier, idx, weight: U.safe(set.weight, 0), reps: U.safe(set.reps, 0), performed: set.performed ?? null, failed: !!set.failed, amrap: !!set.amrap, completed: !!set.completed, rpe: set.rpe || null }; this.activeModal = 'setEdit' },
+                saveSetEdit() { const set = this.setEdit.tier === 't1' ? this.session?.t1?.sets?.[this.setEdit.idx] : this.session?.t2?.sets?.[this.setEdit.idx]; if (!set) return; set.weight = U.rnd(U.safe(this.setEdit.weight, set.weight), this.prefs.weightUnit, this.prefs.microplates); set.reps = Math.max(0, Math.round(U.safe(this.setEdit.reps, set.reps))); if (set.amrap) set.performed = this.setEdit.performed === null || this.setEdit.performed === '' ? null : Math.max(0, Math.round(U.safe(this.setEdit.performed, 0))); set.failed = !!this.setEdit.failed; set.rpe = this.setEdit.rpe; if (set.failed) { set.completed = true; set.completedAt = set.completedAt || U.now() } this.activeModal = null; this.saveSess() },
+                applyBatchAdjust(tier) {
+                    const sets = tier === 't1' ? this.session?.t1?.sets : this.session?.t2?.sets;
+                    if (!sets || !this.batchAdjust) return;
+                    const pct = this.batchAdjust / 100;
+                    sets.forEach(s => { if (!s.completed) { s.weight = U.rnd(s.weight * (1 + pct), this.prefs.weightUnit, this.prefs.microplates) } });
+                    this.batchAdjust = 0;
+                    this.saveSess();
+                },
                 finish() { const inc = this.getInc(); if (inc.total > 0 && !confirm(`Incomplete: ${inc.total}. Finish?`)) return; this.sessionRating = 0; this.sessionNotes = this.session.notes || ''; this.sessionRPE = 7; this.timer.active = false; this.activeModal = 'rating' },
                 getInc() { const t1 = this.session?.t1?.sets || [], t2 = this.session?.t2?.sets || [], mr = [...t1, ...t2].filter(s => !s.completed).length; let at = 0, ad = 0; (this.session?.acc || []).forEach(a => { const on = a.originalName || a.name; for (let i = 1; i <= (a.sets || 0); i++) { at++; if (this.isAccDone(on, i)) ad++ } }); return { mainRemaining: mr, accRemaining: Math.max(0, at - ad), total: mr + Math.max(0, at - ad) } },
                 computeProgression(l, pr, sets, p) { const u = this.prefs.weightUnit, baseInc = u === 'kg' ? 2.5 : 5, isUpper = ['Bench', 'OHP'].includes(l), liftInc = isUpper ? baseInc * 0.5 : baseInc; if (p === 'gzclp') { if (sets.some(s => s.failed)) { const s = this.state[l].stage; if (s >= 3) { this.state[l].stage = 1; this.tms[l] = Math.round(this.tms[l] * .85); return { add: 0, method: 'stage_reset' } } else { this.state[l].stage++; return { add: 0, method: 'stage_advance' } } } else { this.tms[l] += liftInc; return { add: liftInc, method: 'gzclp_linear' } } } if (pr && pr.performed != null) { const s1rm = epley1RM(pr.weight, pr.performed), d = pr.performed - pr.reps; if (!this.e1rmHistory[l]) this.e1rmHistory[l] = []; this.e1rmHistory[l].push({ e1rm: s1rm, date: U.iso(U.now()), timestamp: U.now() }); if (this.e1rmHistory[l].length > 20) this.e1rmHistory[l] = this.e1rmHistory[l].slice(-20); const trend = trendE1RM(this.e1rmHistory, l), cTM = this.tms[l] || 0, tTM = Math.round(trend * .875), maxJump = liftInc * 2; let add = 0; if (d < 0) { const last2 = this.e1rmHistory[l].slice(-2); if (last2.length >= 2 && last2[0].e1rm <= cTM && last2[1].e1rm <= cTM) { add = -Math.round(cTM * .1); this.tms[l] = U.rnd(cTM + add, u, this.prefs.microplates); return { add, method: 'auto_deload_10pct' } } return { add: 0, method: 'hold_missed_reps' } } else if (d === 0) { add = Math.min(liftInc * .5, maxJump); if (tTM <= cTM) add = 0 } else if (d >= 1 && d < 3) add = liftInc; else if (d >= 3 && d < 5) add = liftInc * 1.5; else add = Math.min(liftInc * 2, maxJump); if (trend > 0) { const ceil = Math.round(trend * .9); if (cTM + add > ceil) add = Math.max(0, ceil - cTM) } add = U.rnd(add, u, this.prefs.microplates); this.tms[l] += add; DB.s(K.e1rmHist, this.e1rmHistory); return { add, method: 'e1rm_trend' } } if ((DATA.progs[p]?.prog === 'lin' || DATA.progs[p]?.pW) && !sets.some(s => s.failed)) { this.tms[l] += liftInc; return { add: liftInc, method: 'linear' } } return { add: 0, method: 'none' } },
-                saveFinish() { const { t1, t2 } = this.session, l = t1.name, pr = t1.sets.find(s => s.amrap), p = this.prefs.program, prog = this.computeProgression(l, pr, t1.sets, p), add = prog.add; if (add > 0) confetti({ particleCount: 100, spread: 70, origin: { y: .6 } }); const e1rm = pr ? epley1RM(pr.weight, pr.performed || pr.reps) : 0, all = [...t1.sets, ...t2.sets], iso = U.iso(U.now()); if (e1rm > (this.prs[l]?.weight || 0)) { this.prs[l] = { weight: e1rm, date: iso }; DB.s(K.prs, this.prs) } const hasRpe = this.sessionRPE != null; this.history.push({ date: new Date().toLocaleDateString(), isoDate: iso, timestamp: U.now(), title: this.session.title, increase: add, pr: add > 0, progressionMethod: prog.method, duration: Math.round((U.now() - this.session.start) / 60000), rating: this.sessionRating, rpe: this.sessionRPE, notes: this.sessionNotes, totalVolume: all.reduce((a, s) => s.completed ? a + (s.weight * (s.performed || s.reps)) : a, 0), effectiveVolume: all.reduce((a, s) => { if (!s.completed) return a; const base = this.baseTM(l), tm = base ? (this.tms[base] || 0) : 0; return a + calculateSetFatigue(s.weight, s.performed || s.reps, tm, s.failed, hasRpe) }, 0), totalSets: all.length, completedSets: all.filter(s => s.completed).length, details: { t1: l, weight: pr?.weight, est1rm: e1rm }, setDetails: { t1: t1.sets, t2Name: t2.selectedExercise || t2.name, t2OriginalName: t2.originalName, t2: t2.sets, accessories: this.session.acc.map(a => ({ name: a.selectedExercise || a.name, originalName: a.originalName, total: a.sets, completed: Object.keys(this.session.completedAcc).filter(k => k.startsWith(a.originalName) || k.startsWith(a.name)).length })) } }); if (this.session.dayIdx !== null) { this.idx = (this.session.dayIdx + 1) % DATA.progs[p].days.length; if (this.idx === 0) this.week++; this.pIdx = this.idx } this.streak++; this.session = {}; this.savedSession = null; DB.d(K.session); this.activeModal = null; this.save(); this.chkAch(); this.view = 'dashboard'; this.calBuild(); this.$nextTick(() => this.draw()) },
+                saveFinish() {
+                    const { t1, t2 } = this.session, l = t1.name, pr = t1.sets.find(s => s.amrap), p = this.prefs.program, prog = this.computeProgression(l, pr, t1.sets, p), add = prog.add;
+                    if (add > 0) confetti({ particleCount: 100, spread: 70, origin: { y: .6 } });
+                    const e1rm = pr ? epley1RM(pr.weight, pr.performed || pr.reps) : 0, all = [...t1.sets, ...t2.sets], iso = U.iso(U.now());
+                    if (e1rm > (this.prs[l]?.weight || 0)) { this.prs[l] = { weight: e1rm, date: iso }; DB.s(K.prs, this.prs) }
+                    const avgRest = this.restTimes.length ? Math.round(this.restTimes.reduce((a, r) => a + r.target, 0) / this.restTimes.length) : null;
+                    this.history.push({ date: new Date().toLocaleDateString(), isoDate: iso, timestamp: U.now(), title: this.session.title, increase: add, pr: add > 0, progressionMethod: prog.method, duration: Math.round((U.now() - this.session.start) / 60000), rating: this.sessionRating, rpe: this.sessionRPE, notes: this.sessionNotes, totalVolume: all.reduce((a, s) => s.completed ? a + (s.weight * (s.performed || s.reps)) : a, 0), effectiveVolume: all.reduce((a, s) => { if (!s.completed) return a; const base = this.baseTM(l), tm = base ? (this.tms[base] || 0) : 0; return a + calculateSetFatigue(s.weight, s.performed || s.reps, tm, s.failed, this.sessionRPE != null) }, 0), totalSets: all.length, completedSets: all.filter(s => s.completed).length, avgRestTime: avgRest, details: { t1: l, weight: pr?.weight, est1rm: e1rm }, setDetails: { t1: t1.sets, t2Name: t2.selectedExercise || t2.name, t2OriginalName: t2.originalName, t2: t2.sets, accessories: this.session.acc.map(a => ({ name: a.selectedExercise || a.name, originalName: a.originalName, total: a.sets, completed: Object.keys(this.session.completedAcc).filter(k => k.startsWith(a.originalName) || k.startsWith(a.name)).length })) } });
+                    if (this.session.dayIdx !== null) { this.idx = (this.session.dayIdx + 1) % DATA.progs[p].days.length; if (this.idx === 0) this.week++; this.pIdx = this.idx }
+                    this.streak++;
+                    this.computeLongestStreak();
+                    this.computeFrequency();
+                    this.session = {}; this.savedSession = null; DB.d(K.session); this.activeModal = null; this.save(); this.chkAch(); this.view = 'dashboard'; this.calBuild(); this.$nextTick(() => this.draw());
+                },
                 warmups() { if (!this.session?.t1?.sets?.[0]) return []; const w = this.session.t1.sets[0].weight; return [{ w: 20, r: 10 }, { w: w * .4, r: 5 }, { w: w * .6, r: 3 }, { w: w * .8, r: 2 }].filter(x => x.w > 20) },
                 calcPlates(w) { this.plate = { open: true, w, plates: [] }; let r = (w - this.prefs.barWeight) / 2; DATA.ui.plates[this.prefs.weightUnit].forEach(p => { while (r >= p) { this.plate.plates.push(p); r -= p } }) },
-                draw() { const line = (id, src, d, c) => { const ctx = document.getElementById(id); if (!ctx) return; if (charts[id]) charts[id].destroy(); const l = src.map ? src.map(x => x.date || x) : src.labels || [], data = d || src.map(x => x.details?.est1rm || x.weight); charts[id] = new Chart(ctx, { type: 'line', data: { labels: l, datasets: [{ data, borderColor: c, backgroundColor: c + '80', tension: .3, fill: true }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: false }, scales: { x: { display: false }, y: { grid: { color: '#ffffff0d' }, ticks: { color: '#666' } } } } }) }; line('mainChart', this.history.filter(h => h.details?.t1 === this.chartLift), null, '#6366f1'); const d = this.bwLog.slice(-30); line('bodyWeightChart', d, d.map(x => x.weight), '#3b82f6'); const v = {}; this.history.slice(-20).forEach(h => { const ts = new Date(h.timestamp), k = `W${Math.ceil((((ts - new Date(ts.getFullYear(), 0, 1)) / 864e5) + 1) / 7)}`; v[k] = (v[k] || 0) + (h.totalVolume || 0) }); const ctx = document.getElementById('volumeChart'); if (ctx) { if (charts.vol) charts.vol.destroy(); charts.vol = new Chart(ctx, { type: 'bar', data: { labels: Object.keys(v), datasets: [{ data: Object.values(v), backgroundColor: '#10b98180' }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: false }, scales: { x: { display: false }, y: { grid: { color: '#ffffff0d' }, ticks: { color: '#666' } } } } }) } },
+                closestWeight(w) { const bar = this.prefs.barWeight, plates = DATA.ui.plates[this.prefs.weightUnit]; let rem = (w - bar) / 2, total = bar; plates.forEach(p => { while (rem >= p) { total += p * 2; rem -= p } }); return total },
+                computeSessionVolume() {
+                    let vol = 0;
+                    if (this.session?.t1?.sets) this.session.t1.sets.forEach(s => { if (s.completed) vol += s.weight * (s.performed || s.reps) });
+                    if (this.session?.t2?.sets) this.session.t2.sets.forEach(s => { if (s.completed) vol += s.weight * (s.performed || s.reps) });
+                    this.sessionVolume = vol;
+                },
+                estimateTimeRemaining() {
+                    if (!this.session?.t1?.sets) return 0;
+                    const allSets = [...(this.session.t1?.sets || []), ...(this.session.t2?.sets || [])];
+                    const remaining = allSets.filter(s => !s.completed).length;
+                    let accRemaining = 0;
+                    (this.session.acc || []).forEach(a => { const on = a.originalName || a.name; for (let i = 1; i <= (a.sets || 0); i++) { if (!this.isAccDone(on, i)) accRemaining++ } });
+                    const avgRest = this.restTimes.length > 0 ? this.restTimes.reduce((a, r) => a + r.target, 0) / this.restTimes.length : (this.prefs.restT1 + this.prefs.restT2) / 2;
+                    const setTime = 30;
+                    return Math.round(((remaining + accRemaining) * (avgRest + setTime)) / 60);
+                },
+                draw() {
+                    const line = (id, src, d, c) => { const ctx = document.getElementById(id); if (!ctx) return; if (charts[id]) charts[id].destroy(); const l = src.map ? src.map(x => x.date || x) : src.labels || [], data = d || src.map(x => x.details?.est1rm || x.weight); charts[id] = new Chart(ctx, { type: 'line', data: { labels: l, datasets: [{ data, borderColor: c, backgroundColor: c + '80', tension: .3, fill: true }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: false }, scales: { x: { display: false }, y: { grid: { color: '#ffffff0d' }, ticks: { color: '#666' } } } } }) };
+                    line('mainChart', this.history.filter(h => h.details?.t1 === this.chartLift), null, '#6366f1');
+                    const d = this.bwLog.slice(-30);
+                    line('bodyWeightChart', d, d.map(x => x.weight), '#3b82f6');
+                    const v = {}; this.history.slice(-20).forEach(h => { const ts = new Date(h.timestamp), k = `W${Math.ceil((((ts - new Date(ts.getFullYear(), 0, 1)) / 864e5) + 1) / 7)}`; v[k] = (v[k] || 0) + (h.totalVolume || 0) });
+                    const ctx = document.getElementById('volumeChart');
+                    if (ctx) { if (charts.vol) charts.vol.destroy(); charts.vol = new Chart(ctx, { type: 'bar', data: { labels: Object.keys(v), datasets: [{ data: Object.values(v), backgroundColor: '#10b98180' }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: false }, scales: { x: { display: false }, y: { grid: { color: '#ffffff0d' }, ticks: { color: '#666' } } } } }) }
+                },
+                drawPRCharts() {
+                    Object.keys(DATA.muscles).forEach(l => {
+                        const ctx = document.getElementById('pr_' + l);
+                        if (!ctx) return;
+                        if (charts['pr_' + l]) charts['pr_' + l].destroy();
+                        const entries = (this.e1rmHistory[l] || []).slice(-15);
+                        if (!entries.length) return;
+                        charts['pr_' + l] = new Chart(ctx, { type: 'line', data: { labels: entries.map(e => e.date), datasets: [{ data: entries.map(e => e.e1rm), borderColor: '#6366f1', backgroundColor: '#6366f180', tension: .3, fill: true, pointRadius: 3, pointBackgroundColor: '#6366f1' }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: false }, scales: { x: { display: false }, y: { grid: { color: '#ffffff0d' }, ticks: { color: '#666' } } } } });
+                    });
+                },
                 impact(id) { const ex = EX_INDEX[id], lower = (id || '').toLowerCase(); if (ex) { if (DATA.muscles[ex.base]) return DATA.muscles[ex.base]; if (ex.groupKey.includes('variant') || ex.groupKey === 'dl_accessory') return DATA.muscles[ex.base] || {} } const m = matchers.find(x => x[0].test(lower)); return m ? m[1] : {} },
                 updCache() { const fatigue = {}, now = U.now(), cutoff = now - 14 * 864e5, progScale = DATA.programCapacityScale[this.prefs.program] || 1.0, workouts = [...this.history]; if (this.session?.start && this.session?.t1?.sets) { workouts.push({ timestamp: this.session.start, rpe: null, details: { t1: this.session.t1.name }, setDetails: { t1: this.session.t1.sets, t2Name: this.session.t2?.selectedExercise || this.session.t2?.name, t2: this.session.t2?.sets || [], accessories: (this.session.acc || []).map(a => ({ name: a.selectedExercise || a.name, originalName: a.originalName, total: a.sets, completed: Object.keys(this.session.completedAcc || {}).filter(k => k.startsWith(a.originalName || a.name)).length })) } }) } workouts.forEach(w => { if (w.timestamp < cutoff) return; const ageHrs = (now - w.timestamp) / 36e5, rpeScale = w.rpe ? Math.pow(1.1, w.rpe - 7) : 1.0, hasRpe = w.rpe != null; const proc = (name, sets) => { if (!name || !sets?.length) return; const mus = this.impact(name); if (!Object.keys(mus).length) return; const base = this.baseTM(name), tm = (base ? this.tms[base] : null) || 0; let setStim = 0; sets.forEach(s => { if (!s.completed) return; setStim += calculateSetFatigue(s.weight, s.performed || s.reps, tm, s.failed, hasRpe) }); const totalF = setStim * rpeScale; Object.entries(mus).forEach(([m, inv]) => { if (m === 'cns') return; const hl = DATA.halfLife[m] || 24; fatigue[m] = (fatigue[m] || 0) + (totalF * inv * Math.pow(0.5, ageHrs / hl)) }); if (mus.cns) { fatigue.cns = (fatigue.cns || 0) + (totalF * mus.cns * Math.pow(0.5, ageHrs / DATA.halfLife.cns)) } }; proc(w.details?.t1, w.setDetails?.t1); proc(w.setDetails?.t2Name, w.setDetails?.t2); (w.setDetails?.accessories || []).forEach(a => { if (!a.completed) return; const mus = this.impact(a.name), isC = DATA.compoundAccessories.has(a.name), load = a.completed * (isC ? 4.0 : 2.5) * rpeScale; Object.entries(mus).forEach(([m, inv]) => { const hl = DATA.halfLife[m] || 24; fatigue[m] = (fatigue[m] || 0) + (load * inv * Math.pow(0.5, ageHrs / hl)) }) }) }); const recoveryMap = {}; Object.keys(DATA.halfLife).forEach(m => { const f = fatigue[m] || 0, base = DATA.recoveryCapacity[m] || 20, adj = base * progScale; recoveryMap[m] = Math.round(Math.max(0, 100 - (f / adj * 100))) }); this.cache.recovery = Object.entries(DATA.groups).map(([name, muscles]) => { const vals = muscles.map(m => recoveryMap[m] ?? 100), avg = Math.round(vals.reduce((a, b) => a + b, 0) / vals.length), min = Math.min(...vals); return { name, recovery: avg, min, status: min >= 80 ? 'Ready' : min >= 40 ? 'Recovering' : 'Fatigued', muscles: muscles.map(m => ({ name: m, recovery: recoveryMap[m] ?? 100 })) } }); this.cache.recoveryMap = recoveryMap },
-                calBuild() { const n = new Date(); n.setMonth(n.getMonth() + this.cal.offset); this.cal.monthName = n.toLocaleString('default', { month: 'long', year: 'numeric' }); const y = n.getFullYear(), m = n.getMonth(), d = new Date(y, m, 1).getDay(), ld = new Date(y, m + 1, 0).getDate(), logDates = new Set(this.history.map(h => U.iso(h.timestamp))); this.cal.days = [...Array(d).fill({}), ...[...Array(ld).keys()].map(i => { const iso = U.iso(new Date(y, m, i + 1)); return { num: i + 1, isToday: new Date().getDate() === i + 1 && !this.cal.offset, hasLog: logDates.has(iso) } })] },
-                chkAch() { ACHIEVEMENTS.forEach(a => { if (!this.achievements.includes(a.id) && a.check(this.history)) { this.achievements.push(a.id); this.currentAchievement = a; this.activeModal = 'achievement'; DB.s(K.ach, this.achievements) } }) },
+                getReadinessScore() { if (!this.cache.recoveryMap || !Object.keys(this.cache.recoveryMap).length) return 100; const vals = Object.values(this.cache.recoveryMap); return Math.round(vals.reduce((a, b) => a + b, 0) / vals.length) },
+                getRecoveryETA(muscle) { const rec = this.cache.recoveryMap?.[muscle]; if (!rec || rec >= 95) return 'Ready'; const hl = DATA.halfLife[muscle] || 24; const hoursToRecover = Math.round(hl * Math.log2(100 / Math.max(1, 100 - rec))); if (hoursToRecover <= 1) return '<1h'; if (hoursToRecover < 24) return hoursToRecover + 'h'; return Math.round(hoursToRecover / 24) + 'd' },
+                getRecoveryAdvice() {
+                    if (!this.session?.t1) return null;
+                    const t1Muscles = this.impact(this.session.t1.name);
+                    const fatigued = [];
+                    Object.entries(t1Muscles).forEach(([m, _]) => { if ((this.cache.recoveryMap?.[m] ?? 100) < 50) fatigued.push(m) });
+                    if (fatigued.length === 0) return null;
+                    return { muscles: fatigued, suggestion: 'Consider reducing volume or swapping exercises' };
+                },
+                computeLongestStreak() {
+                    if (!this.history.length) { this.longestStreak = 0; return }
+                    const dates = [...new Set(this.history.map(h => h.isoDate))].sort();
+                    let longest = 1, current = 1;
+                    for (let i = 1; i < dates.length; i++) {
+                        const diff = (new Date(dates[i]) - new Date(dates[i - 1])) / 864e5;
+                        if (diff <= 2) { current++; longest = Math.max(longest, current) }
+                        else current = 1;
+                    }
+                    this.longestStreak = longest;
+                },
+                computeFrequency() {
+                    const now = U.now();
+                    const windows = { '7d': 7, '14d': 14, '30d': 30 };
+                    const freq = {};
+                    Object.entries(windows).forEach(([label, days]) => {
+                        const cutoff = now - days * 864e5;
+                        const workouts = this.history.filter(h => h.timestamp >= cutoff);
+                        const muscleHits = {};
+                        workouts.forEach(w => {
+                            const muscles = this.impact(w.details?.t1);
+                            Object.keys(muscles).forEach(m => { muscleHits[m] = (muscleHits[m] || 0) + 1 });
+                        });
+                        freq[label] = { total: workouts.length, perWeek: Math.round(workouts.length / (days / 7) * 10) / 10, muscleHits };
+                    });
+                    this.freqData = freq;
+                },
+                weeklyTonnage() {
+                    const now = U.now(), weekAgo = now - 7 * 864e5;
+                    return this.history.filter(h => h.timestamp >= weekAgo).reduce((a, h) => a + (h.totalVolume || 0), 0);
+                },
+                tonnageProgress() {
+                    if (!this.tonnageGoal) return 0;
+                    return Math.min(100, Math.round(this.weeklyTonnage() / this.tonnageGoal * 100));
+                },
+                bwMovingAvg(days = 7) {
+                    if (this.bwLog.length < 2) return null;
+                    const recent = this.bwLog.slice(-days);
+                    return Math.round(recent.reduce((a, b) => a + b.weight, 0) / recent.length * 10) / 10;
+                },
+                bwWeeklyChange() {
+                    if (this.bwLog.length < 7) return null;
+                    const recent = this.bwLog.slice(-7);
+                    const older = this.bwLog.slice(-14, -7);
+                    if (!older.length) return null;
+                    const avgRecent = recent.reduce((a, b) => a + b.weight, 0) / recent.length;
+                    const avgOlder = older.reduce((a, b) => a + b.weight, 0) / older.length;
+                    return Math.round((avgRecent - avgOlder) * 10) / 10;
+                },
+                saveTemplate() {
+                    if (!this.templateName.trim()) return;
+                    const tmpl = { name: this.templateName.trim(), created: U.now(), t1: this.session.t1?.name, t2: this.session.t2?.originalName || this.session.t2?.name, t2Exercise: this.session.t2?.selectedExercise, acc: this.session.acc?.map(a => ({ name: a.originalName || a.name, selectedExercise: a.selectedExercise || a.name, sets: a.sets, reps: a.reps })) || [] };
+                    this.templates.push(tmpl);
+                    DB.s(K.templates, this.templates);
+                    this.templateName = '';
+                    this.activeModal = null;
+                },
+                startFromTemplate(tmpl) {
+                    const day = { title: tmpl.name, t1: tmpl.t1, t2: tmpl.t2, s: 'vol', t2s: 't2', acc: tmpl.acc.map(a => ({ name: a.name, sets: a.sets, reps: a.reps })) };
+                    this.start(day);
+                },
+                deleteTemplate(i) { this.templates.splice(i, 1); DB.s(K.templates, this.templates) },
+                openExNote(exName) { this.exNoteTarget = exName; this.exNoteText = this.exerciseNotes[exName] || ''; this.activeModal = 'exNote' },
+                saveExNote() { if (this.exNoteText.trim()) { this.exerciseNotes[this.exNoteTarget] = this.exNoteText.trim() } else { delete this.exerciseNotes[this.exNoteTarget] } DB.s(K.exNotes, this.exerciseNotes); this.activeModal = null },
+                getExNote(name) { return this.exerciseNotes[name] || null },
+                calBuild() { const n = new Date(); n.setMonth(n.getMonth() + this.cal.offset); this.cal.monthName = n.toLocaleString('default', { month: 'long', year: 'numeric' }); const y = n.getFullYear(), m = n.getMonth(), d = new Date(y, m, 1).getDay(), ld = new Date(y, m + 1, 0).getDate(), logDates = {}; this.history.forEach(h => { const iso = U.iso(h.timestamp); logDates[iso] = (logDates[iso] || 0) + (h.totalVolume || 1) }); const maxVol = Math.max(1, ...Object.values(logDates)); this.cal.days = [...Array(d).fill({}), ...[...Array(ld).keys()].map(i => { const iso = U.iso(new Date(y, m, i + 1)); const vol = logDates[iso] || 0; const intensity = vol > 0 ? Math.ceil((vol / maxVol) * 3) : 0; return { num: i + 1, isToday: new Date().getDate() === i + 1 && !this.cal.offset, hasLog: vol > 0, intensity } })]; this.calBuildSummary(y, m) },
+                calBuildSummary(y, m) { const workouts = this.history.filter(h => { const d = new Date(h.timestamp); return d.getFullYear() === y && d.getMonth() === m }); this.calSummary = { count: workouts.length, totalVol: workouts.reduce((a, h) => a + (h.totalVolume || 0), 0), avgDur: workouts.length ? Math.round(workouts.reduce((a, h) => a + (h.duration || 0), 0) / workouts.length) : 0, prs: workouts.filter(h => h.pr).length } },
+                calDayClass(day) { if (!day.hasLog) return ''; if (this.prefs.heatmapCalendar) { return day.intensity >= 3 ? 'cal-hot3' : day.intensity >= 2 ? 'cal-hot2' : 'cal-hot1' } return 'cal-active' },
+                chkAch() { ACHIEVEMENTS.forEach(a => { if (!this.achievements.includes(a.id) && a.check(this.history, this.streak)) { this.achievements.push(a.id); this.currentAchievement = a; this.activeModal = 'achievement'; DB.s(K.ach, this.achievements) } }) },
                 saveSess() { if (this.session?.start) { DB.s(K.session, this.session); this.updCache() } },
                 save() { DB.s(K.main, { tms: this.tms, history: this.history, idx: this.idx, week: this.week, streak: this.streak, state: this.state }); this.updCache() },
                 savePrefs() { DB.s(K.prefs, this.prefs) },
@@ -141,9 +325,15 @@
                 timeAgo(ts) { const d = Math.floor((U.now() - ts) / 6e4); return d < 60 ? d + 'm ago' : Math.floor(d / 60) + 'h ago' },
                 togAcc(n, i) { const k = `${n}-${i}`; this.session.completedAcc[k] = !this.session.completedAcc[k]; this.saveSess(); if (this.session.completedAcc[k] && this.prefs.autoStartTimer) this.timerStart(+this.prefs.restT3) },
                 isAccDone(n, i) { return !!this.session?.completedAcc?.[`${n}-${i}`] },
-                addSet() { this.session.t1.sets.push({ ...this.session.t1.sets[this.session.t1.sets.length - 1], completed: false, failed: false, completedAt: null, performed: null }) },
-                export() { const d = {}; Object.values(K).forEach(k => d[k] = DB.g(k)); d.version = 2; const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(d)], { type: 'application/json' })); a.download = `lift_backup_${U.iso(U.now())}.json`; a.click() },
-                import(e) { const r = new FileReader(); r.onload = ev => { try { const d = JSON.parse(ev.target.result); Object.keys(d).forEach(k => { if (k !== 'version') DB.s(k, d[k]) }); location.reload() } catch { alert('Invalid file') } }; r.readAsText(e.target.files[0]) },
+                addSet() { this.session.t1.sets.push({ ...this.session.t1.sets[this.session.t1.sets.length - 1], completed: false, failed: false, completedAt: null, performed: null, rpe: null }) },
+                exportJSON() { const d = {}; Object.values(K).forEach(k => d[k] = DB.g(k)); d.version = 2; const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(d)], { type: 'application/json' })); a.download = `lift_backup_${U.iso(U.now())}.json`; a.click() },
+                exportCSV() {
+                    const headers = ['Date', 'Title', 'Duration(min)', 'TotalVolume', 'Rating', 'RPE', 'PR', 'T1', 'TopSet', 'Est1RM', 'Notes'];
+                    const rows = this.history.map(h => [h.date, h.title, h.duration || '', h.totalVolume || '', h.rating || '', h.rpe || '', h.pr ? 'Yes' : 'No', h.details?.t1 || '', h.details?.weight || '', h.details?.est1rm || '', (h.notes || '').replace(/,/g, ';')]);
+                    const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+                    const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' })); a.download = `lift_export_${U.iso(U.now())}.csv`; a.click();
+                },
+                importData(e) { const r = new FileReader(); r.onload = ev => { try { const d = JSON.parse(ev.target.result); Object.keys(d).forEach(k => { if (k !== 'version') DB.s(k, d[k]) }); location.reload() } catch { alert('Invalid file') } }; r.readAsText(e.target.files[0]) },
                 reset() { if (confirm('Reset EVERYTHING?')) { localStorage.clear(); location.reload() } },
                 histFilt() { const l = this.history.slice().reverse(); return this.historyFilter !== 'all' ? l.filter(h => h.details?.t1 === this.historyFilter).slice(0, 50) : l.slice(0, 50) },
                 showDay(day) { const n = new Date(); n.setMonth(n.getMonth() + this.cal.offset); const l = this.history.find(h => h.isoDate === U.iso(new Date(n.getFullYear(), n.getMonth(), day.num).getTime())); if (l) this.openLog(l) },
@@ -154,7 +344,26 @@
                 toggleZen() { this.zenMode = !this.zenMode; document.body.style.overflow = this.zenMode ? 'hidden' : '' },
                 getZen() { if (!this.session) return null; if (this.session.t1?.sets) { const s = this.session.t1.sets.find(x => !x.completed); if (s) return { t: 't1', n: this.session.t1.name, w: s.weight, r: s.reps, amrap: s.amrap, s, i: this.session.t1.sets.indexOf(s) } } if (this.session.t2?.sets) { const s = this.session.t2.sets.find(x => !x.completed); if (s) return { t: 't2', n: this.session.t2.selectedExercise || this.session.t2.name, w: s.weight, r: s.reps, amrap: false, s, i: this.session.t2.sets.indexOf(s) } } if (this.session.acc) { for (const a of this.session.acc) { const on = a.originalName || a.name; for (let i = 1; i <= a.sets; i++) { if (!this.isAccDone(on, i)) return { t: 'acc', n: a.selectedExercise || a.name, w: '-', r: (a.reps || '10-12'), amrap: false, on, i } } } } return null },
                 doZen() { const z = this.getZen(); if (!z) return; if (z.t === 'acc') this.togAcc(z.on, z.i); else { if (z.s.amrap) { if (this.zenAmrap === null || this.zenAmrap === '') return alert('Enter reps'); z.s.performed = this.zenAmrap; this.zenAmrap = null } this.toggleSet(z.s, z.t) } },
-                cancel() { if (confirm('Cancel workout?')) { this.session = {}; this.savedSession = null; DB.d(K.session); this.timer.active = false; this.view = 'dashboard'; this.relWake(); this.$nextTick(() => this.draw()) } }
+                cancel() { if (confirm('Cancel workout?')) { this.session = {}; this.savedSession = null; DB.d(K.session); this.timer.active = false; this.view = 'dashboard'; this.relWake(); this.$nextTick(() => this.draw()) } },
+                getProgressionLabel(method) { const labels = { 'e1rm_trend': '📈 E1RM Trend', 'linear': '📏 Linear', 'gzclp_linear': '📏 GZCLP Linear', 'stage_advance': '⬆️ Stage Up', 'stage_reset': '🔄 Stage Reset', 'auto_deload_10pct': '⬇️ Auto Deload', 'hold_missed_reps': '⏸️ Hold', 'none': '—' }; return labels[method] || method || '—' },
+                getE1RMTrend(lift) {
+                    const entries = (this.e1rmHistory[lift] || []).slice(-5);
+                    if (entries.length < 2) return { direction: 'flat', change: 0 };
+                    const first = entries[0].e1rm, last = entries[entries.length - 1].e1rm;
+                    const change = last - first;
+                    return { direction: change > 0 ? 'up' : change < 0 ? 'down' : 'flat', change };
+                },
+                getWilksEstimate() {
+                    const bw = this.bwLog.length ? this.bwLog[this.bwLog.length - 1].weight : 0;
+                    if (!bw) return null;
+                    const total = (this.tms.Bench || 0) / 0.9 + (this.tms.Squat || 0) / 0.9 + (this.tms.Deadlift || 0) / 0.9;
+                    if (!total) return null;
+                    const bwKg = this.prefs.weightUnit === 'kg' ? bw : bw * 0.453592;
+                    const totalKg = this.prefs.weightUnit === 'kg' ? total : total * 0.453592;
+                    const a = -216.0475144, b = 16.2606339, c = -0.002388645, d = -0.00113732, e = 7.01863e-6, f = -1.291e-8;
+                    const coeff = 500 / (a + b * bwKg + c * Math.pow(bwKg, 2) + d * Math.pow(bwKg, 3) + e * Math.pow(bwKg, 4) + f * Math.pow(bwKg, 5));
+                    return Math.round(totalKg * coeff);
+                }
             }
         }
     </script>
@@ -162,13 +371,12 @@
 
 <body x-data="app()" x-init="init()" @keydown.window.escape="handleEscape"
     class="antialiased h-screen overflow-hidden text-slate-200">
-    <!-- FIX: Added viewBox and fill/stroke attributes to all SVG icons to fix broken imports/rendering -->
+
     <div x-show="activeModal" class="modal-bg" x-transition x-cloak>
         <template x-if="activeModal==='resume'">
             <div class="glass-panel text-center">
                 <h3 class="text-xl font-bold text-white mb-1">Resume Session?</h3>
-                <p class="text-xs text-slate-500 mb-6" x-text="savedSession?.title+' • '+timeAgo(savedSession?.start)">
-                </p>
+                <p class="text-xs text-slate-500 mb-6" x-text="savedSession?.title+' • '+timeAgo(savedSession?.start)"></p>
                 <div class="space-y-3"><button @click="resume()" class="btn-p">Resume</button><button @click="finish()"
                         class="btn border border-green-500/30 text-green-400">Finish Now</button><button
                         @click="session={};savedSession=null;DB.d('lift_active_session');activeModal=null"
@@ -219,6 +427,13 @@
                     </div>
                     <div x-show="setEdit.amrap"><label class="lbl text-yellow-500">Performed</label><input type="number"
                             x-model="setEdit.performed" class="inp-lg border-yellow-500/30"></div>
+                    <div><label class="lbl">RPE (optional)</label>
+                        <div class="flex gap-1"><template x-for="r in [6,6.5,7,7.5,8,8.5,9,9.5,10]"><button
+                                    @click="setEdit.rpe = setEdit.rpe===r ? null : r"
+                                    class="flex-1 py-2 rounded text-[10px] font-bold transition"
+                                    :class="setEdit.rpe===r?'bg-indigo-600 text-white':'bg-black/30 text-slate-500 border border-white/10'"
+                                    x-text="r"></button></template></div>
+                    </div>
                     <div class="f-g2 bg-red-900/10 p-3 rounded-xl border border-red-500/20 cursor-pointer"
                         @click="setEdit.failed=!setEdit.failed">
                         <div class="w-6 h-6 rounded border f-c"
@@ -247,6 +462,14 @@
                         <h4 class="lbl text-yellow-500 mb-1">AMRAP</h4>
                         <p class="text-sm text-slate-300">As Many Reps As Possible</p>
                     </div>
+                    <div class="pl-4 border-l-2 border-green-500">
+                        <h4 class="lbl text-green-400 mb-1">Set RPE</h4>
+                        <p class="text-sm text-slate-300">Tap edit to log per-set RPE</p>
+                    </div>
+                    <div class="pl-4 border-l-2 border-purple-500">
+                        <h4 class="lbl text-purple-400 mb-1">Exercise Notes</h4>
+                        <p class="text-sm text-slate-300">Tap 📝 icon to add persistent notes</p>
+                    </div>
                 </div>
             </div>
         </template>
@@ -255,20 +478,26 @@
             <div class="glass-panel text-center">
                 <div class="text-4xl mb-3">💪</div>
                 <h3 class="text-xl font-bold text-white mb-6">Complete!</h3>
-                <div class="mb-6"><label class="lbl">Rating</label>
+                <div class="mb-4"><label class="lbl">Rating</label>
                     <div class="f-c gap-2"><template x-for="i in 5"><button @click="sessionRating=i"
                                 class="text-3xl transition"
                                 :class="i<=sessionRating?'opacity-100 scale-110':'opacity-30'"
                                 x-text="i<=sessionRating?'⭐':'☆'"></button></template></div>
                 </div>
-                <div class="mb-6">
+                <div class="mb-4">
                     <div class="f-cb mb-2"><label class="lbl">RPE</label><span class="text-xs font-bold text-indigo-400"
                             x-text="sessionRPE+'/10'"></span></div><input type="range" x-model.number="sessionRPE"
                         min="5" max="10" step="0.5" class="w-full accent-indigo-500">
                 </div>
-                <div class="mb-6"><label class="lbl">Notes</label><textarea x-model="sessionNotes"
+                <div class="mb-4"><label class="lbl">Notes</label><textarea x-model="sessionNotes"
                         class="inp resize-none h-20"></textarea></div>
-                <button @click="saveFinish()" class="btn-p">Save</button>
+                <div class="mb-4 text-left">
+                    <label class="lbl">Save as Template?</label>
+                    <input type="text" x-model="templateName" class="inp text-sm" placeholder="Template name (optional)">
+                </div>
+                <div class="space-y-3">
+                    <button @click="if(templateName.trim()){saveTemplate()};saveFinish()" class="btn-p">Save</button>
+                </div>
             </div>
         </template>
 
@@ -287,15 +516,45 @@
         <template x-if="activeModal==='achievement'">
             <div
                 class="glass-panel bg-gradient-to-br from-indigo-900/50 to-purple-900/50 border-indigo-500/30 text-center overflow-hidden">
-                <div
-                    class="absolute inset-0 bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-pink-500/10 shimmer">
-                </div>
+                <div class="absolute inset-0 bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-pink-500/10 shimmer"></div>
                 <div class="relative z-10">
                     <div class="text-6xl mb-4" x-text="currentAchievement?.icon"></div>
                     <h3 class="text-2xl font-bold text-white mb-2">Unlocked!</h3>
                     <p class="text-lg font-bold text-indigo-400" x-text="currentAchievement?.title"></p><button
                         @click="activeModal=null"
                         class="mt-6 bg-white/10 text-white font-bold py-3 px-8 rounded-xl">Awesome!</button>
+                </div>
+            </div>
+        </template>
+
+        <template x-if="activeModal==='exNote'">
+            <div class="glass-panel" @click.outside="activeModal=null">
+                <div class="f-cb mb-4">
+                    <h3 class="text-lg font-bold text-white">📝 <span x-text="exNoteTarget"></span></h3>
+                    <button @click="activeModal=null"><svg class="w-6 h-6 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="icons.x" /></svg></button>
+                </div>
+                <textarea x-model="exNoteText" class="inp resize-none h-32 mb-4" placeholder="e.g., Use red band, widen grip..."></textarea>
+                <div class="grid grid-cols-2 gap-3">
+                    <button @click="activeModal=null" class="btn-s">Cancel</button>
+                    <button @click="saveExNote()" class="btn-p">Save</button>
+                </div>
+            </div>
+        </template>
+
+        <template x-if="activeModal==='batchAdjust'">
+            <div class="glass-panel text-center" @click.outside="activeModal=null">
+                <h3 class="text-lg font-bold text-white mb-4">Adjust Remaining Sets</h3>
+                <p class="text-xs text-slate-400 mb-4">Apply % change to all uncompleted sets</p>
+                <div class="flex gap-2 justify-center mb-6">
+                    <template x-for="pct in [-10, -5, -2.5, 2.5, 5, 10]">
+                        <button @click="batchAdjust=pct" class="px-3 py-2 rounded-lg text-xs font-bold transition"
+                            :class="batchAdjust===pct?'bg-indigo-600 text-white':'bg-black/30 text-slate-400 border border-white/10'"
+                            x-text="(pct>0?'+':'')+pct+'%'"></button>
+                    </template>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <button @click="batchAdjust=0;activeModal=null" class="btn-s">Cancel</button>
+                    <button @click="applyBatchAdjust('t1');activeModal=null" class="btn-p">Apply to T1</button>
                 </div>
             </div>
         </template>
@@ -348,8 +607,7 @@
                             <div class="text-[9px] text-slate-500 uppercase">Sets</div>
                         </div>
                         <div class="glass-item">
-                            <div class="text-lg font-bold text-white mono" x-text="fmtVolS(selectedLog?.totalVolume)">
-                            </div>
+                            <div class="text-lg font-bold text-white mono" x-text="fmtVolS(selectedLog?.totalVolume)"></div>
                             <div class="text-[9px] text-slate-500 uppercase">Vol</div>
                         </div>
                         <div class="glass-item">
@@ -358,6 +616,14 @@
                                 x-model="selectedLog.rating" x-show="isEditingLog" class="inp text-center p-0">
                             <div class="text-[9px] text-slate-500 uppercase">Rate</div>
                         </div>
+                    </div>
+                    <div x-show="selectedLog?.progressionMethod" class="glass-item f-cb">
+                        <span class="text-xs text-slate-400">Progression</span>
+                        <span class="text-xs font-bold" x-text="getProgressionLabel(selectedLog?.progressionMethod)"></span>
+                    </div>
+                    <div x-show="selectedLog?.avgRestTime" class="glass-item f-cb">
+                        <span class="text-xs text-slate-400">Avg Rest</span>
+                        <span class="text-xs font-bold text-white mono" x-text="fmt(selectedLog?.avgRestTime||0)"></span>
                     </div>
                     <div x-show="selectedLog?.setDetails?.t1?.length">
                         <h4 class="lbl mb-3" x-text="selectedLog?.details?.t1+' (T1)'"></h4>
@@ -372,7 +638,7 @@
                                                 x-text="prefs.weightUnit"></span><span
                                                 class="text-slate-400 text-sm ml-2">×</span><span class="font-bold ml-1"
                                                 :class="s.amrap?'text-yellow-400':'text-white'"
-                                                x-text="s.performed||s.reps"></span></div>
+                                                x-text="s.performed||s.reps"></span><span x-show="s.rpe" class="text-[10px] text-indigo-400 ml-2" x-text="'RPE '+s.rpe"></span></div>
                                         <div class="text-xs text-slate-500"
                                             x-text="s.completedAt?fmtSet(s.completedAt):''"></div>
                                     </div>
@@ -410,23 +676,32 @@
 
         <template x-if="activeModal==='onerm'">
             <div class="glass-panel text-center" @click.outside="activeModal=null">
-                <h3 class="text-lg font-bold text-white mb-4">1RM Calc</h3>
+                <h3 class="text-lg font-bold text-white mb-4">1RM Calculator</h3>
                 <div class="grid grid-cols-2 gap-4 mb-6">
-                    <div><label class="lbl">Weight</label><input type="number" x-model.number="calc.w" class="inp-lg">
-                    </div>
-                    <div><label class="lbl">Reps</label><input type="number" x-model.number="calc.r" class="inp-lg">
-                    </div>
+                    <div><label class="lbl">Weight</label><input type="number" x-model.number="calc.w" class="inp-lg"></div>
+                    <div><label class="lbl">Reps</label><input type="number" x-model.number="calc.r" class="inp-lg"></div>
                 </div>
-                <div class="bg-indigo-500/10 border border-indigo-500/20 rounded-2xl p-6 mb-6">
-                    <div class="text-5xl font-extrabold text-white mono" x-text="Math.round(calc.w*(1+calc.r/30))||0">
+                <div class="space-y-3 mb-6">
+                    <div class="bg-indigo-500/10 border border-indigo-500/20 rounded-2xl p-4">
+                        <div class="text-3xl font-extrabold text-white mono" x-text="epley1RM(calc.w, calc.r)||0"></div>
+                        <div class="text-[10px] text-slate-400 mt-1">Epley</div>
                     </div>
-                    <div class="text-xs text-slate-400 mt-2">Epley Formula</div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="bg-purple-500/10 border border-purple-500/20 rounded-xl p-3">
+                            <div class="text-xl font-bold text-white mono" x-text="brzycki1RM(calc.w, calc.r)||0"></div>
+                            <div class="text-[10px] text-slate-400">Brzycki</div>
+                        </div>
+                        <div class="bg-green-500/10 border border-green-500/20 rounded-xl p-3">
+                            <div class="text-xl font-bold text-white mono" x-text="lombardi1RM(calc.w, calc.r)||0"></div>
+                            <div class="text-[10px] text-slate-400">Lombardi</div>
+                        </div>
+                    </div>
                 </div>
                 <div class="grid grid-cols-5 gap-2 mb-6"><template x-for="p in [95,90,85,80,75]">
                         <div class="bg-black/30 rounded-lg p-2">
                             <div class="text-[10px] text-slate-500" x-text="p+'%'"></div>
                             <div class="text-sm font-bold text-white mono"
-                                x-text="Math.round(calc.w*(1+calc.r/30)*p/100)||0"></div>
+                                x-text="Math.round(epley1RM(calc.w,calc.r)*p/100)||0"></div>
                         </div>
                     </template></div>
                 <button @click="activeModal=null" class="btn-s">Close</button>
@@ -437,7 +712,8 @@
     <div x-show="plate.open" class="modal-bg" x-cloak @click.self="plate.open=false">
         <div class="glass-panel text-center">
             <div class="text-6xl font-extrabold text-white mono tracking-tighter mb-2" x-text="plate.w"></div>
-            <div class="lbl mb-8">Target (<span x-text="prefs.weightUnit"></span>)</div>
+            <div class="lbl mb-2">Target (<span x-text="prefs.weightUnit"></span>)</div>
+            <div x-show="closestWeight(plate.w) !== plate.w" class="text-xs text-yellow-400 mb-4">Closest: <span class="mono font-bold" x-text="closestWeight(plate.w)"></span></div>
             <div class="f-c gap-1 mb-10 h-24">
                 <div class="h-20 w-4 bg-slate-700 rounded-sm border border-slate-600"></div><template
                     x-for="p in plate.plates">
@@ -484,8 +760,7 @@
         <header class="header-sticky f-cb">
             <div>
                 <p class="lbl mb-0.5" x-text="PROGRAMS[prefs.program].name"></p>
-                <h2 class="text-2xl font-extrabold text-white">Week <span class="text-indigo-500" x-text="week"></span>
-                </h2>
+                <h2 class="text-2xl font-extrabold text-white">Week <span class="text-indigo-500" x-text="week"></span></h2>
             </div>
             <div class="f-g2">
                 <div class="f-g2 bg-[#1A1A1E] px-3 py-1.5 rounded-full border border-white/5"><span
@@ -509,10 +784,18 @@
                     <p class="text-xs text-slate-400">Away <span x-text="daysOff()"></span> days. Consider deload.</p>
                 </div>
             </div>
+
+            <!-- Readiness Score -->
             <div class="glass-card" x-show="history.length">
-                <h3 class="lbl mb-3">Recovery</h3>
+                <div class="f-cb mb-3">
+                    <h3 class="lbl mb-0">Readiness</h3>
+                    <div class="text-2xl font-extrabold mono" :class="getReadinessScore()>=80?'text-green-400':getReadinessScore()>=50?'text-yellow-400':'text-red-400'" x-text="getReadinessScore()+'%'"></div>
+                </div>
+                <div class="h-2 bg-black/50 rounded-full overflow-hidden mb-4">
+                    <div class="h-full transition-[width] duration-700" :class="getReadinessScore()>=80?'bg-green-500':getReadinessScore()>=50?'bg-yellow-500':'bg-red-500'" :style="'width:'+getReadinessScore()+'%'"></div>
+                </div>
                 <div class="grid grid-cols-2 gap-3"><template x-for="m in cache.recovery">
-                        <div class="glass-item">
+                        <div class="glass-item cursor-pointer" @click="recoveryExpanded=recoveryExpanded===m.name?null:m.name">
                             <div class="f-cb mb-2"><span class="text-xs text-slate-400" x-text="m.name"></span><span
                                     class="text-[10px] font-bold"
                                     :class="m.status==='Ready'?'text-green-400':m.status==='Recovering'?'text-yellow-400':'text-red-400'"
@@ -522,9 +805,33 @@
                                     :class="m.recovery>=100?'bg-green-500':m.recovery>=50?'bg-yellow-500':'bg-red-500'"
                                     :style="'width:'+Math.min(100,m.recovery)+'%'"></div>
                             </div>
+                            <!-- Expanded per-muscle detail -->
+                            <div x-show="recoveryExpanded===m.name" x-collapse class="mt-3 space-y-1.5 border-t border-white/5 pt-2">
+                                <template x-for="mu in m.muscles">
+                                    <div class="f-cb text-[10px]">
+                                        <span class="text-slate-500" x-text="mu.name"></span>
+                                        <div class="f-g2">
+                                            <span class="text-slate-600" x-text="getRecoveryETA(mu.name)"></span>
+                                            <span class="mono font-bold" :class="mu.recovery>=80?'text-green-400':mu.recovery>=40?'text-yellow-400':'text-red-400'" x-text="mu.recovery+'%'"></span>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
                         </div>
                     </template></div>
             </div>
+
+            <!-- Tonnage Goal Progress -->
+            <div x-show="tonnageGoal>0" class="glass-card">
+                <div class="f-cb mb-2">
+                    <h3 class="lbl mb-0">Weekly Tonnage Goal</h3>
+                    <span class="text-xs text-slate-400 mono" x-text="fmtVol(weeklyTonnage())+' / '+fmtVol(tonnageGoal)"></span>
+                </div>
+                <div class="h-2 bg-black/50 rounded-full overflow-hidden">
+                    <div class="h-full bg-emerald-500 transition-[width] duration-700" :style="'width:'+tonnageProgress()+'%'"></div>
+                </div>
+            </div>
+
             <div class="relative overflow-hidden rounded-[2rem] bg-[#121214] border border-white/10 p-6 shadow-2xl">
                 <div class="absolute -right-10 -top-10 w-40 h-40 bg-indigo-500/10 blur-[50px] rounded-full"></div>
                 <div class="relative z-10">
@@ -564,6 +871,21 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Templates -->
+            <div x-show="templates.length" class="glass-card">
+                <h3 class="lbl mb-3">Templates</h3>
+                <div class="space-y-2"><template x-for="(tmpl,ti) in templates">
+                    <div class="glass-item f-cb">
+                        <button @click="startFromTemplate(tmpl)" class="text-left flex-1">
+                            <div class="text-sm font-bold text-white" x-text="tmpl.name"></div>
+                            <div class="text-[10px] text-slate-500" x-text="tmpl.t1+' + '+tmpl.t2"></div>
+                        </button>
+                        <button @click="deleteTemplate(ti)" class="btn-icon text-red-400 text-xs">✕</button>
+                    </div>
+                </template></div>
+            </div>
+
             <div class="grid grid-cols-2 gap-3"><button @click="repLast()" x-show="prevSim()"
                     class="glass-card text-left active:scale-95 transition">
                     <div class="lbl">Repeat Last</div>
@@ -583,13 +905,15 @@
                                 class="text-[10px] font-bold text-slate-600 mb-1.5">TM</span></div>
                         <div class="text-[10px] text-slate-600 mt-1">Est 1RM: <span
                                 x-text="Math.round(tms[l]/0.9)"></span></div>
-                        <div x-show="prefs.program==='gzclp'" class="text-[9px] text-indigo-400 mt-1">Stage: <span
-                                x-text="state[l]?.stage||1"></span></div>
+                        <div class="f-g2 mt-1">
+                            <div x-show="prefs.program==='gzclp'" class="text-[9px] text-indigo-400">Stage: <span x-text="state[l]?.stage||1"></span></div>
+                            <div class="text-[9px]" :class="getE1RMTrend(l).direction==='up'?'text-green-400':getE1RMTrend(l).direction==='down'?'text-red-400':'text-slate-600'" x-text="getE1RMTrend(l).change>0?'↑'+getE1RMTrend(l).change:getE1RMTrend(l).change<0?'↓'+Math.abs(getE1RMTrend(l).change):''"></div>
+                        </div>
                     </div>
                 </template></div>
             <div class="glass-card">
                 <div class="f-cb mb-4">
-                    <h3 class="lbl">History</h3><select x-model="chartLift" @change="$nextTick(()=>draw())"
+                    <h3 class="lbl">E1RM History</h3><select x-model="chartLift" @change="$nextTick(()=>draw())"
                         class="bg-black/50 border border-white/10 text-[10px] font-bold text-white rounded px-2 py-1 outline-none"><template
                             x-for="l in lifts()">
                             <option :value="l" x-text="l"></option>
@@ -601,6 +925,20 @@
                 <h3 class="lbl mb-4">Volume</h3>
                 <div class="h-32 relative"><canvas id="volumeChart"></canvas></div>
             </div>
+
+            <!-- Training Frequency -->
+            <div class="glass-card" x-show="history.length">
+                <h3 class="lbl mb-3">Frequency</h3>
+                <div class="grid grid-cols-3 gap-3 text-center">
+                    <template x-for="(data, label) in freqData">
+                        <div class="glass-item">
+                            <div class="text-lg font-bold text-white mono" x-text="data.perWeek"></div>
+                            <div class="text-[9px] text-slate-500 uppercase" x-text="label+'/wk'"></div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+
             <div class="grid grid-cols-4 gap-3 text-center">
                 <div class="glass-item">
                     <div class="text-xl font-bold text-white mono" x-text="history.length"></div>
@@ -613,12 +951,70 @@
                 </div>
                 <div class="glass-item">
                     <div class="text-xl font-bold text-white mono" x-text="avgDur()"></div>
-                    <div class="text-[9px] text-slate-500 uppercase">Avg</div>
+                    <div class="text-[9px] text-slate-500 uppercase">Avg Min</div>
                 </div>
                 <div class="glass-item">
-                    <div class="text-xl font-bold text-white mono" x-text="history.filter(h=>h.pr).length"></div>
-                    <div class="text-[9px] text-slate-500 uppercase">PRs</div>
+                    <div class="text-xl font-bold text-white mono" x-text="longestStreak"></div>
+                    <div class="text-[9px] text-slate-500 uppercase">Best🔥</div>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PR Records View -->
+    <div x-show="view==='records'" class="h-full overflow-y-auto pb-32 no-scrollbar">
+        <header class="header-sticky">
+            <h2 class="text-3xl font-extrabold text-white">Personal Records</h2>
+        </header>
+        <div class="px-6 space-y-6">
+            <!-- Wilks Estimate -->
+            <div x-show="getWilksEstimate()" class="glass-card text-center">
+                <h3 class="lbl mb-2">Est. Wilks Score</h3>
+                <div class="text-4xl font-extrabold text-indigo-400 mono" x-text="getWilksEstimate()||'-'"></div>
+                <div class="text-[10px] text-slate-500 mt-1">Based on estimated 1RMs & bodyweight</div>
+            </div>
+
+            <!-- All-Time PRs -->
+            <div class="glass-card">
+                <h3 class="lbl mb-4">All-Time PRs (Est. 1RM)</h3>
+                <div class="space-y-4"><template x-for="l in lifts()">
+                    <div class="glass-item">
+                        <div class="f-cb mb-2">
+                            <div class="f-g2">
+                                <span class="text-sm font-bold text-white" x-text="l"></span>
+                                <span x-show="prs[l]" class="text-xs">🏆</span>
+                            </div>
+                            <div class="f-col items-end">
+                                <span class="text-xl font-extrabold text-white mono" x-text="prs[l]?.weight||'—'"></span>
+                                <span class="text-[10px] text-slate-500" x-text="prs[l]?.date||''"></span>
+                            </div>
+                        </div>
+                        <div class="h-24 relative"><canvas :id="'pr_'+l"></canvas></div>
+                        <div class="f-cb mt-2 text-[10px]">
+                            <span class="text-slate-500">TM: <span class="text-white mono" x-text="Math.round(tms[l])"></span></span>
+                            <span class="text-slate-500">Current E1RM: <span class="text-white mono" x-text="Math.round(tms[l]/0.9)"></span></span>
+                            <span :class="getE1RMTrend(l).direction==='up'?'text-green-400':'text-red-400'" x-text="getE1RMTrend(l).direction==='up'?'↑ Trending Up':getE1RMTrend(l).direction==='down'?'↓ Trending Down':'→ Stable'"></span>
+                        </div>
+                    </div>
+                </template></div>
+            </div>
+
+            <!-- Recent PRs -->
+            <div class="glass-card">
+                <h3 class="lbl mb-4">Recent PR Workouts</h3>
+                <div class="space-y-2"><template x-for="h in history.filter(x=>x.pr).slice(-10).reverse()">
+                    <div class="glass-item f-cb">
+                        <div>
+                            <div class="text-sm font-bold text-white" x-text="h.title"></div>
+                            <div class="text-[10px] text-slate-500" x-text="h.date"></div>
+                        </div>
+                        <div class="f-col items-end">
+                            <span class="text-sm font-bold text-green-400" x-text="'+'+h.increase+' '+prefs.weightUnit"></span>
+                            <span class="text-[10px] text-slate-500" x-text="getProgressionLabel(h.progressionMethod)"></span>
+                        </div>
+                    </div>
+                </template></div>
+                <div x-show="!history.filter(x=>x.pr).length" class="text-center text-slate-500 text-sm py-4">No PRs yet. Keep training!</div>
             </div>
         </div>
     </div>
@@ -711,6 +1107,11 @@
                         <div class="lbl font-sans">Max</div><span class="text-red-400" x-text="getBW('max')"></span>
                     </div>
                 </div>
+                <div class="mt-4 glass-item f-cb">
+                    <div class="text-sm text-slate-300">Trend (7d Avg)</div>
+                    <div class="font-bold mono" :class="bwWeeklyChange()>0?'text-red-400':bwWeeklyChange()<0?'text-green-400':'text-slate-400'" x-text="(bwWeeklyChange()>0?'+':'')+bwWeeklyChange()+' '+prefs.weightUnit+'/wk'"></div>
+                </div>
+                <div class="mt-4"><label class="lbl">Tonnage Goal (Weekly Vol)</label><input type="number" x-model.number="tonnageGoal" @change="DB.s(K.tonnageGoal, tonnageGoal)" class="inp-lg text-sm" placeholder="e.g. 50000"></div>
             </div>
             <div class="glass-card">
                 <h3 class="lbl mb-4">TMs</h3>
@@ -760,7 +1161,7 @@
                             class="text-[10px] font-bold text-slate-600" x-text="d"></span></template></div>
                 <div class="cal-grid"><template x-for="d in cal.days">
                         <div @click="d.hasLog&&showDay(d)"
-                            :class="['cal-day',d.isToday?'cal-today':'',d.hasLog?'cal-active cursor-pointer':'']"
+                            :class="['cal-day',d.isToday?'cal-today':'',calDayClass(d), d.hasLog?'cursor-pointer':'']"
                             x-text="d.num"></div>
                     </template></div>
             </div>
@@ -804,9 +1205,9 @@
                     <div x-show="!history.length" class="text-center text-slate-500 text-sm py-8">No workouts yet.</div>
                 </div>
             </div>
-            <div class="flex gap-3"><button @click="export()" class="btn-s">Export</button><button
+            <div class="flex gap-3"><button @click="exportCSV()" class="btn-s">Export CSV</button><button @click="exportJSON()" class="btn-s">Backup JSON</button><button
                     @click="$refs.imp.click()" class="btn-s">Import</button><input type="file" x-ref="imp"
-                    class="hidden" @change="import($event)"><button @click="reset()"
+                    class="hidden" @change="importData($event)"><button @click="reset()"
                     class="btn border border-red-500/20 text-red-400">Reset</button></div>
         </div>
     </div>
@@ -814,10 +1215,15 @@
     <div x-show="view==='workout'" class="fixed inset-0 z-50 bg-black overflow-y-auto" x-cloak>
         <div class="sticky top-0 bg-black/90 backdrop-blur-md border-b border-white/5 p-4 f-cb z-30"><button
                 @click="cancel()" class="text-slate-400 text-sm font-bold">Cancel</button>
-            <div class="flex gap-4"><button @click="toggleZen()" class="text-indigo-400 hover:text-white"><svg
-                        class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <div class="flex gap-4">
+                <button @click="activeModal='batchAdjust'" class="text-slate-400 hover:text-white font-bold text-xs bg-white/5 px-2 py-1 rounded">Batch +/-</button>
+                <button @click="toggleZen()" class="text-indigo-400 font-bold text-xs bg-indigo-500/10 px-3 py-1 rounded-full border border-indigo-500/30 flex items-center gap-1">
+                    FOCUS
+                    <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="icons.expand" />
-                    </svg></button><button @click="activeModal='info'" class="text-slate-500 hover:text-white"><svg
+                    </svg>
+                </button>
+                <button @click="activeModal='info'" class="text-slate-500 hover:text-white"><svg
                         class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="icons.info" />
                     </svg></button></div><button @click="finish()"
@@ -826,7 +1232,17 @@
         <div class="bg-[#0A0A0A] border-b border-white/5 py-2 flex justify-center gap-4 text-xs text-slate-400 mono">
             <span x-text="sessionTimerStr"></span><span class="text-slate-600">|</span><span
                 x-text="sessProg()+'%'"></span>
+            <span x-show="prefs.showETR" class="text-slate-500 ml-2" x-text="'~'+estimateTimeRemaining()+'m left'"></span>
         </div>
+        
+        <!-- Fatigue Warning -->
+        <div x-show="getRecoveryAdvice()" class="mx-4 mt-4 bg-orange-900/20 border border-orange-500/20 rounded-xl p-3 f-cb">
+            <div class="text-xs text-orange-200">
+                <span class="font-bold">⚠️ Fatigue Alert:</span> <span x-text="getRecoveryAdvice()?.muscles.join(', ')"></span>
+            </div>
+            <button @click="activeModal='batchAdjust'" class="text-[10px] bg-orange-500/20 text-orange-300 px-2 py-1 rounded font-bold">Reduce Vol</button>
+        </div>
+
         <div x-show="timer.active" x-transition
             class="sticky top-24 z-20 mx-auto max-w-[280px] bg-[#1A1A1E] border border-white/10 rounded-full shadow-2xl f-cb p-1 pr-4 overflow-hidden mt-2">
             <div class="absolute inset-0 bg-indigo-600/20 origin-left transition-transform duration-1000 linear"
@@ -879,9 +1295,13 @@
             </div>
 
             <div x-show="session.t1?.sets">
-                <h3 class="text-2xl font-extrabold text-white mb-4 f-cb"><span x-text="session.t1?.name"></span><span
-                        class="text-[10px] px-2 py-1 rounded bg-white/5 border border-white/10 text-slate-400 uppercase font-bold">T1</span>
-                </h3>
+                <div class="f-cb mb-4">
+                    <h3 class="text-2xl font-extrabold text-white f-cb gap-2">
+                        <span x-text="session.t1?.name"></span>
+                        <span class="text-[10px] px-2 py-1 rounded bg-white/5 border border-white/10 text-slate-400 uppercase font-bold">T1</span>
+                    </h3>
+                    <button @click="openExNote(session.t1?.name)" class="text-slate-500 hover:text-indigo-400">📝</button>
+                </div>
                 <div class="space-y-2"><template x-for="(s,i) in session.t1?.sets||[]">
                         <div class="glass-item f-cb transition"
                             :class="[s.completed?(s.failed?'border-red-500/40 bg-red-500/5':'border-green-500/30 bg-green-500/5'):'']">
@@ -894,9 +1314,12 @@
                                             x-text="Math.round(s.weight)"></span><span
                                             class="text-xs text-slate-500 ml-1 font-sans"
                                             x-text="prefs.weightUnit"></span></div>
-                                    <div class="text-[10px] font-bold"
-                                        :class="s.amrap?'text-yellow-500':'text-slate-500'"
-                                        x-text="s.amrap?(s.performed||s.reps)+'+':s.reps"></div>
+                                    <div class="f-g2">
+                                        <div class="text-[10px] font-bold"
+                                            :class="s.amrap?'text-yellow-500':'text-slate-500'"
+                                            x-text="s.amrap?(s.performed||s.reps)+'+':s.reps"></div>
+                                        <div x-show="s.rpe" class="text-[9px] text-indigo-400 font-bold bg-indigo-500/10 px-1 rounded" x-text="'@'+s.rpe"></div>
+                                    </div>
                                 </div>
                             </div>
                             <div class="f-g2"><button @click="calcPlates(s.weight)"
@@ -914,13 +1337,17 @@
 
             <div x-show="session.t2?.sets">
                 <div class="relative z-20">
-                    <div class="f-cb mb-3"><button @click="swapState.t2=!swapState.t2"
-                            class="f-g2 text-lg font-bold text-slate-300 hover:text-white transition"><span
-                                x-text="exName(session.t2?.selectedExercise||session.t2?.name)"></span><svg
-                                class="w-4 h-4 text-indigo-500" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="icons.swap" />
-                            </svg></button><span
-                            class="text-[10px] px-2 py-1 rounded bg-white/5 border border-white/10 text-slate-400 uppercase font-bold">T2</span>
+                    <div class="f-cb mb-3">
+                        <div class="f-g2">
+                            <button @click="swapState.t2=!swapState.t2"
+                                class="text-lg font-bold text-slate-300 hover:text-white transition flex items-center gap-1"><span
+                                    x-text="exName(session.t2?.selectedExercise||session.t2?.name)"></span><svg
+                                    class="w-4 h-4 text-indigo-500" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="icons.swap" />
+                                </svg></button>
+                            <button @click="openExNote(session.t2?.selectedExercise||session.t2?.name)" class="text-slate-500 text-sm hover:text-indigo-400">📝</button>
+                        </div>
+                        <span class="text-[10px] px-2 py-1 rounded bg-white/5 border border-white/10 text-slate-400 uppercase font-bold">T2</span>
                     </div>
                     <div x-show="swapState.t2" @click.outside="swapState.t2=false" class="ex-dropdown max-h-60"
                         x-transition>
@@ -992,6 +1419,7 @@
                     Set</button><button @click="activeModal='onerm'"
                     class="btn border border-white/10 hover:bg-white/5">🧮 1RM</button></div>
 
+            <!-- Zen Mode Overlay -->
             <div x-show="zenMode" x-transition.opacity
                 class="fixed inset-0 z-[100] f-col items-center justify-center p-6 text-center bg-[#101012]" x-cloak>
                 <div class="absolute top-6 right-6"><button @click="toggleZen()"
