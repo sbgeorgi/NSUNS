@@ -84,24 +84,24 @@ const DATA = {
         Row: { lats: 1, bi: .6, rearDelt: .6, grip: .6, lowBack: .35, cns: .3 }
     },
     halfLife: {
-        chest: 36, upperChest: 36,
-        frontDelt: 22, rearDelt: 16,
-        tri: 18, bi: 18,
-        lats: 30, traps: 22,
-        quads: 56, hams: 52, glutes: 52, calves: 28,
-        lowBack: 60, cns: 36,
-        abs: 20, grip: 14, forearm: 16
+        chest: 28, upperChest: 28,
+        frontDelt: 20, rearDelt: 16,
+        tri: 16, bi: 16,
+        lats: 26, traps: 20,
+        quads: 42, hams: 38, glutes: 38, calves: 24,
+        lowBack: 44, cns: 32,
+        abs: 18, grip: 12, forearm: 12
     },
     baseRecoveryCapacity: {
-        chest: 20, upperChest: 20,
-        frontDelt: 15, rearDelt: 12,
-        tri: 15, bi: 15,
-        lats: 25, traps: 20,
-        quads: 30, hams: 25, glutes: 30, calves: 35,
-        lowBack: 35, cns: 50,
-        abs: 40, grip: 15, forearm: 15
+        chest: 60, upperChest: 60,
+        frontDelt: 50, rearDelt: 45,
+        tri: 50, bi: 50,
+        lats: 70, traps: 60,
+        quads: 85, hams: 80, glutes: 85, calves: 90,
+        lowBack: 90, cns: 120,
+        abs: 100, grip: 50, forearm: 50
     },
-    programCapacityScale: { nsuns: 1.4, ppl: 1.3, phul: 1.1, stronglifts: .9, gzclp: 1, '531': 1 },
+    programCapacityScale: { nsuns: 2.2, ppl: 1.8, phul: 1.5, stronglifts: 1.0, gzclp: 1.3, '531': 1.2 },
     groups: {
         Push: ['chest', 'frontDelt', 'tri', 'upperChest'],
         Pull: ['lats', 'bi', 'rearDelt', 'traps'],
@@ -340,9 +340,9 @@ const parseRepRange = (repsStr) => {
 const calculateSetFatigue = (w, r, tm, failed, hasRPE) => {
     if (r <= 0 || w <= 0) return 0;
     const ref = tm > 0 ? tm : w;
-    const intensity = Math.min(w / ref, 1.25);
-    const intensityFactor = Math.pow(intensity, 2) * (1 + intensity);
-    const repFactor = r * (1 + 0.05 * Math.max(0, r - 5));
+    const intensity = Math.min(w / ref, 1.15);
+    const intensityFactor = Math.pow(intensity, 1.5) * (1 + intensity);
+    const repFactor = r * (1 + 0.03 * Math.max(0, r - 5));
     const failurePenalty = failed ? 1.4 : 1.0;
     const rpePenalty = hasRPE ? 1.0 : 1.1;
     return repFactor * intensityFactor * failurePenalty * rpePenalty;
@@ -1017,7 +1017,6 @@ function app() {
             const inc = isUpper ? (u === 'kg' ? 1.25 : 2.5) : (u === 'kg' ? 2.5 : 5);
             const completionRate = sets.length > 0 ? sets.filter(s => s.completed && !s.failed).length / sets.length : 1;
 
-            // --- 5/3/1 BBB ---
             if (p === '531') {
                 if (this.week % 4 !== 0) {
                     return { add: 0, method: '531_in_cycle' };
@@ -1047,7 +1046,6 @@ function app() {
                 return { add: cycleInc, method: '531_cycle' };
             }
 
-            // --- StrongLifts 5x5 ---
             if (p === 'stronglifts' || p === 'sl') {
                 if (!this.state[l]) {
                     this.state[l] = { t1Stage: 1, t2Stage: 1, consecutiveFailures: 0, deloadCount: 0, slScheme: l === 'Deadlift' ? 'dl' : 'std' };
@@ -1090,7 +1088,6 @@ function app() {
                 return { add: dlInc, method: 'sl_linear' };
             }
 
-            // --- GZCLP ---
             if (p === 'gzclp') {
                 const stageKey = tier === 't1' ? 't1Stage' : 't2Stage';
                 if (!this.state[l]) {
@@ -1113,7 +1110,6 @@ function app() {
                 return { add: inc, method: `gz_${tier}_linear` };
             }
 
-            // --- PPL (AMRAP-aware linear) ---
             if (p === 'ppl' || (DATA.progs[p]?.prog === 'amrap_linear')) {
                 if (pr && pr.performed != null) {
                     const s1rmRaw = compositeE1RM(pr.weight, pr.performed);
@@ -1154,7 +1150,6 @@ function app() {
                 return { add: 0, method: 'ppl_hold' };
             }
 
-            // --- nSuns / default E1RM trend ---
             if (pr && pr.performed != null) {
                 const s1rmRaw = compositeE1RM(pr.weight, pr.performed);
                 const mult = this.exMult(this.session?.t1?.name || l);
@@ -1219,7 +1214,6 @@ function app() {
                 return { add, method: 'e1rm_trend' };
             }
 
-            // --- Fallback linear for PHUL and others ---
             if ((DATA.progs[p]?.prog === 'lin' || DATA.progs[p]?.pW) && !sets.some(s => s.failed) && completionRate >= 0.8) {
                 this.tms[l] += inc;
                 return { add: inc, method: 'linear' };
@@ -1234,11 +1228,9 @@ function app() {
             const pr = t1.sets.find(s => s.amrap);
             const p = this.prefs.program;
 
-            // Compute T1 progression
             const prog = this.computeProgression(l, pr, t1.sets, p, 't1');
             const add = prog.add;
 
-            // Compute T2 progression for GZCLP (independent T2 stages)
             if (p === 'gzclp') {
                 const t2Lift = t2.originalName || t2.name;
                 const t2Base = this.baseTM(t2Lift) || t2Lift;
@@ -1586,7 +1578,8 @@ function app() {
             const rm = {};
             Object.keys(DATA.halfLife).forEach(m => {
                 const adaptedCapacity = this.getAdaptedRecoveryCapacity(m);
-                const fatigueScore = (fatigue[m] || 0) / adaptedCapacity * progScale * chronicMod * 100;
+                // INVERTED LOGIC HERE: Divide by progScale to reflect capacity relative to program expectations
+                const fatigueScore = (fatigue[m] || 0) / (adaptedCapacity * progScale) * chronicMod * 100;
                 rm[m] = Math.round(Math.max(0, 100 - fatigueScore));
             });
 
