@@ -1192,10 +1192,7 @@ function app() {
                 let add;
                 if (d === 0) {
                     add = Math.max(U.rnd(inc * 0.5, u, this.prefs.microplates), this.prefs.microplates ? (u === 'kg' ? 1.25 : 2.5) : (u === 'kg' ? 2.5 : 5));
-                    if (trend > 0) {
-                        const tTM = Math.round(trend * .875);
-                        if (tTM <= cTM) add = U.rnd(inc * 0.5, u, this.prefs.microplates);
-                    }
+
                 } else if (d < 3) {
                     add = inc;
                 } else if (d < 5) {
@@ -1206,11 +1203,6 @@ function app() {
 
                 if (completionRate < 0.8) {
                     add = Math.min(add, inc * 0.5);
-                }
-
-                if (trend > 0) {
-                    const ceil = Math.round(trend * .9);
-                    if (cTM + add > ceil) add = Math.max(0, ceil - cTM);
                 }
 
                 add = U.rnd(add, u, this.prefs.microplates);
