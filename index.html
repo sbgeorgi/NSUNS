@@ -92,151 +92,148 @@
         const ICONS = { warn: 'M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z', x: 'M6 18L18 6M6 6l12 12', check: 'M5 13l4 4L19 7', trash: 'M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16', edit: 'M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z', save: 'M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4', play: 'M8 5v14l11-7z', prev: 'M15 19l-7-7 7-7', next: 'M9 5l7 7-7 7', warn2: 'M12 8v4m0 4h.01', info: 'M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z', train: 'M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10', hist: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z', set: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z', chev_down: 'M19 9l-7 7-7-7', swap: 'M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4', expand: 'M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4', search: 'M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z', trophy: 'M12 15l-2 5h4l-2-5zm0 0a7 7 0 01-7-7V4h14v4a7 7 0 01-7 7zM5 4H3v2a3 3 0 003 3m10-5h2v2a3 3 0 01-3 3', target: 'M12 2a10 10 0 110 20 10 10 0 010-20zm0 4a6 6 0 100 12 6 6 0 000-12zm0 4a2 2 0 110 4 2 2 0 010-4z', clock: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z', trendUp: 'M13 7h8m0 0v8m0-8l-8 8-4-4-6 6', trendDown: 'M13 17h8m0 0V9m0 8l-8-8-4 4-6-6', copy: 'M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3', bookmark: 'M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z', zap: 'M13 10V3L4 14h7v7l9-11h-7z', bar_chart: 'M9 19V13a1 1 0 00-1-1H5a1 1 0 00-1 1v6m6 0H4m6 0h4m0 0V9a1 1 0 00-1-1h-3a1 1 0 00-1 1v10m6 0V7a1 1 0 00-1-1h-3a1 1 0 00-1 1v12m6 0h-4m4 0h1a1 1 0 001-1V11a1 1 0 00-1-1h-3a1 1 0 00-1 1v8', note: 'M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z', undo: 'M3 10h10a5 5 0 015 5v2M3 10l4-4m-4 4l4 4' };
 
         const DATA = {
-            muscles: {
-                // Tuned to better reflect motor unit recruitment and systemic CNS load
-                Bench: { chest: 1, frontDelt: 0.75, tri: 0.75, upperChest: 0.3, lats: 0.1, cns: 0.4 },
-                OHP: { frontDelt: 1, tri: 0.8, upperChest: 0.4, traps: 0.4, abs: 0.2, cns: 0.5 },
-                Squat: { quads: 1, glutes: 0.8, lowBack: 0.6, hams: 0.4, abs: 0.3, calves: 0.1, cns: 1.0 },
-                Deadlift: { hams: 1, glutes: 0.9, lowBack: 1.2, traps: 0.6, quads: 0.3, grip: 0.7, cns: 1.4 },
-                Row: { lats: 1, bi: 0.5, rearDelt: 0.6, traps: 0.5, grip: 0.5, lowBack: 0.4, cns: 0.4 }
-            },
-            halfLife: {
-                // Reduced overall to reflect 48-72hr biological recovery loops. 
-                // Large muscles/CNS take ~30-36h to half-clear, small muscles take ~16-20h.
-                chest: 24, upperChest: 24, frontDelt: 18, rearDelt: 16, tri: 20, bi: 18,
-                lats: 24, traps: 20, quads: 30, hams: 32, glutes: 28, calves: 16,
-                lowBack: 36, cns: 36, abs: 16, grip: 14, forearm: 14
-            },
-            baseRecoveryCapacity: {
-                // Rebalanced so massive absolute tonnage (Squat/DL) has high capacity sinks, 
-                // and smaller isolation muscles accurately show fatigue from lower absolute weights.
-                chest: 85, upperChest: 80, frontDelt: 65, rearDelt: 45, tri: 60, bi: 55,
-                lats: 95, traps: 80, quads: 125, hams: 115, glutes: 115, calves: 50,
-                lowBack: 110, cns: 160, abs: 60, grip: 60, forearm: 60
-            },
-            // Adjusted scales because high-frequency lifters adapt to higher set counts
-            programCapacityScale: { nsuns: 2.0, ppl: 1.8, phul: 1.5, stronglifts: 1.1, gzclp: 1.4, '531': 1.6 },
-            groups: {
-                Push: ['chest', 'frontDelt', 'tri', 'upperChest'],
-                Pull: ['lats', 'bi', 'rearDelt', 'traps'],
-                Legs: ['quads', 'hams', 'glutes', 'calves'],
-                'Core/Back': ['lowBack', 'abs'],
-                CNS: ['cns']
-            },
-            // Added heavily fatiguing T2s that were missing so their fatigue multiplier isn't underestimated
-            compoundAccessories: new Set([
-                'Row', 'Pendlay Row', 'DB Row', 'Cable Row', 'T-Bar Row', 'Seal Row', 'Chest Supported Row', 'Meadows Row', 
-                'Pullups', 'Chin-ups', 'Lat Pulldown', 'LatPD', 'Neutral Pullups', 'Chins', 'Wide Grip Pulldown', 'Close Grip Pulldown', 
-                'Dips', 'Close Grip BP', 'Incline Bench', 'Spoto Press', 'Paused Bench', 'Floor Press',
-                'Leg Press', 'Lunges', 'Bulgarian Split', 'Hip Thrust', 'Hack Squat', 'Nordic Curl', 'Good Morning', 
-                'Front Squat', 'Pause Squat', 'SSB Squat', 'Box Squat',
-                'OHP', 'Seated OHP', 'DB OHP', 'Push Press', 'Behind Neck Press',
-                'DL', 'Romanian DL', 'SLDL', 'Sumo DL', 'Trap Bar DL', 'Deficit DL', 'Block Pull', 'Paused DL'
-            ]),
-            schemes: {
-                nsuns: {
-                    vol: [[.65, 8], [.75, 6], [.85, 4], [.85, 4], [.85, 4], [.8, 5], [.75, 6], [.7, 7], [.65, 8, '+']],
-                    heavy: [[.75, 5], [.85, 3], [.95, 1, '+'], [.9, 3], [.85, 3], [.8, 3], [.75, 5], [.7, 5], [.65, 5, '+']],
-                    dl: [[.75, 5], [.85, 3], [.95, 1, '+'], [.9, 3], [.85, 3], [.8, 3], [.75, 3], [.7, 3], [.65, 3]],
-                    t2: [[.5, 5], [.6, 6], [.7, 7], [.7, 4], [.7, 4], [.7, 4], [.7, 4], [.7, 4]]
-                },
-                stronglifts: {
-                    std: [[1, 5], [1, 5], [1, 5], [1, 5], [1, 5, '+']], dl: [[1, 5, '+']],
-                    '3x5': [[1, 5], [1, 5], [1, 5, '+']], '3x3': [[1, 3], [1, 3], [1, 3, '+']], '1x3': [[1, 3, '+']]
-                },
-                phul: { pow: [[.85, 5], [.85, 5], [.85, 5]], hyp: [[.65, 10], [.65, 10], [.65, 10]], vol: [[.6, 12], [.6, 12], [.6, 12]] },
-                ppl: { m5: [[.85, 5], [.85, 5], [.85, 5], [.85, 5], [.85, 5, '+']], m1: [[.9, 5, '+']], sec: [[.7, 10], [.7, 10], [.7, 10]] },
-                gzclp: {
-                    t1: [[.85, 3], [.85, 3], [.85, 3], [.85, 3], [.85, 3, '+']], t2: [[.65, 10], [.65, 10], [.65, 10]],
-                    t1_s2: [[.85, 2], [.85, 2], [.85, 2], [.85, 2], [.85, 2], [.85, 2, '+']],
-                    t1_s3: [[.85, 1], [.85, 1], [.85, 1], [.85, 1], [.85, 1], [.85, 1], [.85, 1], [.85, 1], [.85, 1], [.85, 1, '+']],
-                    t2_s2: [[.65, 8], [.65, 8], [.65, 8]], t2_s3: [[.65, 6], [.65, 6], [.65, 6]],
-                    f1: [[5, 3], [6, 2], [10, 1]], f2: [[3, 10], [3, 8], [3, 6]]
-                },
-                '531': { w1: [[.65, 5], [.75, 5], [.85, 5, '+']], w2: [[.7, 3], [.8, 3], [.9, 3, '+']], w3: [[.75, 5], [.85, 3], [.95, 1, '+']], del: [[.4, 5], [.5, 5], [.6, 5]], bbb: Array(5).fill([.5, 10]) }
-            },
-            progs: {
-                nsuns: {
-                    name: 'nSuns LP', daysPerWeek: 5, progressionDesc: 'Linear + AMRAP',
-                    days: [
-                        { t: 'Bench Vol', t1: 'Bench', t2: 'OHP', s: 'vol', t2s: 't2', acc: [{ name: 'Row', sets: 4, reps: '10-12' }] },
-                        { t: 'Squat Heavy', t1: 'Squat', t2: 'Deadlift', s: 'heavy', t2s: 't2', acc: [{ name: 'Legs', sets: 4, reps: '10-12' }] },
-                        { t: 'OHP Heavy', t1: 'OHP', t2: 'Bench', s: 'heavy', t2s: 't2', acc: [{ name: 'Pullups', sets: 4, reps: 'AMRAP' }] },
-                        { t: 'Deadlift Heavy', t1: 'Deadlift', t2: 'Squat', s: 'dl', t2s: 't2', acc: [{ name: 'Abs', sets: 4, reps: '10-15' }] },
-                        { t: 'Bench Heavy', t1: 'Bench', t2: 'Incline Bench', s: 'heavy', t2s: 't2', acc: [{ name: 'Arms', sets: 4, reps: '10-15' }] } // Switched second Bench to Incline per traditional nSuns logic
-                    ]
-                },
-                ppl: {
-                    name: 'PPL', prog: 'amrap_linear', daysPerWeek: 6, progressionDesc: 'Linear + AMRAP',
-                    days: [
-                        { t: 'Push A', t1: 'Bench', t2: 'OHP', s: 'm5', t2s: 'sec', acc: [{ name: 'Tri', sets: 3, reps: '10-15' }] },
-                        { t: 'Pull A', t1: 'Deadlift', t2: 'Row', s: 'm1', t2s: 'sec', acc: [{ name: 'Bi', sets: 3, reps: '10-15' }] },
-                        { t: 'Legs A', t1: 'Squat', t2: 'Romanian DL', s: 'm5', t2s: 'sec', acc: [{ name: 'Legs', sets: 3, reps: '10-15' }] }, // Replaced second DL with RDL for better standard PPL
-                        { t: 'Push B', t1: 'OHP', t2: 'Bench', s: 'm5', t2s: 'sec', acc: [{ name: 'Tri', sets: 3, reps: '10-15' }] },
-                        { t: 'Pull B', t1: 'Row', t2: 'Pullups', s: 'm5', t2s: 'vol', acc: [{ name: 'Bi', sets: 3, reps: '10-15' }] }, // Replaced DL with pullups to avoid over-taxing CNS
-                        { t: 'Legs B', t1: 'Squat', t2: 'Leg Press', s: 'm5', t2s: 'sec', acc: [{ name: 'Legs', sets: 3, reps: '10-15' }] } // Replaced DL with leg press
-                    ]
-                },
-                phul: {
-                    name: 'PHUL', prog: 'lin', daysPerWeek: 4, progressionDesc: 'Linear',
-                    days: [
-                        { t: 'Up Pwr', t1: 'Bench', t2: 'Row', s: 'pow', t2s: 'pow', acc: [{ name: 'OHP', sets: 3, reps: '6-10' }] },
-                        { t: 'Lo Pwr', t1: 'Squat', t2: 'Deadlift', s: 'pow', t2s: 'pow', acc: [{ name: 'Legs', sets: 3, reps: '8-12' }] },
-                        { t: 'Up Hyp', t1: 'OHP', t2: 'Incline Bench', s: 'hyp', t2s: 'hyp', acc: [{ name: 'Row', sets: 3, reps: '10-12' }] }, // Standardized PHUL exercise
-                        { t: 'Lo Hyp', t1: 'Front Squat', t2: 'Romanian DL', s: 'hyp', t2s: 'hyp', acc: [{ name: 'Legs', sets: 3, reps: '10-15' }] } // Standardized PHUL exercise
-                    ]
-                },
-                stronglifts: {
-                    name: 'SL 5x5', prog: 'sl', pW: true, daysPerWeek: 3, progressionDesc: 'Linear + Deload',
-                    days: [
-                        { t: 'A', t1: 'Squat', t2: 'Bench', s: 'std', t2s: 'std', acc: [{ name: 'Row', sets: 5, reps: '5' }] },
-                        { t: 'B', t1: 'Squat', t2: 'OHP', s: 'std', t2s: 'std', acc: [{ name: 'DL', sets: 1, reps: '5+' }] }
-                    ]
-                },
-                gzclp: {
-                    name: 'GZCLP', prog: 'gz', daysPerWeek: 4, progressionDesc: 'Stage Failure',
-                    days: [
-                        { t: 'D1', t1: 'Squat', t2: 'Bench', s: 't1', t2s: 't2', acc: [{ name: 'LatPD', sets: 3, reps: '10-12' }] },
-                        { t: 'D2', t1: 'OHP', t2: 'Deadlift', s: 't1', t2s: 't2', acc: [{ name: 'Row', sets: 3, reps: '10-12' }] },
-                        { t: 'D3', t1: 'Bench', t2: 'Squat', s: 't1', t2s: 't2', acc: [{ name: 'Tri', sets: 3, reps: '10-15' }] },
-                        { t: 'D4', t1: 'Deadlift', t2: 'OHP', s: 't1', t2s: 't2', acc: [{ name: 'Bi', sets: 3, reps: '10-15' }] }
-                    ]
-                },
-                '531': {
-                    name: '5/3/1 BBB', prog: '531', daysPerWeek: 4, progressionDesc: 'Monthly Wave',
-                    days: [
-                        { t: 'OHP', t1: 'OHP', t2: 'OHP', s: '531', t2s: 'bbb', acc: [{ name: 'Chins', sets: 5, reps: 'AMRAP' }] },
-                        { t: 'DL', t1: 'Deadlift', t2: 'Deadlift', s: '531', t2s: 'bbb', acc: [{ name: 'Abs', sets: 5, reps: '10-15' }] },
-                        { t: 'Bench', t1: 'Bench', t2: 'Bench', s: '531', t2s: 'bbb', acc: [{ name: 'Row', sets: 5, reps: '10-12' }] },
-                        { t: 'Squat', t1: 'Squat', t2: 'Squat', s: '531', t2s: 'bbb', acc: [{ name: 'Legs', sets: 5, reps: '10-15' }] }
-                    ]
-                }
-            },
-            ui: {
-                bars: [{ weight: 45, name: 'Standard' }, { weight: 35, name: 'Womens' }, { weight: 20, name: 'Kg Std' }, { weight: 15, name: 'Kg Wm' }],
-                timers: [{ l: 'Main (T1)', k: 'restT1', m: 300 }, { l: 'Secondary (T2)', k: 'restT2', m: 180 }, { l: 'Accessory (T3)', k: 'restT3', m: 120 }],
-                opts: [
-                    { k: 'timerSound', l: 'Timer Sound' }, { k: 'vibration', l: 'Vibration' },
-                    { k: 'autoStartTimer', l: 'Auto-start Timer' }, { k: 'showPreviousWorkout', l: 'Show Previous Workout' },
-                    { k: 'autoDeload', l: 'Auto-suggest Deload' }, { k: 'keepAwake', l: 'Keep Screen Awake' },
-                    { k: 'reduceMotion', l: 'Reduce Motion' }, { k: 'showETR', l: 'Show Est. Time Remaining' },
-                    { k: 'heatmapCalendar', l: 'Heatmap Calendar' }, { k: 'smartRest', l: 'Smart Rest Suggestions' },
-                    { k: 'swipeToComplete', l: 'Swipe to Complete Sets' }
-                ],
-                nav: [
-                    { id: 'dashboard', l: 'Train', i: ICONS.train }, { id: 'records', l: 'PRs', i: ICONS.trophy },
-                    { id: 'calendar', l: 'History', i: ICONS.hist }, { id: 'preferences', l: 'Settings', i: ICONS.set }
-                ],
-                plates: { kg: [25, 20, 15, 10, 5, 2.5, 1.25], lbs: [45, 35, 25, 10, 5, 2.5] },
-                colors: {
-                    55: 'bg-red-600 text-white shadow-[inset_0_-4px_0_rgba(0,0,0,0.2)]', 45: 'bg-blue-600 text-white shadow-[inset_0_-4px_0_rgba(0,0,0,0.2)]',
-                    35: 'bg-yellow-500 text-black shadow-[inset_0_-4px_0_rgba(0,0,0,0.2)]', 25: 'bg-green-500 text-black shadow-[inset_0_-4px_0_rgba(0,0,0,0.2)]',
-                    20: 'bg-blue-600 text-white shadow-[inset_0_-4px_0_rgba(0,0,0,0.2)]', 15: 'bg-yellow-500 text-black shadow-[inset_0_-4px_0_rgba(0,0,0,0.2)]',
-                    10: 'bg-slate-100 text-black shadow-[inset_0_-4px_0_rgba(0,0,0,0.2)]', 5: 'bg-slate-100 text-black shadow-[inset_0_-4px_0_rgba(0,0,0,0.2)]',
-                    2.5: 'bg-red-400 text-white shadow-[inset_0_-4px_0_rgba(0,0,0,0.2)]', 1.25: 'bg-gray-400 text-black shadow-[inset_0_-4px_0_rgba(0,0,0,0.2)]'
-                }
-            }
-        };
+    // TUNED: Adjusted biomechanical recruitment profiles (e.g., lower hamstrings on squats, higher traps on deadlifts)
+    muscles: {
+        Bench: { chest: 1, frontDelt: .75, tri: .75, lats: .2, bi: .05, cns: .45 },
+        OHP: { frontDelt: 1, tri: .75, upperChest: .4, traps: .4, abs: .3, cns: .55 },
+        Squat: { quads: 1, glutes: .8, lowBack: .65, hams: .3, abs: .4, calves: .15, cns: 1.0 },
+        Deadlift: { hams: 1, glutes: .9, lowBack: 1, traps: .8, quads: .4, grip: .8, cns: 1.2 },
+        Row: { lats: 1, bi: .6, rearDelt: .7, grip: .6, lowBack: .5, cns: .45 }
+    },
+    // TUNED: Adjusted for real-world DOMS and fiber recovery times (hours until 50% recovered)
+    halfLife: {
+        chest: 36, upperChest: 36, frontDelt: 24, rearDelt: 20, tri: 24, bi: 24,
+        lats: 36, traps: 26, quads: 48, hams: 54, glutes: 48, calves: 24,
+        lowBack: 60, cns: 72, abs: 24, grip: 24, forearm: 24
+    },
+    // TUNED: Increased capacities slightly so normal hyperthrophy work doesn't immediately push users into "Fatigued" status
+    baseRecoveryCapacity: {
+        chest: 80, upperChest: 80, frontDelt: 60, rearDelt: 50, tri: 65, bi: 65,
+        lats: 90, traps: 75, quads: 100, hams: 90, glutes: 100, calves: 110,
+        lowBack: 90, cns: 120, abs: 110, grip: 85, forearm: 85
+    },
+    // TUNED: This is critical for different programs. A baseline StrongLifts user cannot survive nSuns volume, 
+    // but an nSuns user's body adapts to it. This scale prevents high-volume programs from permanently showing 0% readiness.
+    programCapacityScale: { 
+        nsuns: 2.0,      // Massive daily volume (9 sets T1 + 8 sets T2)
+        ppl: 1.85,       // High frequency (6 days/wk) + moderate daily volume
+        phul: 1.55,      // Moderate-High daily volume, 4 days/wk
+        '531': 1.5,      // 5/3/1 BBB (5x10) generates massive metabolic fatigue
+        gzclp: 1.4,      // Moderate volume tier system
+        stronglifts: 1.0 // The low-volume baseline
+    },
+    groups: {
+        Push: ['chest', 'frontDelt', 'tri', 'upperChest'],
+        Pull: ['lats', 'bi', 'rearDelt', 'traps'],
+        Legs: ['quads', 'hams', 'glutes', 'calves'],
+        'Core/Back': ['lowBack', 'abs'],
+        CNS: ['cns']
+    },
+    compoundAccessories: new Set(['Row', 'Pendlay Row', 'DB Row', 'Cable Row', 'T-Bar Row', 'Seal Row', 'Chest Supported Row', 'Meadows Row', 'Pullups', 'Chin-ups', 'Lat Pulldown', 'LatPD', 'Neutral Pullups', 'Chins', 'Wide Grip Pulldown', 'Close Grip Pulldown', 'Dips', 'Close Grip BP', 'Leg Press', 'Lunges', 'Bulgarian Split', 'Hip Thrust', 'Hack Squat', 'Nordic Curl', 'Good Morning', 'OHP', 'Seated OHP', 'DB OHP', 'Push Press', 'DL', 'Romanian DL', 'SLDL']),
+    schemes: {
+        nsuns: {
+            vol: [[.65, 8], [.75, 6], [.85, 4], [.85, 4], [.85, 4], [.8, 5], [.75, 6], [.7, 7], [.65, 8, '+']],
+            heavy: [[.75, 5], [.85, 3], [.95, 1, '+'], [.9, 3], [.85, 3], [.8, 3], [.75, 5], [.7, 5], [.65, 5, '+']],
+            dl: [[.75, 5], [.85, 3], [.95, 1, '+'], [.9, 3], [.85, 3], [.8, 3], [.75, 3], [.7, 3], [.65, 3]],
+            t2: [[.5, 5], [.6, 6], [.7, 7], [.7, 4], [.7, 4], [.7, 4], [.7, 4], [.7, 4]]
+        },
+        stronglifts: {
+            std: [[1, 5], [1, 5], [1, 5], [1, 5], [1, 5, '+']], dl: [[1, 5, '+']],
+            '3x5': [[1, 5], [1, 5], [1, 5, '+']], '3x3': [[1, 3], [1, 3], [1, 3, '+']], '1x3': [[1, 3, '+']]
+        },
+        phul: { pow: [[.85, 5], [.85, 5], [.85, 5]], hyp: [[.65, 10], [.65, 10], [.65, 10]], vol: [[.6, 12], [.6, 12], [.6, 12]] },
+        ppl: { m5: [[.85, 5], [.85, 5], [.85, 5], [.85, 5], [.85, 5, '+']], m1: [[.9, 5, '+']], sec: [[.7, 10], [.7, 10], [.7, 10]] },
+        gzclp: {
+            t1: [[.85, 3], [.85, 3], [.85, 3], [.85, 3], [.85, 3, '+']], t2: [[.65, 10], [.65, 10], [.65, 10]],
+            t1_s2: [[.85, 2], [.85, 2], [.85, 2], [.85, 2], [.85, 2], [.85, 2, '+']],
+            t1_s3: [[.85, 1], [.85, 1], [.85, 1], [.85, 1], [.85, 1], [.85, 1], [.85, 1], [.85, 1], [.85, 1], [.85, 1, '+']],
+            t2_s2: [[.65, 8], [.65, 8], [.65, 8]], t2_s3: [[.65, 6], [.65, 6], [.65, 6]],
+            f1: [[5, 3], [6, 2], [10, 1]], f2: [[3, 10], [3, 8], [3, 6]]
+        },
+        '531': { w1: [[.65, 5], [.75, 5], [.85, 5, '+']], w2: [[.7, 3], [.8, 3], [.9, 3, '+']], w3: [[.75, 5], [.85, 3], [.95, 1, '+']], del: [[.4, 5], [.5, 5], [.6, 5]], bbb: Array(5).fill([.5, 10]) }
+    },
+    progs: {
+        nsuns: {
+            name: 'nSuns LP', daysPerWeek: 5, progressionDesc: 'Linear + AMRAP',
+            days: [
+                { t: 'Bench Vol', t1: 'Bench', t2: 'OHP', s: 'vol', t2s: 't2', acc: [{ name: 'Row', sets: 4, reps: '10-12' }] },
+                { t: 'Squat Heavy', t1: 'Squat', t2: 'Deadlift', s: 'heavy', t2s: 't2', acc: [{ name: 'Legs', sets: 4, reps: '10-12' }] },
+                { t: 'OHP Heavy', t1: 'OHP', t2: 'Bench', s: 'heavy', t2s: 't2', acc: [{ name: 'Pullups', sets: 4, reps: 'AMRAP' }] },
+                { t: 'Deadlift Heavy', t1: 'Deadlift', t2: 'Squat', s: 'dl', t2s: 't2', acc: [{ name: 'Abs', sets: 4, reps: '10-15' }] },
+                { t: 'Bench Heavy', t1: 'Bench', t2: 'Bench', s: 'heavy', t2s: 't2', acc: [{ name: 'Arms', sets: 4, reps: '10-15' }] }
+            ]
+        },
+        ppl: {
+            name: 'PPL', prog: 'amrap_linear', daysPerWeek: 6, progressionDesc: 'Linear + AMRAP',
+            days: [
+                { t: 'Push A', t1: 'Bench', t2: 'OHP', s: 'm5', t2s: 'sec', acc: [{ name: 'Tri', sets: 3, reps: '10-15' }] },
+                { t: 'Pull A', t1: 'Deadlift', t2: 'Row', s: 'm1', t2s: 'sec', acc: [{ name: 'Bi', sets: 3, reps: '10-15' }] },
+                { t: 'Legs A', t1: 'Squat', t2: 'Deadlift', s: 'm5', t2s: 'sec', acc: [{ name: 'Legs', sets: 3, reps: '10-15' }] },
+                { t: 'Push B', t1: 'OHP', t2: 'Bench', s: 'm5', t2s: 'sec', acc: [{ name: 'Tri', sets: 3, reps: '10-15' }] },
+                { t: 'Pull B', t1: 'Row', t2: 'Deadlift', s: 'm5', t2s: 'vol', acc: [{ name: 'Bi', sets: 3, reps: '10-15' }] },
+                { t: 'Legs B', t1: 'Squat', t2: 'Deadlift', s: 'm5', t2s: 'sec', acc: [{ name: 'Legs', sets: 3, reps: '10-15' }] }
+            ]
+        },
+        phul: {
+            name: 'PHUL', prog: 'lin', daysPerWeek: 4, progressionDesc: 'Linear',
+            days: [
+                { t: 'Up Pwr', t1: 'Bench', t2: 'Row', s: 'pow', t2s: 'pow', acc: [{ name: 'OHP', sets: 3, reps: '6-10' }] },
+                { t: 'Lo Pwr', t1: 'Squat', t2: 'Deadlift', s: 'pow', t2s: 'pow', acc: [{ name: 'Legs', sets: 3, reps: '8-12' }] },
+                { t: 'Up Hyp', t1: 'OHP', t2: 'Bench', s: 'hyp', t2s: 'hyp', acc: [{ name: 'Row', sets: 3, reps: '10-12' }] },
+                { t: 'Lo Hyp', t1: 'Deadlift', t2: 'Squat', s: 'hyp', t2s: 'hyp', acc: [{ name: 'Legs', sets: 3, reps: '10-15' }] }
+            ]
+        },
+        stronglifts: {
+            name: 'SL 5x5', prog: 'sl', pW: true, daysPerWeek: 3, progressionDesc: 'Linear + Deload',
+            days: [
+                { t: 'A', t1: 'Squat', t2: 'Bench', s: 'std', t2s: 'std', acc: [{ name: 'Row', sets: 5, reps: '5' }] },
+                { t: 'B', t1: 'Squat', t2: 'OHP', s: 'std', t2s: 'std', acc: [{ name: 'DL', sets: 1, reps: '5+' }] }
+            ]
+        },
+        gzclp: {
+            name: 'GZCLP', prog: 'gz', daysPerWeek: 4, progressionDesc: 'Stage Failure',
+            days: [
+                { t: 'D1', t1: 'Squat', t2: 'Bench', s: 't1', t2s: 't2', acc: [{ name: 'LatPD', sets: 3, reps: '10-12' }] },
+                { t: 'D2', t1: 'OHP', t2: 'Deadlift', s: 't1', t2s: 't2', acc: [{ name: 'Row', sets: 3, reps: '10-12' }] },
+                { t: 'D3', t1: 'Bench', t2: 'Squat', s: 't1', t2s: 't2', acc: [{ name: 'Tri', sets: 3, reps: '10-15' }] },
+                { t: 'D4', t1: 'Deadlift', t2: 'OHP', s: 't1', t2s: 't2', acc: [{ name: 'Bi', sets: 3, reps: '10-15' }] }
+            ]
+        },
+        '531': {
+            name: '5/3/1 BBB', prog: '531', daysPerWeek: 4, progressionDesc: 'Monthly Wave',
+            days: [
+                { t: 'OHP', t1: 'OHP', t2: 'OHP', s: '531', t2s: 'bbb', acc: [{ name: 'Chins', sets: 5, reps: 'AMRAP' }] },
+                { t: 'DL', t1: 'Deadlift', t2: 'Deadlift', s: '531', t2s: 'bbb', acc: [{ name: 'Abs', sets: 5, reps: '10-15' }] },
+                { t: 'Bench', t1: 'Bench', t2: 'Bench', s: '531', t2s: 'bbb', acc: [{ name: 'Row', sets: 5, reps: '10-12' }] },
+                { t: 'Squat', t1: 'Squat', t2: 'Squat', s: '531', t2s: 'bbb', acc: [{ name: 'Legs', sets: 5, reps: '10-15' }] }
+            ]
+        }
+    },
+    ui: {
+        bars: [{ weight: 45, name: 'Standard' }, { weight: 35, name: 'Womens' }, { weight: 20, name: 'Kg Std' }, { weight: 15, name: 'Kg Wm' }],
+        timers: [{ l: 'Main (T1)', k: 'restT1', m: 300 }, { l: 'Secondary (T2)', k: 'restT2', m: 180 }, { l: 'Accessory (T3)', k: 'restT3', m: 120 }],
+        opts: [
+            { k: 'timerSound', l: 'Timer Sound' }, { k: 'vibration', l: 'Vibration' },
+            { k: 'autoStartTimer', l: 'Auto-start Timer' }, { k: 'showPreviousWorkout', l: 'Show Previous Workout' },
+            { k: 'autoDeload', l: 'Auto-suggest Deload' }, { k: 'keepAwake', l: 'Keep Screen Awake' },
+            { k: 'reduceMotion', l: 'Reduce Motion' }, { k: 'showETR', l: 'Show Est. Time Remaining' },
+            { k: 'heatmapCalendar', l: 'Heatmap Calendar' }, { k: 'smartRest', l: 'Smart Rest Suggestions' },
+            { k: 'swipeToComplete', l: 'Swipe to Complete Sets' }
+        ],
+        nav: [
+            { id: 'dashboard', l: 'Train', i: ICONS.train }, { id: 'records', l: 'PRs', i: ICONS.trophy },
+            { id: 'calendar', l: 'History', i: ICONS.hist }, { id: 'preferences', l: 'Settings', i: ICONS.set }
+        ],
+        plates: { kg: [25, 20, 15, 10, 5, 2.5, 1.25], lbs: [45, 35, 25, 10, 5, 2.5] },
+        colors: {
+            55: 'bg-red-600 text-white shadow-[inset_0_-4px_0_rgba(0,0,0,0.2)]', 45: 'bg-blue-600 text-white shadow-[inset_0_-4px_0_rgba(0,0,0,0.2)]',
+            35: 'bg-yellow-500 text-black shadow-[inset_0_-4px_0_rgba(0,0,0,0.2)]', 25: 'bg-green-500 text-black shadow-[inset_0_-4px_0_rgba(0,0,0,0.2)]',
+            20: 'bg-blue-600 text-white shadow-[inset_0_-4px_0_rgba(0,0,0,0.2)]', 15: 'bg-yellow-500 text-black shadow-[inset_0_-4px_0_rgba(0,0,0,0.2)]',
+            10: 'bg-slate-100 text-black shadow-[inset_0_-4px_0_rgba(0,0,0,0.2)]', 5: 'bg-slate-100 text-black shadow-[inset_0_-4px_0_rgba(0,0,0,0.2)]',
+            2.5: 'bg-red-400 text-white shadow-[inset_0_-4px_0_rgba(0,0,0,0.2)]', 1.25: 'bg-gray-400 text-black shadow-[inset_0_-4px_0_rgba(0,0,0,0.2)]'
+        }
+    }
+};
 
         const ACHIEVEMENTS = [
             { id: 'first', title: 'First Steps', icon: '🎯', check: h => h.length >= 1 },
