@@ -74,7 +74,6 @@
     .swipe-row .swipe-bg-right { position: absolute; left: 0; top: 0; bottom: 0; width: 100%; display: flex; align-items: center; padding-left: 1rem; background: rgba(34,197,94,0.15); border-radius: 0.5rem; z-index: 0; opacity: 0; transition: opacity 0.15s; pointer-events: none; }
     .swipe-row .swipe-content { position: relative; z-index: 1; background: inherit; transition: transform 0.15s ease-out; }
     
-    /* Range Slider Styling */
     input[type=range] { -webkit-appearance: none; background: transparent; }
     input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 20px; width: 20px; border-radius: 50%; background: #6366f1; cursor: pointer; margin-top: -8px; box-shadow: 0 0 10px rgba(99,102,241,0.5); }
     input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cursor: pointer; background: rgba(255,255,255,0.1); border-radius: 2px; }
@@ -184,7 +183,12 @@
         const DB = { g: (k, d) => JSON.parse(localStorage.getItem(k) || "null") || d, s: (k, v) => localStorage.setItem(k, JSON.stringify(v)), d: k => localStorage.removeItem(k) };
         const U = {
             now: () => Date.now(),
-            fmt: s => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`,
+            fmt: s => {
+                const abs = Math.abs(s);
+                const m = Math.floor(abs / 60);
+                const sec = Math.floor(abs % 60);
+                return (s < 0 ? '-' : '') + m + ':' + String(sec).padStart(2, '0');
+            },
             iso: ts => new Date(ts).toISOString().split('T')[0],
             rnd: (n, u, m) => m ? (u === 'kg' ? Math.round(n / 1.25) * 1.25 : Math.round(n / 2.5) * 2.5) : (u === 'kg' ? Math.round(n / 2.5) * 2.5 : Math.round(n / 5) * 5),
             conv: (w, f, t) => f === t ? +w : f === 'lbs' ? +w * 0.453592 : +w / 0.453592, safe: (v, d = 0) => Number.isFinite(+v) ? +v : d
@@ -228,7 +232,7 @@
                 tonnageGoal: 0, restHistory: [],
                 prefs: { weightUnit: 'lbs', program: 'nsuns', restT1: 180, restT2: 120, restT3: 60, timerSound: true, vibration: true, autoStartTimer: true, showPreviousWorkout: true, autoDeload: true, barWeight: 45, microplates: false, keepAwake: false, reduceMotion: false, showETR: true, heatmapCalendar: true, smartRest: true, swipeToComplete: true, warmupSteps: [40, 60, 80], useDots: true },
                 activeModal: null, session: {}, savedSession: null,
-                timer: { active: false, start: null, dur: 0, rem: 0, pct: 0, label: 'Rest' },
+                timer: { active: false, start: null, dur: 0, rem: 0, pct: 0, label: 'Rest', zeroCrossed: false },
                 tempBodyWeight: null, showWarmups: false, plate: { open: false, w: 0, plates: [], originalW: 0 }, calc: { w: 0, r: 0 }, chartLift: 'Bench',
                 cal: { monthName: '', days: [], offset: 0 }, sessionTimerStr: '0:00', deloadInfo: {}, sessionRating: 0, sessionNotes: '', sessionRPE: 7,
                 currentAchievement: null, selectedLog: null, historyFilter: 'all', previousWorkout: null, isEditingLog: false, swapState: { t2: false, acc: null, q: '' },
@@ -237,6 +241,7 @@
                 recoveryExpanded: null, sessionVolume: 0, restTimes: [], bwGoal: null, templateName: '', showExNoteModal: false, exNoteTarget: '', exNoteText: '',
                 calSummary: {}, freqData: {}, longestStreak: 0, compareMode: false, batchAdjust: 0, undoState: { visible: false, timer: null, action: null, label: '', leaving: false },
                 autoSaveTimer: null, lastSetCompletedAt: null, swipeData: { startX: 0, startY: 0, dx: 0, active: false, tier: null, idx: null },
+                selectedRecovery: null, expandedRecovery: null,
 
                 init() {
                     const d = DB.g(K.main, {}), s = DB.g(K.prefs, {});
@@ -277,10 +282,12 @@
                     const n = U.now();
                     if (this.session.start) { this.sessionTimerStr = U.fmt((n - this.session.start) / 1000); this.computeSessionVolume(); }
                     if (this.timer.active) {
-                        this.timer.rem = Math.max(0, this.timer.dur - Math.floor((n - this.timer.start) / 1000));
-                        this.timer.pct = this.timer.dur > 0 ? (this.timer.rem / this.timer.dur) : 0;
-                        if (this.timer.rem <= 0) {
-                            this.timer.active = false;
+                        const elapsed = Math.floor((n - this.timer.start) / 1000);
+                        this.timer.rem = this.timer.dur - elapsed;
+                        this.timer.pct = this.timer.dur > 0 ? Math.max(0, this.timer.rem / this.timer.dur) : 0;
+                        
+                        if (this.timer.rem <= 0 && !this.timer.zeroCrossed) {
+                            this.timer.zeroCrossed = true;
                             if (this.prefs.timerSound) this.beep();
                             if (this.prefs.vibration && navigator.vibrate) navigator.vibrate([200, 100, 200]);
                         }
@@ -382,8 +389,8 @@
                 swapAcc(i, n) { if (this.session.acc?.[i]) { this.session.acc[i].selectedExercise = n; this.session.acc[i].name = n; this.swapState.acc = null; this.swapState.q = ''; this.saveSess(); } },
                 getT2Alts() { const q = (this.swapState.q || '').trim().toLowerCase(), alts = this.session?.t2 ? this.exAlts(this.session.t2.originalName || this.session.t2.name) : []; return !q ? alts : alts.filter(a => (a.name || a.id).toLowerCase().includes(q)); },
                 getAccAlts(i) { const q = (this.swapState.q || '').trim().toLowerCase(), alts = this.session?.acc?.[i] ? this.exAlts(this.session.acc[i].originalName || this.session.acc[i].name) : []; return !q ? alts : alts.filter(a => (a.name || a.id).toLowerCase().includes(q)); },
-                timerStart(s, label = 'Rest') { const dur = Math.max(1, Math.floor(+s)); this.timer = { active: true, start: U.now(), dur, rem: dur, pct: 1, label }; this.restTimes.push({ started: U.now(), target: dur }); },
-                timerAdj(d) { if (!this.timer.active) return; const n = Math.max(5, (this.timer.dur || 0) + d); this.timer.dur = n; this.timer.rem = Math.max(0, n - Math.floor((U.now() - this.timer.start) / 1000)); this.timer.pct = n > 0 ? (this.timer.rem / n) : 0; },
+                timerStart(s, label = 'Rest') { const dur = Math.max(1, Math.floor(+s)); this.timer = { active: true, start: U.now(), dur, rem: dur, pct: 1, label, zeroCrossed: false }; this.restTimes.push({ started: U.now(), target: dur }); },
+                timerAdj(d) { if (!this.timer.active) return; const n = Math.max(5, (this.timer.dur || 0) + d); this.timer.dur = n; },
                 saveAmrap() { const val = parseInt(this.amrapState.val); if (!isNaN(val) && val >= 0) { this.amrapState.set.performed = val; this.toggleSet(this.amrapState.set, this.amrapState.tier); this.activeModal = null; } else alert("Please enter a valid number of reps"); },
                 showUndo(label, undoFn) { if (this.undoState.timer) clearTimeout(this.undoState.timer); this.undoState = { visible: true, timer: setTimeout(() => { this.undoState.leaving = true; setTimeout(() => { this.undoState.visible = false; this.undoState.leaving = false; this.undoState.action = null; }, 250); }, 5000), action: undoFn, label, leaving: false }; },
                 doUndo() { if (this.undoState.action) { this.undoState.action(); if (this.undoState.timer) clearTimeout(this.undoState.timer); this.undoState = { visible: false, timer: null, action: null, label: '', leaving: false }; this.computeSessionVolume(); this.saveSess(); } },
@@ -392,7 +399,8 @@
                 triggerRest(tier, isFail) {
                     if (this.timer.active) this.recordActualRest(tier);
                     this.lastSetCompletedAt = U.now();
-                    if (this.prefs.autoStartTimer) this.timerStart(this.prefs.smartRest ? this.getSmartRestDuration(tier) : (+this.prefs[tier === 't1' ? 'restT1' : 'restT2'] + (isFail ? 60 : 0)), isFail ? 'Fail Rest' : (tier === 't1' ? 'T1 Rest' : 'T2 Rest'));
+                    const targetKey = tier === 't1' ? 'restT1' : (tier === 't2' ? 'restT2' : 'restT3');
+                    if (this.prefs.autoStartTimer) this.timerStart(this.prefs.smartRest ? this.getSmartRestDuration(tier) : (+this.prefs[targetKey] + (isFail ? 60 : 0)), isFail ? 'Fail Rest' : (tier === 't1' ? 'T1 Rest' : (tier === 't2' ? 'T2 Rest' : 'Acc Rest')));
                 },
 
                 toggleSet(s, tier, fail = false) {
@@ -603,9 +611,21 @@
                 calcPlates(w, orig) { 
                     if(orig !== undefined) this.plate.originalW = orig;
                     else if(!this.plate.open) this.plate.originalW = w;
-                    this.plate = { open: true, w, plates: [], originalW: this.plate.originalW || w }; 
-                    let r = (w - this.prefs.barWeight) / 2; 
-                    DATA.ui.plates[this.prefs.weightUnit].forEach(p => { while (r >= p) { this.plate.plates.push(p); r -= p; } }); 
+
+                    this.plate.open = true;
+                    this.plate.w = w;
+                    this.plate.plates = [];
+
+                    let r = (w - this.prefs.barWeight) / 2;
+                    if(r <= 0) return;
+
+                    const eps = 0.01;
+                    DATA.ui.plates[this.prefs.weightUnit].forEach(p => { 
+                        while (r >= p - eps) { 
+                            this.plate.plates.push(p); 
+                            r -= p; 
+                        } 
+                    }); 
                 },
                 closestWeight(w) { const bar = this.prefs.barWeight; let rem = (w - bar) / 2, t = bar; DATA.ui.plates[this.prefs.weightUnit].forEach(p => { while (rem >= p) { t += p * 2; rem -= p; } }); return t; },
                 computeSessionVolume() { this.sessionVolume = [...(this.session?.t1?.sets || []), ...(this.session?.t2?.sets || [])].reduce((a, s) => s.completed ? a + (s.weight * (s.performed || s.reps)) : a, 0); },
@@ -617,9 +637,9 @@
                     return Math.round(((rem + ar) * (avgRest + 45)) / 60); 
                 },
 
-                handleSwipeStart(e, tier, idx) { if (this.prefs.swipeToComplete) this.swipeData = { startX: (e.touches ? e.touches[0] : e).clientX, startY: (e.touches ? e.touches[0] : e).clientY, dx: 0, active: true, tier, idx }; },
-                handleSwipeMove(e) { if (!this.swipeData.active || !this.prefs.swipeToComplete) return; const t = e.touches ? e.touches[0] : e, dx = t.clientX - this.swipeData.startX, dy = Math.abs(t.clientY - this.swipeData.startY); if (dy > Math.abs(dx)) this.swipeData.active = false; else if (Math.abs(dx) > 10) { e.preventDefault(); this.swipeData.dx = dx; } },
-                handleSwipeEnd() { if (!this.swipeData.active || !this.prefs.swipeToComplete) return; const { dx, tier, idx } = this.swipeData, set = this.session?.[tier]?.sets?.[idx]; if (dx > 60 && set && !set.completed) this.toggleSet(set, tier, false); else if (dx < -60 && set && !set.failed) this.toggleSet(set, tier, true); this.swipeData = { startX: 0, startY: 0, dx: 0, active: false, tier: null, idx: null }; },
+                handleSwipeStart(e, tier, idx) { this.swipeData = { startX: (e.touches ? e.touches[0] : e).clientX, startY: (e.touches ? e.touches[0] : e).clientY, dx: 0, active: true, tier, idx }; },
+                handleSwipeMove(e) { if (!this.swipeData.active) return; const t = e.touches ? e.touches[0] : e, dx = t.clientX - this.swipeData.startX, dy = Math.abs(t.clientY - this.swipeData.startY); if (dy > Math.abs(dx)) this.swipeData.active = false; else if (Math.abs(dx) > 10) { e.preventDefault(); this.swipeData.dx = dx; } },
+                handleSwipeEnd() { if (!this.swipeData.active) return; const { dx, tier, idx } = this.swipeData, set = this.session?.[tier]?.sets?.[idx]; if (dx > 60 && set && !set.completed) this.toggleSet(set, tier, false); else if (dx < -60 && set && !set.failed) this.toggleSet(set, tier, true); this.swipeData = { startX: 0, startY: 0, dx: 0, active: false, tier: null, idx: null }; },
                 getSwipeTransform(tier, idx) { return this.swipeData.active && this.swipeData.tier === tier && this.swipeData.idx === idx ? `transform:translateX(${Math.max(-80, Math.min(80, this.swipeData.dx))}px)` : ''; },
                 getSwipeBgOpacity(tier, idx, dir) { if (!this.swipeData.active || this.swipeData.tier !== tier || this.swipeData.idx !== idx) return 'opacity:0'; const dx = this.swipeData.dx; return (dir === 'right' && dx > 20) ? `opacity:${Math.min(1, dx / 80)}` : (dir === 'left' && dx < -20) ? `opacity:${Math.min(1, Math.abs(dx) / 80)}` : 'opacity:0'; },
 
@@ -852,6 +872,7 @@
                         class="btn border border-red-500/20 text-red-400">Discard</button></div>
             </div>
         </template>
+        <!-- Recovery modal removed, integrated into dashboard -->
         <template x-if="activeModal==='amrapInput'">
             <div class="glass-panel text-center">
                 <h3 class="text-xl font-bold text-white mb-2">AMRAP Result</h3>
@@ -1012,13 +1033,17 @@
             <div class="glass-panel text-center" @click.outside="activeModal=null">
                 <h3 class="text-lg font-bold text-white mb-4">Adjust Remaining Sets</h3>
                 <p class="text-xs text-slate-400 mb-4">Apply % change to all uncompleted sets</p>
-                <div class="flex gap-2 justify-center mb-6"><template x-for="pct in [-10, -5, -2.5, 2.5, 5, 10]"><button
-                            @click="batchAdjust=pct" class="px-3 py-2 rounded-lg text-xs font-bold transition"
+                <div class="flex flex-wrap gap-2 justify-center mb-6">
+                    <template x-for="pct in [-10, -5, -2.5, 2.5, 5, 10]">
+                        <button @click="batchAdjust=pct" class="px-3 py-2 rounded-lg text-xs font-bold transition min-w-[3rem]"
                             :class="batchAdjust===pct?'bg-indigo-600 text-white':'bg-black/30 text-slate-400 border border-white/10'"
-                            x-text="(pct>0?'+':'')+pct+'%'"></button></template></div>
+                            x-text="(pct>0?'+':'')+pct+'%'">
+                        </button>
+                    </template>
+                </div>
                 <div class="grid grid-cols-2 gap-3"><button @click="batchAdjust=0;activeModal=null"
                         class="btn-s">Cancel</button><button @click="applyBatchAdjust('t1');activeModal=null"
-                        class="btn-p">Apply to T1</button></div>
+                        class="btn-p">Apply</button></div>
             </div>
         </template>
         <template x-if="activeModal==='detail'">
@@ -1207,17 +1232,41 @@
                 </div>
                 <div class="grid grid-cols-4 gap-2 mb-2">
                     <template x-for="g in cache.recovery">
-                        <div class="f-col items-center gap-1">
+                        <div class="f-col items-center gap-1 cursor-pointer hover:opacity-80 transition" @click="expandedRecovery = (expandedRecovery === g.name ? null : g.name)">
                             <div class="h-16 w-3 bg-white/10 rounded-full overflow-hidden relative">
                                 <div class="absolute bottom-0 w-full rounded-full transition-all duration-1000"
                                     :style="`height:${g.recovery}%;`"
                                     :class="g.recovery>=80?'bg-green-500':g.recovery>=40?'bg-yellow-500':'bg-red-500'">
                                 </div>
                             </div>
-                            <span class="text-[9px] font-bold text-slate-500 uppercase" x-text="g.name"></span>
+                            <span class="text-[9px] font-bold text-slate-500 uppercase" :class="expandedRecovery === g.name ? 'text-white' : ''" x-text="g.name"></span>
                         </div>
                     </template>
                 </div>
+                <!-- Inline Recovery Details -->
+                <div x-show="expandedRecovery" x-transition class="mt-4 pt-4 border-t border-white/5">
+                    <template x-if="expandedRecovery">
+                        <div x-data="{ g: cache.recovery.find(x => x.name === expandedRecovery) }">
+                            <h4 class="text-sm font-bold text-white mb-2" x-text="g.name + ' Details'"></h4>
+                            <div class="space-y-2">
+                                <template x-for="m in g.muscles">
+                                    <div class="f-cb">
+                                        <span class="text-xs text-slate-300" x-text="m.name"></span>
+                                        <div class="f-g2">
+                                            <div class="w-24 h-1.5 bg-white/10 rounded-full overflow-hidden">
+                                                <div class="h-full rounded-full transition-all duration-500" 
+                                                     :class="m.recovery>=80?'bg-green-500':m.recovery>=40?'bg-yellow-500':'bg-red-500'" 
+                                                     :style="'width:'+m.recovery+'%'"></div>
+                                            </div>
+                                            <span class="text-xs font-mono font-bold w-8 text-right" :class="m.recovery>=80?'text-green-400':m.recovery>=40?'text-yellow-400':'text-red-400'" x-text="m.recovery+'%'"></span>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+
                 <div x-data="{adv: getRecoveryAdvice()}" x-show="adv" class="mt-3 p-2 bg-red-500/10 rounded border border-red-500/20 flex gap-2 items-center">
                     <template x-if="adv">
                         <div class="f-g2">
@@ -1303,49 +1352,47 @@
     <div x-show="view==='workout'" class="f-col h-full bg-black fixed inset-0 z-50" x-transition x-cloak>
         <div class="header-sticky border-b border-white/5 f-cb bg-[#101012]">
             <div class="flex-1">
-                <h2 class="text-lg font-bold text-white truncate w-48" x-text="session.title"></h2>
+                <h2 class="text-lg font-bold text-white truncate w-32" x-text="session.title"></h2>
                 <div class="f-g2 text-xs mono text-slate-400">
                     <span x-text="sessionTimerStr"></span>
                     <span x-show="prefs.showETR" class="text-slate-600">|</span>
-                    <span x-show="prefs.showETR" x-text="'~'+estimateTimeRemaining()+'m left'"></span>
+                    <span x-show="prefs.showETR" x-text="'~'+estimateTimeRemaining()+'m'"></span>
                 </div>
             </div>
             <div class="f-g2">
-                <button @click="toggleZen()" class="w-10 h-10 rounded-full f-c transition" :class="zenMode?'bg-indigo-600 text-white':'bg-white/5 text-slate-400'">
-                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                <button @click="toggleZen()" class="w-8 h-8 rounded-full f-c transition" :class="zenMode?'bg-indigo-600 text-white':'bg-white/5 text-slate-400'">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
                 </button>
                 <button @click="plate.open=!plate.open"
-                    class="w-10 h-10 rounded-full bg-white/5 text-slate-400 f-c hover:bg-white/10 hover:text-white transition">
-                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    class="w-8 h-8 rounded-full bg-white/5 text-slate-400 f-c hover:bg-white/10 hover:text-white transition">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                         <circle cx="12" cy="12" r="10" stroke-width="2" />
                         <circle cx="12" cy="12" r="3" stroke-width="2" />
                     </svg>
                 </button>
-                <button @click="activeModal='info'"
-                    class="w-10 h-10 rounded-full bg-white/5 text-slate-400 f-c hover:bg-white/10 hover:text-white transition">
-                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="icons.info" />
-                    </svg>
+                <button @click="cancel()"
+                    class="bg-red-500/10 text-red-400 w-8 h-8 rounded-full f-c font-bold transition hover:bg-red-500/20">
+                    ✕
                 </button>
                 <button @click="finish()"
-                    class="bg-green-600 hover:bg-green-500 text-white px-4 py-2 rounded-full text-sm font-bold transition shadow-lg shadow-green-900/20">
+                    class="bg-green-600 hover:bg-green-500 text-white px-3 py-1.5 rounded-full text-xs font-bold transition shadow-lg shadow-green-900/20">
                     Finish
                 </button>
             </div>
         </div>
 
         <!-- Timer Bar -->
-        <div x-show="timer.active" class="bg-[#1A1A1E] border-b border-white/5 px-6 py-3 f-cb transition-all" x-transition>
+        <div x-show="timer.active" class="bg-[#1A1A1E] border-b border-white/5 px-6 py-4 f-cb transition-all" x-transition>
             <div class="f-g2">
-                <div class="w-10 h-10 rounded-full border-2 border-indigo-500 f-c relative">
-                    <span class="text-xs font-bold mono z-10" x-text="timer.rem"></span>
+                <div class="w-12 h-12 rounded-full border-2 f-c relative" :class="timer.rem<0?'border-red-500':'border-indigo-500'">
+                    <span class="text-sm font-bold mono z-10" :class="timer.rem<0?'text-red-400':'text-white'" x-text="fmt(timer.rem)"></span>
                     <svg class="absolute inset-0 w-full h-full -rotate-90 text-indigo-900/30" viewBox="0 0 36 36">
                         <path class="stroke-current" stroke-width="3" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                        <path class="stroke-indigo-500 transition-all duration-1000 ease-linear" :stroke-dasharray="timer.pct*100+', 100'" stroke-width="3" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                        <path class="transition-all duration-1000 ease-linear" :class="timer.rem<0?'stroke-red-500':'stroke-indigo-500'" :stroke-dasharray="timer.pct*100+', 100'" stroke-width="3" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
                     </svg>
                 </div>
                 <div>
-                    <div class="text-xs text-slate-400" x-text="timer.label"></div>
+                    <div class="text-sm font-bold text-white mb-0.5" x-text="timer.label"></div>
                     <div class="f-g2">
                         <button @click="timerAdj(-10)" class="text-xs bg-white/5 px-2 py-1 rounded hover:bg-white/10">-10</button>
                         <button @click="timerAdj(30)" class="text-xs bg-white/5 px-2 py-1 rounded hover:bg-white/10">+30</button>
@@ -1362,25 +1409,42 @@
         <!-- Zen Mode Overlay -->
         <div x-show="zenMode" class="flex-1 f-col items-center justify-center p-6 text-center space-y-6 bg-black" x-transition>
             <template x-if="getZen()">
-                <div class="w-full max-w-sm">
-                    <div class="text-sm text-slate-500 uppercase tracking-widest mb-2" x-text="getZen().t==='t1'?'Main Lift':getZen().t==='t2'?'Secondary':'Accessory'"></div>
-                    <h2 class="text-4xl font-black text-white mb-6" x-text="getZen().n"></h2>
-                    <div class="f-c gap-8 mb-10">
-                        <div>
-                            <div class="text-6xl font-bold mono text-white" x-text="getZen().w"></div>
-                            <div class="text-sm text-slate-500 uppercase mt-2" x-text="prefs.weightUnit"></div>
+                <div class="w-full max-w-sm swipe-row rounded-xl p-6 border border-white/10 bg-[#151518]"
+                     :style="getSwipeTransform(getZen().t, getZen().i)"
+                     @touchstart="handleSwipeStart($event, getZen().t, getZen().i)"
+                     @touchmove="handleSwipeMove($event)"
+                     @touchend="handleSwipeEnd()">
+                     
+                    <!-- Swipe Indicators (Behind) -->
+                    <div class="swipe-bg-left" :style="getSwipeBgOpacity(getZen().t, getZen().i, 'left')"><span class="font-bold text-red-500 text-xl">FAIL</span></div>
+                    <div class="swipe-bg-right" :style="getSwipeBgOpacity(getZen().t, getZen().i, 'right')"><span class="font-bold text-green-500 text-xl">COMPLETE</span></div>
+
+                    <div class="swipe-content">
+                        <div class="text-sm text-slate-500 uppercase tracking-widest mb-2" x-text="getZen().t==='t1'?'Main Lift':getZen().t==='t2'?'Secondary':'Accessory'"></div>
+                        <h2 class="text-4xl font-black text-white mb-6" x-text="getZen().n"></h2>
+                        <div class="f-c gap-8 mb-10">
+                            <div @click="calcPlates(getZen().w)" class="cursor-pointer active:scale-95 transition">
+                                <div class="text-6xl font-bold mono text-white" x-text="getZen().w"></div>
+                                <div class="text-sm text-slate-500 uppercase mt-2" x-text="prefs.weightUnit"></div>
+                            </div>
+                            <div class="text-4xl text-slate-700">×</div>
+                            <div>
+                                <div class="text-6xl font-bold mono" :class="getZen().amrap?'text-yellow-500':'text-white'" x-text="getZen().r+(getZen().amrap?'+':'')"></div>
+                                <div class="text-sm text-slate-500 uppercase mt-2">Reps</div>
+                            </div>
                         </div>
-                        <div class="text-4xl text-slate-700">×</div>
-                        <div>
-                            <div class="text-6xl font-bold mono" :class="getZen().amrap?'text-yellow-500':'text-white'" x-text="getZen().r+(getZen().amrap?'+':'')"></div>
-                            <div class="text-sm text-slate-500 uppercase mt-2">Reps</div>
+                        <div x-show="getZen().amrap" class="mb-6">
+                            <input type="number" x-model="zenAmrap" placeholder="Reps performed?" class="inp-lg text-2xl py-4 border-yellow-500/50 text-yellow-500">
+                        </div>
+                        <button @click="doZen()" class="w-full py-6 bg-white text-black font-black text-xl rounded-2xl active:scale-95 transition">COMPLETE SET</button>
+                        <div class="mt-8 text-slate-500 text-sm" x-text="'Set '+(getZen().i+1)"></div>
+                        
+                        <!-- Prominent Timer in Focus Mode -->
+                        <div x-show="timer.active" class="mt-8 p-4 bg-white/5 rounded-2xl border border-white/5">
+                            <div class="text-xs text-slate-500 uppercase mb-1" x-text="timer.label"></div>
+                            <div class="text-4xl font-bold mono" :class="timer.rem<0?'text-red-500':'text-indigo-400'" x-text="fmt(timer.rem)"></div>
                         </div>
                     </div>
-                    <div x-show="getZen().amrap" class="mb-6">
-                        <input type="number" x-model="zenAmrap" placeholder="Reps performed?" class="inp-lg text-2xl py-4 border-yellow-500/50 text-yellow-500">
-                    </div>
-                    <button @click="doZen()" class="w-full py-6 bg-white text-black font-black text-xl rounded-2xl active:scale-95 transition">COMPLETE SET</button>
-                    <div class="mt-8 text-slate-500 text-sm" x-text="'Set '+(getZen().i+1)"></div>
                 </div>
             </template>
             <template x-if="!getZen()">
@@ -1425,7 +1489,10 @@
                                  :style="getSwipeTransform('t1',i)"
                                  :class="s.completed?(s.failed?'bg-red-900/10 border-red-500/30':'bg-green-900/10 border-green-500/30'):'bg-[#222] border-white/5'"
                                  @click="!prefs.swipeToComplete && toggleSet(s, 't1')">
-                                <div class="text-xs font-bold text-slate-500 text-center" x-text="i+1"></div>
+                                <div class="f-col items-center">
+                                    <div class="text-xs font-bold text-slate-500" x-text="i+1"></div>
+                                    <div class="text-[9px] text-slate-500 mt-1" x-show="s.completedAt" x-text="fmtSet(s.completedAt)"></div>
+                                </div>
                                 <div class="f-c gap-2" @click.stop="calcPlates(s.weight)">
                                     <span class="text-lg font-bold mono" :class="s.completed?'text-white':'text-indigo-200'" x-text="s.weight"></span>
                                     <span x-show="previousWorkout && i===0 && s.weight > previousWorkout.topSet" class="text-[9px] bg-yellow-500/20 text-yellow-500 px-1 rounded">PR</span>
@@ -1476,7 +1543,10 @@
                     <template x-for="(s,i) in session.t2?.sets">
                         <div class="grid grid-cols-[2rem_1fr_3rem_3rem] gap-2 items-center p-3 rounded-xl border border-white/5 transition bg-[#1A1A1E]"
                              :class="s.completed?'bg-green-900/10 border-green-500/30':''">
-                            <div class="text-xs font-bold text-slate-500 text-center" x-text="i+1"></div>
+                            <div class="f-col items-center">
+                                <div class="text-xs font-bold text-slate-500" x-text="i+1"></div>
+                                <div class="text-[9px] text-slate-500 mt-1" x-show="s.completedAt" x-text="fmtSet(s.completedAt)"></div>
+                            </div>
                             <div class="text-center cursor-pointer" @click="calcPlates(s.weight)">
                                 <span class="font-bold text-white mono" x-text="s.weight"></span>
                             </div>
@@ -1535,7 +1605,8 @@
                 </div>
             </div>
             
-            <button @click="cancel()" class="w-full py-4 text-red-500 font-bold text-sm hover:bg-red-500/10 rounded-xl transition">Cancel Workout</button>
+            <button @click="finish()" class="btn-p">Finish Workout</button>
+            <!-- Cancel button removed from bottom, moved to header -->
         </div>
 
         <!-- Plate Calc Overlay -->
@@ -1793,7 +1864,7 @@
             </div>
             
             <div class="text-center text-[10px] text-slate-600 font-mono">
-                v3.6.0 • LIFT ULTIMATE
+                v3.6.1 • LIFT ULTIMATE
             </div>
         </div>
     </div>
