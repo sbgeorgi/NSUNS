@@ -78,10 +78,19 @@
     input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 20px; width: 20px; border-radius: 50%; background: #6366f1; cursor: pointer; margin-top: -8px; box-shadow: 0 0 10px rgba(99,102,241,0.5); }
     input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cursor: pointer; background: rgba(255,255,255,0.1); border-radius: 2px; }
     input[type=range]:focus { outline: none; }
+
+    /* Metronome Animations */
+    .tempo-pulse { animation: tempo 4s infinite linear; }
+    @keyframes tempo { 
+        0% { transform: scale(1); opacity: 1; background: #ef4444; } /* Eccentric */
+        75% { transform: scale(0.8); opacity: 0.5; background: #eab308; } /* Pause */
+        85% { transform: scale(1.2); opacity: 1; background: #22c55e; } /* Concentric */
+        100% { transform: scale(1); opacity: 1; background: #3b82f6; } /* Top pause */
+    }
 </style>
 
     <script>
-        const ICONS = { warn: 'M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z', x: 'M6 18L18 6M6 6l12 12', check: 'M5 13l4 4L19 7', trash: 'M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16', edit: 'M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z', save: 'M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4', play: 'M8 5v14l11-7z', prev: 'M15 19l-7-7 7-7', next: 'M9 5l7 7-7 7', warn2: 'M12 8v4m0 4h.01', info: 'M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z', train: 'M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10', hist: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z', set: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z', chev_down: 'M19 9l-7 7-7-7', swap: 'M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4', expand: 'M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4', search: 'M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z', trophy: 'M12 15l-2 5h4l-2-5zm0 0a7 7 0 01-7-7V4h14v4a7 7 0 01-7 7zM5 4H3v2a3 3 0 003 3m10-5h2v2a3 3 0 01-3 3', target: 'M12 2a10 10 0 110 20 10 10 0 010-20zm0 4a6 6 0 100 12 6 6 0 000-12zm0 4a2 2 0 110 4 2 2 0 010-4z', clock: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z', trendUp: 'M13 7h8m0 0v8m0-8l-8 8-4-4-6 6', trendDown: 'M13 17h8m0 0V9m0 8l-8-8-4 4-6-6', copy: 'M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3', bookmark: 'M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z', zap: 'M13 10V3L4 14h7v7l9-11h-7z', bar_chart: 'M9 19V13a1 1 0 00-1-1H5a1 1 0 00-1 1v6m6 0H4m6 0h4m0 0V9a1 1 0 00-1-1h-3a1 1 0 00-1 1v10m6 0V7a1 1 0 00-1-1h-3a1 1 0 00-1 1v12m6 0h-4m4 0h1a1 1 0 001-1V11a1 1 0 00-1-1h-3a1 1 0 00-1 1v8', note: 'M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z', undo: 'M3 10h10a5 5 0 015 5v2M3 10l4-4m-4 4l4 4' };
+        const ICONS = { warn: 'M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z', x: 'M6 18L18 6M6 6l12 12', check: 'M5 13l4 4L19 7', trash: 'M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16', edit: 'M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z', save: 'M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4', play: 'M8 5v14l11-7z', prev: 'M15 19l-7-7 7-7', next: 'M9 5l7 7-7 7', warn2: 'M12 8v4m0 4h.01', info: 'M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z', train: 'M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10', hist: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z', set: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z', chev_down: 'M19 9l-7 7-7-7', swap: 'M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4', expand: 'M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4', search: 'M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z', trophy: 'M12 15l-2 5h4l-2-5zm0 0a7 7 0 01-7-7V4h14v4a7 7 0 01-7 7zM5 4H3v2a3 3 0 003 3m10-5h2v2a3 3 0 01-3 3', target: 'M12 2a10 10 0 110 20 10 10 0 010-20zm0 4a6 6 0 100 12 6 6 0 000-12zm0 4a2 2 0 110 4 2 2 0 010-4z', clock: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z', trendUp: 'M13 7h8m0 0v8m0-8l-8 8-4-4-6 6', trendDown: 'M13 17h8m0 0V9m0 8l-8-8-4 4-6-6', copy: 'M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3', bookmark: 'M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z', zap: 'M13 10V3L4 14h7v7l9-11h-7z', bar_chart: 'M9 19V13a1 1 0 00-1-1H5a1 1 0 00-1 1v6m6 0H4m6 0h4m0 0V9a1 1 0 00-1-1h-3a1 1 0 00-1 1v10m6 0V7a1 1 0 00-1-1h-3a1 1 0 00-1 1v12m6 0h-4m4 0h1a1 1 0 001-1V11a1 1 0 00-1-1h-3a1 1 0 00-1 1v8', note: 'M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z', undo: 'M3 10h10a5 5 0 015 5v2M3 10l4-4m-4 4l4 4', zap_filled: 'M13 10V3L4 14h7v7l9-11h-7z' };
 
         const DATA = {
             muscles: {
@@ -102,7 +111,7 @@
             programCapacityScale: { nsuns: 1.75, ppl: 1.8, phul: 1.5, stronglifts: 1.0, gzclp: 1.3, '531': 1.2 },
             groups: {
                 Push: ['chest', 'frontDelt', 'tri', 'upperChest'], Pull: ['lats', 'bi', 'rearDelt', 'traps'],
-                Legs: ['quads', 'hams', 'glutes', 'calves'], 'Core/Back': ['lowBack', 'abs'], CNS: ['cns']
+                Legs: ['quads', 'hams', 'glutes', 'calves'], 'Core': ['lowBack', 'abs'], CNS: ['cns']
             },
             compoundAccessories: new Set(['Row', 'Pendlay Row', 'DB Row', 'Cable Row', 'T-Bar Row', 'Seal Row', 'Chest Supported Row', 'Meadows Row', 'Pullups', 'Chin-ups', 'Lat Pulldown', 'LatPD', 'Neutral Pullups', 'Chins', 'Wide Grip Pulldown', 'Close Grip Pulldown', 'Dips', 'Close Grip BP', 'Leg Press', 'Lunges', 'Bulgarian Split', 'Hip Thrust', 'Hack Squat', 'Nordic Curl', 'Good Morning', 'OHP', 'Seated OHP', 'DB OHP', 'Push Press', 'DL', 'Romanian DL', 'SLDL']),
             schemes: {
@@ -179,7 +188,7 @@
             [/(rear|reverse|fly)/i, { rearDelt: 1, traps: .3 }], [/(chest|fly|cable|pec)/i, { chest: .8, frontDelt: .2 }]
         ];
 
-        const K = { main: 'nsuns_ultimate', prefs: 'lift_preferences', bw: 'lift_bodyweight', session: 'lift_active_session', ach: 'lift_achievements', prs: 'lift_prs', e1rmHist: 'lift_e1rm_history', templates: 'lift_templates', exNotes: 'lift_exercise_notes', tonnageGoal: 'lift_tonnage_goal', restHist: 'lift_rest_history' };
+        const K = { main: 'nsuns_ultimate', prefs: 'lift_preferences', bw: 'lift_bodyweight', session: 'lift_active_session', ach: 'lift_achievements', prs: 'lift_prs', e1rmHist: 'lift_e1rm_history', templates: 'lift_templates', exNotes: 'lift_exercise_notes', tonnageGoal: 'lift_tonnage_goal', restHist: 'lift_rest_history', xp: 'lift_xp' };
         const DB = { g: (k, d) => JSON.parse(localStorage.getItem(k) || "null") || d, s: (k, v) => localStorage.setItem(k, JSON.stringify(v)), d: k => localStorage.removeItem(k) };
         const U = {
             now: () => Date.now(),
@@ -229,11 +238,11 @@
                 tms: { Bench: 0, Squat: 0, Deadlift: 0, OHP: 0, Row: 0 },
                 state: { Bench: {}, Squat: {}, Deadlift: {}, OHP: {}, Row: {} },
                 prs: {}, history: [], bwLog: [], achievements: [], e1rmHistory: {}, templates: [], exerciseNotes: {},
-                tonnageGoal: 0, restHistory: [],
+                tonnageGoal: 0, restHistory: [], xp: 0,
                 prefs: { weightUnit: 'lbs', program: 'nsuns', restT1: 180, restT2: 120, restT3: 60, timerSound: true, vibration: true, autoStartTimer: true, showPreviousWorkout: true, autoDeload: true, barWeight: 45, microplates: false, keepAwake: false, reduceMotion: false, showETR: true, heatmapCalendar: true, smartRest: true, swipeToComplete: true, warmupSteps: [40, 60, 80], useDots: true },
                 activeModal: null, session: {}, savedSession: null,
                 timer: { active: false, start: null, dur: 0, rem: 0, pct: 0, label: 'Rest', zeroCrossed: false },
-                tempBodyWeight: null, showWarmups: false, plate: { open: false, w: 0, plates: [], originalW: 0 }, calc: { w: 0, r: 0 }, chartLift: 'Bench',
+                tempBodyWeight: null, showWarmups: false, metronomeActive: false, plate: { open: false, w: 0, plates: [], originalW: 0 }, calc: { w: 0, r: 0 }, chartLift: 'Bench',
                 cal: { monthName: '', days: [], offset: 0 }, sessionTimerStr: '0:00', deloadInfo: {}, sessionRating: 0, sessionNotes: '', sessionRPE: 7,
                 currentAchievement: null, selectedLog: null, historyFilter: 'all', previousWorkout: null, isEditingLog: false, swapState: { t2: false, acc: null, q: '' },
                 zenMode: false, zenAmrap: null, setEdit: { tier: 't1', idx: 0, weight: 0, reps: 0, performed: null, failed: false, amrap: false, completed: false, rpe: null },
@@ -249,7 +258,7 @@
                         tms: d.tms || this.tms, history: d.history || [], idx: d.idx || 0, week: d.week || 1, streak: d.streak || 0,
                         state: this.migrateState(d.state), prefs: { ...this.prefs, ...s }, bwLog: DB.g(K.bw, []).filter(x => x.date),
                         achievements: DB.g(K.ach, []), prs: DB.g(K.prs, {}), e1rmHistory: DB.g(K.e1rmHist, {}),
-                        templates: DB.g(K.templates, []), exerciseNotes: DB.g(K.exNotes, {}), tonnageGoal: DB.g(K.tonnageGoal, 0), restHistory: DB.g(K.restHist, [])
+                        templates: DB.g(K.templates, []), exerciseNotes: DB.g(K.exNotes, {}), tonnageGoal: DB.g(K.tonnageGoal, 0), restHistory: DB.g(K.restHist, []), xp: DB.g(K.xp, 0)
                     });
                     this.savedSession = DB.g(K.session) || DB.g('lift_active_session_backup');
                     if (!this.prefs.warmupSteps) this.prefs.warmupSteps = [40, 60, 80];
@@ -267,6 +276,19 @@
                             DB.s('lift_active_session_backup', this.session);
                         }
                     }, 10000);
+                },
+
+                get currentLevel() {
+                    return Math.max(1, Math.floor(Math.pow(this.xp / 1000, 0.5)));
+                },
+                get currentTitle() {
+                    const titles = ['Initiate', 'Iron Novice', 'Steel Apprentice', 'Bronze Warrior', 'Silver Knight', 'Gold Spartan', 'Platinum Titan', 'Diamond Juggernaut', 'Astral Leviathan', 'Ultimate Lifter'];
+                    return titles[Math.min(titles.length - 1, Math.floor(this.currentLevel / 5))];
+                },
+                get xpProgress() {
+                    const currentTierXP = Math.pow(this.currentLevel, 2) * 1000;
+                    const nextTierXP = Math.pow(this.currentLevel + 1, 2) * 1000;
+                    return Math.min(100, Math.max(0, ((this.xp - currentTierXP) / (nextTierXP - currentTierXP)) * 100));
                 },
 
                 migrateState(s) {
@@ -364,7 +386,7 @@
                     else if (p === 'stronglifts') { t1s = this.getSLSchemeKey(d.t1); t2s = this.getSLSchemeKey(d.t2); }
 
                     this.session = {
-                        title: d.title || d.t || 'Workout', start: U.now(), acc: JSON.parse(JSON.stringify(d.acc || [])).map(a => ({ ...a, reps: a.reps || '10-12', originalName: a.name, selectedExercise: a.name })),
+                        title: d.title || d.t || 'Workout', start: U.now(), acc: JSON.parse(JSON.stringify(d.acc || [])).map(a => ({ ...a, reps: a.reps || '10-12', originalName: a.name, selectedExercise: a.name, supersetId: null })),
                         completedAcc: {}, notes: '', dayIdx: c ? null : this.pIdx,
                         t1: { name: d.t1, sets: this.getSets(t1s, d.t1, this.tms[d.t1], 't1') },
                         t2: { name: d.t2, originalName: d.t2, selectedExercise: d.t2, schemeKey: t2s, sets: this.getSets(t2s, d.t2, this.tms[this.baseTM(d.t2) || d.t2], 't2', d.t2) }
@@ -374,7 +396,7 @@
                         const h = this.history.slice().reverse().find(x => x.details?.t1 === d.t1);
                         if (h) this.previousWorkout = { date: h.date, duration: h.duration, topSet: h.details?.weight, amrapResult: h.setDetails?.t1?.find(s => s.amrap)?.performed, totalVolume: h.totalVolume };
                     }
-                    this.sessionVolume = 0; this.restTimes = []; this.lastSetCompletedAt = null; this.saveSess(); this.view = 'workout'; this.reqWake();
+                    this.showWarmups = false; this.sessionVolume = 0; this.restTimes = []; this.lastSetCompletedAt = null; this.saveSess(); this.view = 'workout'; this.reqWake();
                 },
 
                 swapT2(nEx) {
@@ -387,6 +409,13 @@
                 },
 
                 swapAcc(i, n) { if (this.session.acc?.[i]) { this.session.acc[i].selectedExercise = n; this.session.acc[i].name = n; this.swapState.acc = null; this.swapState.q = ''; this.saveSess(); } },
+                toggleSuperset(i) {
+                    if (this.session.acc?.[i]) {
+                        const curr = this.session.acc[i].supersetId;
+                        this.session.acc[i].supersetId = curr ? null : 'A';
+                        this.saveSess();
+                    }
+                },
                 getT2Alts() { const q = (this.swapState.q || '').trim().toLowerCase(), alts = this.session?.t2 ? this.exAlts(this.session.t2.originalName || this.session.t2.name) : []; return !q ? alts : alts.filter(a => (a.name || a.id).toLowerCase().includes(q)); },
                 getAccAlts(i) { const q = (this.swapState.q || '').trim().toLowerCase(), alts = this.session?.acc?.[i] ? this.exAlts(this.session.acc[i].originalName || this.session.acc[i].name) : []; return !q ? alts : alts.filter(a => (a.name || a.id).toLowerCase().includes(q)); },
                 timerStart(s, label = 'Rest') { const dur = Math.max(1, Math.floor(+s)); this.timer = { active: true, start: U.now(), dur, rem: dur, pct: 1, label, zeroCrossed: false }; this.restTimes.push({ started: U.now(), target: dur }); },
@@ -403,11 +432,20 @@
                     if (this.prefs.autoStartTimer) this.timerStart(this.prefs.smartRest ? this.getSmartRestDuration(tier) : (+this.prefs[targetKey] + (isFail ? 60 : 0)), isFail ? 'Fail Rest' : (tier === 't1' ? 'T1 Rest' : (tier === 't2' ? 'T2 Rest' : 'Acc Rest')));
                 },
 
+                checkAutoRegulationPrompt(s, tier) {
+                    if (tier === 't1' && (s.rpe >= 9.5 || s.failed) && this.session.t1.sets.filter(x => !x.completed).length > 1) {
+                        if(confirm('RPE 9.5+ or Failure detected early. Want to drop the weight on remaining sets by 10% to preserve CNS?')) {
+                            this.batchAdjust = -10;
+                            this.applyBatchAdjust('t1');
+                        }
+                    }
+                },
+
                 toggleSet(s, tier, fail = false) {
                     if (fail) {
                         const { failed, completed, completedAt } = s;
                         s.failed = !s.failed;
-                        if (s.failed) { s.completed = true; s.completedAt = U.now(); this.triggerRest(tier, true); this.showUndo('Set failed', () => Object.assign(s, { failed, completed, completedAt })); }
+                        if (s.failed) { s.completed = true; s.completedAt = U.now(); this.triggerRest(tier, true); this.checkAutoRegulationPrompt(s, tier); this.showUndo('Set failed', () => Object.assign(s, { failed, completed, completedAt })); }
                         else this.showUndo('Fail removed', () => Object.assign(s, { failed: true, completed: true, completedAt: completedAt || U.now() }));
                     } else {
                         if (s.amrap && (s.performed == null || s.performed === '') && !s.completed) { this.amrapState = { set: s, tier, val: s.reps }; this.activeModal = 'amrapInput'; this.$nextTick(() => this.$refs.amrapField?.focus()); return; }
@@ -418,6 +456,7 @@
                             s.completedAt = U.now(); 
                             if (this.lastSetCompletedAt) s.timeSincePrev = Math.round((U.now() - this.lastSetCompletedAt) / 1000); 
                             this.triggerRest(tier, s.failed); 
+                            this.checkAutoRegulationPrompt(s, tier);
                             this.showUndo('Set completed', () => Object.assign(s, { completed: false, failed: false, completedAt: null, timeSincePrev: null })); 
                         }
                     }
@@ -562,6 +601,10 @@
                     const durSecs = Math.max(60, (U.now() - this.session.start) / 1000);
                     const powerWatts = Math.round(workJoules / durSecs);
 
+                    // Update XP System
+                    this.xp += Math.round(intensityScore * 5 + (workJoules / 150));
+                    DB.s(K.xp, this.xp);
+
                     // T2 PRs
                     let bestT2E1RM = 0;
                     t2.sets.forEach(s => { if(s.completed) bestT2E1RM = Math.max(bestT2E1RM, compositeE1RM(s.weight, s.performed||s.reps)); });
@@ -606,7 +649,7 @@
                     if (!this.session?.t1?.sets?.[0]) return []; 
                     const w = this.session.t1.sets[0].weight; 
                     let steps = this.prefs.warmupSteps || [40,60,80];
-                    return [{w: this.prefs.barWeight, r: 10}, ...steps.map(p => ({ w: w * (p/100), r: p < 50 ? 5 : p < 75 ? 3 : 2 }))].filter(x => x.w >= this.prefs.barWeight);
+                    return [{w: this.prefs.barWeight, r: 10}, ...steps.map(p => ({ w: U.rnd(w * (p/100), this.prefs.weightUnit, this.prefs.microplates), r: p < 50 ? 5 : p < 75 ? 3 : 2 }))].filter(x => x.w >= this.prefs.barWeight);
                 },
                 calcPlates(w, orig) { 
                     if(orig !== undefined) this.plate.originalW = orig;
@@ -646,8 +689,33 @@
                 draw() {
                     const drawLine = (id, src, d, c) => { const ctx = document.getElementById(id); if (ctx) { if (charts[id]) charts[id].destroy(); charts[id] = new Chart(ctx, { type: 'line', data: { labels: src.map(x => x.date || x) || [], datasets: [{ data: d || src.map(x => x.details?.est1rm || x.weight), borderColor: c, backgroundColor: c + '80', tension: .3, fill: true }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: false }, scales: { x: { display: false }, y: { grid: { color: '#ffffff0d' }, ticks: { color: '#666' } } } } }); } };
                     drawLine('mainChart', this.history.filter(h => h.details?.t1 === this.chartLift), null, '#6366f1'); drawLine('bodyWeightChart', this.bwLog.slice(-30), this.bwLog.slice(-30).map(x => x.weight), '#3b82f6');
+                    
                     const v = {}, ctx = document.getElementById('volumeChart'); this.history.slice(-20).forEach(h => { const ts = new Date(h.timestamp); const k = `W${Math.ceil((((ts - new Date(ts.getFullYear(), 0, 1)) / 864e5) + 1) / 7)}`; v[k] = (v[k] || 0) + (h.totalVolume || 0); });
                     if (ctx) { if (charts.vol) charts.vol.destroy(); charts.vol = new Chart(ctx, { type: 'bar', data: { labels: Object.keys(v), datasets: [{ data: Object.values(v), backgroundColor: '#10b98180' }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: false }, scales: { x: { display: false }, y: { grid: { color: '#ffffff0d' }, ticks: { color: '#666' } } } } }); }
+                    
+                    // Muscle Balance Radar Chart Addition
+                    const balCtx = document.getElementById('balanceChart');
+                    if (balCtx) {
+                        if (charts.balance) charts.balance.destroy();
+                        charts.balance = new Chart(balCtx, {
+                            type: 'radar',
+                            data: {
+                                labels: ['Push', 'Pull', 'Legs', 'Core'],
+                                datasets: [{
+                                    data: [this.cache.mgVol.Push||0, this.cache.mgVol.Pull||0, this.cache.mgVol.Legs||0, this.cache.mgVol.Core||0],
+                                    backgroundColor: 'rgba(99, 102, 241, 0.2)',
+                                    borderColor: '#6366f1',
+                                    pointBackgroundColor: '#fff',
+                                    borderWidth: 2
+                                }]
+                            },
+                            options: { 
+                                maintainAspectRatio: false,
+                                scales: { r: { ticks: { display: false, maxTicksLimit: 5 }, grid: { color: 'rgba(255,255,255,0.1)' }, angleLines: { color: 'rgba(255,255,255,0.1)' }, pointLabels: { color: '#94a3b8', font: { size: 10 } } } }, 
+                                plugins: { legend: false, tooltip: { enabled: false } } 
+                            }
+                        });
+                    }
                 },
 
                 drawPRCharts() { 
@@ -672,7 +740,7 @@
                     const mgVol = { Push: 0, Pull: 0, Legs: 0, Core: 0 };
 
                     allW.forEach(w => {
-                        if (w.timestamp >= now - 7 * 864e5) {
+                        if (w.timestamp >= now - 30 * 864e5) {
                             const pSet = (sList, name) => {
                                 if(!sList || !name) return;
                                 const vol = sList.reduce((a,x)=>x.completed?a+(x.weight*(x.performed||x.reps)):a, 0);
@@ -757,7 +825,7 @@
                 },
 
                 finSetup() { if (Object.values(this.setup).some(v => v > 0)) { Object.keys(this.setup).forEach(k => this.tms[k] = U.rnd(this.setup[k] * .9, this.prefs.weightUnit)); this.save(); this.savePrefs(); this.view = 'dashboard'; } },
-                resume() { this.session = this.savedSession; if (this.session?.t2 && !this.session.t2.originalName) this.session.t2.originalName = this.session.t2.name; if (this.session?.acc) this.session.acc.forEach(a => { if (!a.originalName) a.originalName = a.name; }); if (!this.session.completedAcc) this.session.completedAcc = {}; const lastC = [...(this.session.t1?.sets || []), ...(this.session.t2?.sets || [])].filter(s => s.completedAt).sort((a, b) => b.completedAt - a.completedAt); this.lastSetCompletedAt = lastC.length ? lastC[0].completedAt : null; this.activeModal = null; this.view = 'workout'; this.reqWake(); },
+                resume() { this.session = this.savedSession; if (this.session?.t2 && !this.session.t2.originalName) this.session.t2.originalName = this.session.t2.name; if (this.session?.acc) this.session.acc.forEach(a => { if (!a.originalName) a.originalName = a.name; if(a.supersetId===undefined) a.supersetId=null; }); if (!this.session.completedAcc) this.session.completedAcc = {}; const lastC = [...(this.session.t1?.sets || []), ...(this.session.t2?.sets || [])].filter(s => s.completedAt).sort((a, b) => b.completedAt - a.completedAt); this.lastSetCompletedAt = lastC.length ? lastC[0].completedAt : null; this.activeModal = null; this.view = 'workout'; this.reqWake(); },
                 logBW() { if (this.tempBodyWeight) { this.bwLog.push({ date: U.now(), weight: this.tempBodyWeight }); DB.s(K.bw, this.bwLog); } this.activeModal = null; this.start(); },
                 getBW(t) { const w = this.bwLog.map(x => x.weight); return !w.length ? '-' : t === 'last' ? w[w.length - 1].toFixed(1) : t === 'min' ? Math.min(...w).toFixed(1) : Math.max(...w).toFixed(1); },
                 fmtVol: v => v > 1e6 ? (v / 1e6).toFixed(1) + 'M' : v > 1e3 ? (v / 1e3).toFixed(0) + 'K' : v, fmtVolS: v => v ? v > 1e3 ? (v / 1e3).toFixed(1) + 'k' : v : '-',
@@ -949,7 +1017,7 @@
                     </div>
                     <div class="pl-4 border-l-2 border-green-500">
                         <h4 class="lbl text-green-400 mb-1">Set RPE</h4>
-                        <p class="text-sm text-slate-300">Log 9.0+ RPE to trigger auto-rest extension</p>
+                        <p class="text-sm text-slate-300">Log 9.0+ RPE to trigger auto-rest extension & weight drop prompts</p>
                     </div>
                     <div class="pl-4 border-l-2 border-purple-500">
                         <h4 class="lbl text-purple-400 mb-1">Exercise Notes</h4>
@@ -1034,7 +1102,7 @@
                 <h3 class="text-lg font-bold text-white mb-4">Adjust Remaining Sets</h3>
                 <p class="text-xs text-slate-400 mb-4">Apply % change to all uncompleted sets</p>
                 <div class="flex flex-wrap gap-2 justify-center mb-6">
-                    <template x-for="pct in [-10, -5, -2.5, 2.5, 5, 10]">
+                    <template x-for="pct in [-15, -10, -5, -2.5, 2.5, 5, 10, 15]">
                         <button @click="batchAdjust=pct" class="px-3 py-2 rounded-lg text-xs font-bold transition min-w-[3rem]"
                             :class="batchAdjust===pct?'bg-indigo-600 text-white':'bg-black/30 text-slate-400 border border-white/10'"
                             x-text="(pct>0?'+':'')+pct+'%'">
@@ -1213,10 +1281,13 @@
                 <div class="text-2xl font-black italic tracking-tighter text-white">LIFT <span
                         class="text-indigo-500">ULTIMATE</span></div>
             </div>
-            <div class="f-g2">
-                <div class="bg-white/5 rounded-full px-3 py-1 flex items-center gap-2 border border-white/10"
-                    @click="activeModal='achievement'">
-                    <span class="text-lg">🔥</span><span class="text-sm font-bold mono" x-text="streak"></span>
+            <div class="f-col items-end gap-1">
+                <div class="bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/20 text-[10px] text-indigo-400 font-bold uppercase tracking-wider shadow-[0_0_10px_rgba(99,102,241,0.2)]" x-text="'LVL ' + currentLevel + ' ' + currentTitle"></div>
+                <div class="f-g2">
+                    <div class="bg-white/5 rounded-full px-3 py-1 flex items-center gap-2 border border-white/10"
+                        @click="activeModal='achievement'">
+                        <span class="text-lg">🔥</span><span class="text-sm font-bold mono" x-text="streak"></span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1277,6 +1348,14 @@
                 </div>
             </div>
 
+            <!-- Muscle Imbalance Radar Chart -->
+            <div class="glass-card">
+                <div class="f-cb mb-2">
+                     <h3 class="lbl mb-0">Muscle Balance (30 Days)</h3>
+                </div>
+                <div class="h-48 w-full relative"><canvas id="balanceChart"></canvas></div>
+            </div>
+
             <!-- Main Chart -->
             <div class="glass-card">
                 <div class="f-cb mb-4">
@@ -1294,7 +1373,12 @@
 
             <!-- Schedule / Next Workout -->
             <div class="space-y-4">
-                <h3 class="lbl px-2">Schedule</h3>
+                <div class="f-cb px-2">
+                    <h3 class="lbl mb-0">Schedule</h3>
+                    <div class="w-32 bg-white/10 h-1.5 rounded-full overflow-hidden">
+                        <div class="h-full bg-indigo-500 transition-all duration-500" :style="'width:' + xpProgress + '%'"></div>
+                    </div>
+                </div>
                 <div class="snap-scroll">
                     <template x-for="(d, i) in PROGRAMS[prefs.program].days">
                         <div @click="start(d)" class="glass-card snap-card cursor-pointer relative overflow-hidden transition active:scale-95 group"
@@ -1360,6 +1444,14 @@
                 </div>
             </div>
             <div class="f-g2">
+                <button @click="metronomeActive = !metronomeActive" 
+                        class="w-8 h-8 rounded-full f-c transition"
+                        :class="metronomeActive ? 'bg-black border-2 border-green-500 tempo-pulse' : 'bg-white/5 text-slate-400 border border-transparent'"
+                        title="Toggle Tempo Metronome (3-1-1-1)">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="icons.clock" />
+                    </svg>
+                </button>
                 <button @click="toggleZen()" class="w-8 h-8 rounded-full f-c transition" :class="zenMode?'bg-indigo-600 text-white':'bg-white/5 text-slate-400'">
                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
                 </button>
@@ -1473,6 +1565,30 @@
                     <button @click="activeModal='batchAdjust'" class="text-xs bg-white/5 px-2 py-1 rounded hover:bg-white/10">Adjust</button>
                 </div>
 
+                <!-- Warm-up UI addition -->
+                <div class="mb-4 bg-black/30 rounded-xl p-3 border border-white/5">
+                    <div class="f-cb cursor-pointer" @click="showWarmups = !showWarmups">
+                        <div class="f-g2">
+                            <svg class="w-4 h-4 text-orange-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="icons.zap_filled" /></svg>
+                            <span class="text-xs font-bold text-orange-400 uppercase tracking-widest">Warm-ups</span>
+                        </div>
+                        <svg class="w-4 h-4 text-slate-500 transition-transform" :class="showWarmups ? 'rotate-180' : ''" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                    </div>
+                    <div x-show="showWarmups" x-transition class="mt-3 space-y-2">
+                        <template x-for="(w, i) in warmups()">
+                            <div class="f-cb px-3 py-2 bg-[#1A1A1E] rounded-lg border border-white/5 cursor-pointer hover:bg-white/5 transition" @click="calcPlates(w.w)">
+                                <div class="text-xs text-slate-500 font-bold" x-text="'Set ' + (i+1) + ' (' + Math.round(w.w / session.t1.sets[0].weight * 100) + '%)'"></div>
+                                <div class="f-g2">
+                                    <span class="text-sm font-bold text-white mono" x-text="w.w"></span>
+                                    <span class="text-[10px] text-slate-500" x-text="prefs.weightUnit"></span>
+                                    <span class="text-xs text-slate-500 mx-1">×</span>
+                                    <span class="text-sm font-bold text-white mono" x-text="w.r"></span>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+
                 <div class="space-y-1">
                     <div class="grid grid-cols-[2rem_1fr_3rem_3rem] gap-2 px-2 pb-2 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-center">
                         <div>#</div><div>Weight</div><div>Reps</div><div>Log</div>
@@ -1566,15 +1682,21 @@
 
             <!-- Accessories -->
             <div class="glass-card">
-                <h3 class="lbl mb-4">Accessories</h3>
+                <div class="f-cb mb-4">
+                    <h3 class="lbl mb-0">Accessories</h3>
+                    <div class="text-[10px] text-slate-500">Tap 🔗 to link supersets</div>
+                </div>
                 <div class="space-y-4">
                     <template x-for="(a,i) in session.acc">
-                        <div class="relative">
+                        <div class="relative" :class="a.supersetId ? 'border-l-2 border-indigo-500 pl-3 -ml-3' : ''">
                             <div class="f-cb mb-2">
                                 <div class="relative flex-1">
-                                    <div @click="swapState.acc=i;swapState.q=''" class="font-bold text-white cursor-pointer f-g2">
-                                        <span x-text="a.selectedExercise||a.name"></span>
-                                        <svg class="w-3 h-3 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="icons.swap" /></svg>
+                                    <div class="f-g2">
+                                        <div @click="swapState.acc=i;swapState.q=''" class="font-bold text-white cursor-pointer f-g2">
+                                            <span x-text="a.selectedExercise||a.name"></span>
+                                            <svg class="w-3 h-3 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="icons.swap" /></svg>
+                                        </div>
+                                        <button @click="toggleSuperset(i)" class="ml-2 text-[10px] rounded p-1 transition" :class="a.supersetId ? 'bg-indigo-500 text-white' : 'bg-white/5 text-slate-500'">🔗</button>
                                     </div>
                                     <div x-show="swapState.acc===i" @click.outside="swapState.acc=null" class="ex-dropdown" x-transition>
                                         <input type="text" x-model="swapState.q" class="w-full bg-transparent p-3 text-sm border-b border-white/10 outline-none text-white" placeholder="Search..." autofocus>
@@ -1864,7 +1986,7 @@
             </div>
             
             <div class="text-center text-[10px] text-slate-600 font-mono">
-                v3.6.1 • LIFT ULTIMATE
+                v4.0.0 • LIFT ULTIMATE EXPANDED
             </div>
         </div>
     </div>
