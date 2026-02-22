@@ -742,14 +742,20 @@
                     allW.forEach(w => {
                         if (w.timestamp >= now - 30 * 864e5) {
                             const pSet = (sList, name) => {
-                                if(!sList || !name) return;
-                                const vol = sList.reduce((a,x)=>x.completed?a+(x.weight*(x.performed||x.reps)):a, 0);
-                                const imp = impact(name) || {};
-                                if(imp.chest || imp.frontDelt || imp.tri) mgVol.Push += vol;
-                                if(imp.lats || imp.rearDelt || imp.bi || imp.traps) mgVol.Pull += vol;
-                                if(imp.quads || imp.hams || imp.glutes || imp.calves) mgVol.Legs += vol;
-                                if(imp.abs || imp.lowBack) mgVol.Core += vol;
-                            };
+                        if(!sList || !name) return;
+                        const vol = sList.reduce((a,x)=>x.completed?a+(x.weight*(x.performed||x.reps)):a, 0);
+                        const imp = impact(name) || {};
+                        
+                        // Helper: Get the highest impact factor for a group of muscles
+                        // e.g. For Bench, Push muscles might be 1.0, but Pull muscles only 0.2
+                        const getFactor = (ms) => Math.max(0, ...ms.map(m => imp[m] || 0));
+
+                        // Multiply volume by the impact factor (0.0 to 1.0)
+                        mgVol.Push += vol * getFactor(['chest', 'frontDelt', 'tri', 'upperChest']);
+                        mgVol.Pull += vol * getFactor(['lats', 'bi', 'rearDelt', 'traps']);
+                        mgVol.Legs += vol * getFactor(['quads', 'hams', 'glutes', 'calves']);
+                        mgVol.Core += vol * getFactor(['abs', 'lowBack']);
+                    };
                             pSet(w.setDetails?.t1, w.details?.t1);
                             pSet(w.setDetails?.t2, w.setDetails?.t2Name);
                         }
