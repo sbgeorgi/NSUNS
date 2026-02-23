@@ -97,7 +97,7 @@
                 Bench: { chest: 1, frontDelt: .7, tri: .7, lats: .2, bi: .15, cns: .45 },
                 OHP: { frontDelt: 1, tri: .6, upperChest: .4, traps: .3, abs: .3, cns: .55 },
                 Squat: { quads: 1, glutes: .75, lowBack: .65, hams: .5, abs: .4, calves: .15, cns: .9 },
-                Deadlift: { hams: 1, glutes: .9, lowBack: 1, traps: .6, quads: .4, grip: .8, cns: 1.2 },
+                Deadlift: { hams: 1, glutes: .9, lowBack: 1, traps: .6, lats: 0.7, quads: .4, grip: .8, cns: 1.2 },
                 Row: { lats: 1, bi: .6, rearDelt: .6, grip: .6, lowBack: .4, cns: .35 }
             },
             halfLife: {
@@ -742,20 +742,26 @@
                     allW.forEach(w => {
                         if (w.timestamp >= now - 30 * 864e5) {
                             const pSet = (sList, name) => {
-                        if(!sList || !name) return;
-                        const vol = sList.reduce((a,x)=>x.completed?a+(x.weight*(x.performed||x.reps)):a, 0);
-                        const imp = impact(name) || {};
-                        
-                        // Helper: Get the highest impact factor for a group of muscles
-                        // e.g. For Bench, Push muscles might be 1.0, but Pull muscles only 0.2
-                        const getFactor = (ms) => Math.max(0, ...ms.map(m => imp[m] || 0));
+    if(!sList || !name) return;
+    const vol = sList.reduce((a,x)=>x.completed?a+(x.weight*(x.performed||x.reps)):a, 0);
+    const imp = impact(name) || {};
+    
+    // Helper to get max impact
+    const getF = (ms) => Math.max(0, ...ms.map(m => imp[m] || 0));
 
-                        // Multiply volume by the impact factor (0.0 to 1.0)
-                        mgVol.Push += vol * getFactor(['chest', 'frontDelt', 'tri', 'upperChest']);
-                        mgVol.Pull += vol * getFactor(['lats', 'bi', 'rearDelt', 'traps']);
-                        mgVol.Legs += vol * getFactor(['quads', 'hams', 'glutes', 'calves']);
-                        mgVol.Core += vol * getFactor(['abs', 'lowBack']);
-                    };
+    // THE FIX: "Main Mover" Threshold
+    // If impact is > 0.5, count 100% of volume.
+    // If impact is <= 0.5 (stabilizer), count weighted volume.
+    const calc = (ms) => {
+        const f = getF(ms);
+        return vol * (f > 0.5 ? 1 : f); 
+    };
+
+    mgVol.Push += calc(['chest', 'frontDelt', 'tri', 'upperChest']);
+    mgVol.Pull += calc(['lats', 'bi', 'rearDelt', 'traps']);
+    mgVol.Legs += calc(['quads', 'hams', 'glutes', 'calves']);
+    mgVol.Core += calc(['abs', 'lowBack']);
+};
                             pSet(w.setDetails?.t1, w.details?.t1);
                             pSet(w.setDetails?.t2, w.setDetails?.t2Name);
                         }
