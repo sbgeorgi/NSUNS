@@ -246,7 +246,7 @@
                 cal: { monthName: '', days: [], offset: 0 }, sessionTimerStr: '0:00', deloadInfo: {}, sessionRating: 0, sessionNotes: '', sessionRPE: 7,
                 currentAchievement: null, selectedLog: null, historyFilter: 'all', previousWorkout: null, isEditingLog: false, swapState: { t2: false, acc: null, q: '' },
                 zenMode: false, zenAmrap: null, setEdit: { tier: 't1', idx: 0, weight: 0, reps: 0, performed: null, failed: false, amrap: false, completed: false, rpe: null },
-                setup: {}, idx: 0, pIdx: 0, week: 1, streak: 0, cache: { recovery: [], volume: [], recoveryMap: {}, mgVol: {Push: 0, Pull: 0, Legs: 0, Core: 0} }, wakeLock: null,
+                setup: {}, idx: 0, pIdx: 0, week: 1, streak: 0, cache: { recovery: [], volume: [], recoveryMap: {}, mgVol: { Push: 0, Pull: 0, Legs: 0, Core: 0 } }, wakeLock: null,
                 recoveryExpanded: null, sessionVolume: 0, restTimes: [], bwGoal: null, templateName: '', showExNoteModal: false, exNoteTarget: '', exNoteText: '',
                 calSummary: {}, freqData: {}, longestStreak: 0, compareMode: false, batchAdjust: 0, undoState: { visible: false, timer: null, action: null, label: '', leaving: false },
                 autoSaveTimer: null, lastSetCompletedAt: null, swipeData: { startX: 0, startY: 0, dx: 0, active: false, tier: null, idx: null },
@@ -270,7 +270,7 @@
                     window.addEventListener('pointerdown', this.unlockAudio, { once: true, passive: true });
                     this.$nextTick(() => { this.draw(); this.calBuild(); this.chkAch() });
                     setInterval(() => this.tick(), 1000);
-                    this.autoSaveTimer = setInterval(() => { 
+                    this.autoSaveTimer = setInterval(() => {
                         if (this.session?.start && this.session?.t1) {
                             this.saveSess();
                             DB.s('lift_active_session_backup', this.session);
@@ -307,7 +307,7 @@
                         const elapsed = Math.floor((n - this.timer.start) / 1000);
                         this.timer.rem = this.timer.dur - elapsed;
                         this.timer.pct = this.timer.dur > 0 ? Math.max(0, this.timer.rem / this.timer.dur) : 0;
-                        
+
                         if (this.timer.rem <= 0 && !this.timer.zeroCrossed) {
                             this.timer.zeroCrossed = true;
                             if (this.prefs.timerSound) this.beep();
@@ -434,7 +434,7 @@
 
                 checkAutoRegulationPrompt(s, tier) {
                     if (tier === 't1' && (s.rpe >= 9.5 || s.failed) && this.session.t1.sets.filter(x => !x.completed).length > 1) {
-                        if(confirm('RPE 9.5+ or Failure detected early. Want to drop the weight on remaining sets by 10% to preserve CNS?')) {
+                        if (confirm('RPE 9.5+ or Failure detected early. Want to drop the weight on remaining sets by 10% to preserve CNS?')) {
                             this.batchAdjust = -10;
                             this.applyBatchAdjust('t1');
                         }
@@ -452,12 +452,12 @@
                         const { completed, failed, completedAt, timeSincePrev } = s;
                         s.completed = !s.completed;
                         if (!s.completed) { s.failed = false; s.completedAt = null; s.timeSincePrev = null; this.showUndo('Set uncompleted', () => Object.assign(s, { completed, failed, completedAt, timeSincePrev })); }
-                        else { 
-                            s.completedAt = U.now(); 
-                            if (this.lastSetCompletedAt) s.timeSincePrev = Math.round((U.now() - this.lastSetCompletedAt) / 1000); 
-                            this.triggerRest(tier, s.failed); 
+                        else {
+                            s.completedAt = U.now();
+                            if (this.lastSetCompletedAt) s.timeSincePrev = Math.round((U.now() - this.lastSetCompletedAt) / 1000);
+                            this.triggerRest(tier, s.failed);
                             this.checkAutoRegulationPrompt(s, tier);
-                            this.showUndo('Set completed', () => Object.assign(s, { completed: false, failed: false, completedAt: null, timeSincePrev: null })); 
+                            this.showUndo('Set completed', () => Object.assign(s, { completed: false, failed: false, completedAt: null, timeSincePrev: null }));
                         }
                     }
                     this.computeSessionVolume(); this.saveSess();
@@ -465,24 +465,24 @@
 
                 setSetRPE(s, rpe) { s.rpe = rpe; this.saveSess(); },
                 editSet(tier, idx) { const set = this.session?.[tier]?.sets?.[idx]; if (!set) return; this.setEdit = { tier, idx, weight: U.safe(set.weight, 0), reps: U.safe(set.reps, 0), performed: set.performed ?? null, failed: !!set.failed, amrap: !!set.amrap, completed: !!set.completed, rpe: set.rpe || null }; this.activeModal = 'setEdit'; },
-                saveSetEdit() { 
-                    const set = this.session?.[this.setEdit.tier]?.sets?.[this.setEdit.idx]; 
-                    if (!set) return; 
-                    set.weight = U.rnd(U.safe(this.setEdit.weight, set.weight), this.prefs.weightUnit, this.prefs.microplates); 
-                    set.reps = Math.max(0, Math.round(U.safe(this.setEdit.reps, set.reps))); 
-                    if (set.amrap) set.performed = this.setEdit.performed == null || this.setEdit.performed === '' ? null : Math.max(0, Math.round(U.safe(this.setEdit.performed, 0))); 
-                    
+                saveSetEdit() {
+                    const set = this.session?.[this.setEdit.tier]?.sets?.[this.setEdit.idx];
+                    if (!set) return;
+                    set.weight = U.rnd(U.safe(this.setEdit.weight, set.weight), this.prefs.weightUnit, this.prefs.microplates);
+                    set.reps = Math.max(0, Math.round(U.safe(this.setEdit.reps, set.reps)));
+                    if (set.amrap) set.performed = this.setEdit.performed == null || this.setEdit.performed === '' ? null : Math.max(0, Math.round(U.safe(this.setEdit.performed, 0)));
+
                     const oldRpe = set.rpe;
-                    set.rpe = this.setEdit.rpe; 
+                    set.rpe = this.setEdit.rpe;
                     if (set.rpe >= 9.0 && oldRpe < 9.0 && this.timer.active && !set.failed) {
                         this.timerAdj(45);
                         this.showUndo('High RPE: +45s Rest', () => this.timerAdj(-45));
                     }
 
-                    set.failed = !!this.setEdit.failed; 
-                    if (set.failed) { set.completed = true; set.completedAt = set.completedAt || U.now(); } 
-                    this.activeModal = null; 
-                    this.saveSess(); 
+                    set.failed = !!this.setEdit.failed;
+                    if (set.failed) { set.completed = true; set.completedAt = set.completedAt || U.now(); }
+                    this.activeModal = null;
+                    this.saveSess();
                 },
                 applyBatchAdjust(tier) { const sets = this.session?.[tier]?.sets; if (!sets || !this.batchAdjust) return; const pct = this.batchAdjust / 100; sets.forEach(s => { if (!s.completed) s.weight = U.rnd(s.weight * (1 + pct), this.prefs.weightUnit, this.prefs.microplates); }); this.batchAdjust = 0; this.saveSess(); },
                 finish() { const inc = this.getInc(); if (inc.total > 0 && !confirm(`Incomplete: ${inc.total}. Finish?`)) return; this.sessionRating = 0; this.sessionNotes = this.session.notes || ''; this.sessionRPE = 7; this.timer.active = false; this.activeModal = 'rating'; },
@@ -592,12 +592,12 @@
 
                     // Intensity Score, Work, Power
                     let rpeSum = 0, rpeCount = 0;
-                    all.forEach(s => { if(s.completed && s.rpe) { rpeSum+=s.rpe; rpeCount++; } });
-                    const avgRpe = rpeCount ? rpeSum/rpeCount : 7;
-                    const vol = all.reduce((a,s)=>s.completed?a+(s.weight*(s.performed||s.reps)):a, 0);
-                    const avgVol = this.history.length ? this.history.reduce((a,b)=>a+(b.totalVolume||0),0)/this.history.length : vol;
+                    all.forEach(s => { if (s.completed && s.rpe) { rpeSum += s.rpe; rpeCount++; } });
+                    const avgRpe = rpeCount ? rpeSum / rpeCount : 7;
+                    const vol = all.reduce((a, s) => s.completed ? a + (s.weight * (s.performed || s.reps)) : a, 0);
+                    const avgVol = this.history.length ? this.history.reduce((a, b) => a + (b.totalVolume || 0), 0) / this.history.length : vol;
                     const intensityScore = Math.min(100, Math.round(((vol / (avgVol || 1)) * 40) + ((avgRpe / 10) * 60)));
-                    const workJoules = Math.round(vol * 9.8 * 0.5); 
+                    const workJoules = Math.round(vol * 9.8 * 0.5);
                     const durSecs = Math.max(60, (U.now() - this.session.start) / 1000);
                     const powerWatts = Math.round(workJoules / durSecs);
 
@@ -607,7 +607,7 @@
 
                     // T2 PRs
                     let bestT2E1RM = 0;
-                    t2.sets.forEach(s => { if(s.completed) bestT2E1RM = Math.max(bestT2E1RM, compositeE1RM(s.weight, s.performed||s.reps)); });
+                    t2.sets.forEach(s => { if (s.completed) bestT2E1RM = Math.max(bestT2E1RM, compositeE1RM(s.weight, s.performed || s.reps)); });
                     const t2Name = t2.selectedExercise || t2.name;
                     let t2PR = false;
                     if (bestT2E1RM > (this.prs[t2Name]?.weight || 0)) {
@@ -630,7 +630,7 @@
                             if (rmax) autoProgNotes.push(`+ Consider upping weight on ${on} (hit max reps)`);
                         }
                     });
-                    if(autoProgNotes.length) this.sessionNotes = (this.sessionNotes ? this.sessionNotes + '\n' : '') + autoProgNotes.join('\n');
+                    if (autoProgNotes.length) this.sessionNotes = (this.sessionNotes ? this.sessionNotes + '\n' : '') + autoProgNotes.join('\n');
 
                     this.history.push({
                         date: new Date().toLocaleDateString(), isoDate: iso, timestamp: U.now(), title: this.session.title, increase: prog.add, pr: prog.add > 0 || isNewPR, progressionMethod: prog.method, duration: Math.round((U.now() - this.session.start) / 60000), rating: this.sessionRating, rpe: this.sessionRPE, notes: this.sessionNotes, totalVolume: vol,
@@ -645,39 +645,39 @@
                     this.streak++; this.computeLongestStreak(); this.computeFrequency(); this.session = {}; this.savedSession = null; DB.d(K.session); DB.d('lift_active_session_backup'); this.activeModal = null; this.save(); this.chkAch(); this.view = 'dashboard'; this.calBuild(); this.$nextTick(() => this.draw());
                 },
 
-                warmups() { 
-                    if (!this.session?.t1?.sets?.[0]) return []; 
-                    const w = this.session.t1.sets[0].weight; 
-                    let steps = this.prefs.warmupSteps || [40,60,80];
-                    return [{w: this.prefs.barWeight, r: 10}, ...steps.map(p => ({ w: U.rnd(w * (p/100), this.prefs.weightUnit, this.prefs.microplates), r: p < 50 ? 5 : p < 75 ? 3 : 2 }))].filter(x => x.w >= this.prefs.barWeight);
+                warmups() {
+                    if (!this.session?.t1?.sets?.[0]) return [];
+                    const w = this.session.t1.sets[0].weight;
+                    let steps = this.prefs.warmupSteps || [40, 60, 80];
+                    return [{ w: this.prefs.barWeight, r: 10 }, ...steps.map(p => ({ w: U.rnd(w * (p / 100), this.prefs.weightUnit, this.prefs.microplates), r: p < 50 ? 5 : p < 75 ? 3 : 2 }))].filter(x => x.w >= this.prefs.barWeight);
                 },
-                calcPlates(w, orig) { 
-                    if(orig !== undefined) this.plate.originalW = orig;
-                    else if(!this.plate.open) this.plate.originalW = w;
+                calcPlates(w, orig) {
+                    if (orig !== undefined) this.plate.originalW = orig;
+                    else if (!this.plate.open) this.plate.originalW = w;
 
                     this.plate.open = true;
                     this.plate.w = w;
                     this.plate.plates = [];
 
                     let r = (w - this.prefs.barWeight) / 2;
-                    if(r <= 0) return;
+                    if (r <= 0) return;
 
                     const eps = 0.01;
-                    DATA.ui.plates[this.prefs.weightUnit].forEach(p => { 
-                        while (r >= p - eps) { 
-                            this.plate.plates.push(p); 
-                            r -= p; 
-                        } 
-                    }); 
+                    DATA.ui.plates[this.prefs.weightUnit].forEach(p => {
+                        while (r >= p - eps) {
+                            this.plate.plates.push(p);
+                            r -= p;
+                        }
+                    });
                 },
                 closestWeight(w) { const bar = this.prefs.barWeight; let rem = (w - bar) / 2, t = bar; DATA.ui.plates[this.prefs.weightUnit].forEach(p => { while (rem >= p) { t += p * 2; rem -= p; } }); return t; },
                 computeSessionVolume() { this.sessionVolume = [...(this.session?.t1?.sets || []), ...(this.session?.t2?.sets || [])].reduce((a, s) => s.completed ? a + (s.weight * (s.performed || s.reps)) : a, 0); },
-                estimateTimeRemaining() { 
-                    if (!this.session?.t1?.sets) return 0; 
-                    const rem = [...(this.session.t1?.sets || []), ...(this.session.t2?.sets || [])].filter(s => !s.completed).length; 
-                    let ar = 0; (this.session.acc || []).forEach(a => { const on = a.originalName || a.name; for (let i = 1; i <= (a.sets || 0); i++) if (!this.isAccDone(on, i)) ar++; }); 
+                estimateTimeRemaining() {
+                    if (!this.session?.t1?.sets) return 0;
+                    const rem = [...(this.session.t1?.sets || []), ...(this.session.t2?.sets || [])].filter(s => !s.completed).length;
+                    let ar = 0; (this.session.acc || []).forEach(a => { const on = a.originalName || a.name; for (let i = 1; i <= (a.sets || 0); i++) if (!this.isAccDone(on, i)) ar++; });
                     const avgRest = this.restTimes.length ? this.restTimes.reduce((a, r) => a + r.target, 0) / this.restTimes.length : (this.prefs.restT1 + this.prefs.restT2) / 2;
-                    return Math.round(((rem + ar) * (avgRest + 45)) / 60); 
+                    return Math.round(((rem + ar) * (avgRest + 45)) / 60);
                 },
 
                 handleSwipeStart(e, tier, idx) { this.swipeData = { startX: (e.touches ? e.touches[0] : e).clientX, startY: (e.touches ? e.touches[0] : e).clientY, dx: 0, active: true, tier, idx }; },
@@ -689,10 +689,10 @@
                 draw() {
                     const drawLine = (id, src, d, c) => { const ctx = document.getElementById(id); if (ctx) { if (charts[id]) charts[id].destroy(); charts[id] = new Chart(ctx, { type: 'line', data: { labels: src.map(x => x.date || x) || [], datasets: [{ data: d || src.map(x => x.details?.est1rm || x.weight), borderColor: c, backgroundColor: c + '80', tension: .3, fill: true }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: false }, scales: { x: { display: false }, y: { grid: { color: '#ffffff0d' }, ticks: { color: '#666' } } } } }); } };
                     drawLine('mainChart', this.history.filter(h => h.details?.t1 === this.chartLift), null, '#6366f1'); drawLine('bodyWeightChart', this.bwLog.slice(-30), this.bwLog.slice(-30).map(x => x.weight), '#3b82f6');
-                    
+
                     const v = {}, ctx = document.getElementById('volumeChart'); this.history.slice(-20).forEach(h => { const ts = new Date(h.timestamp); const k = `W${Math.ceil((((ts - new Date(ts.getFullYear(), 0, 1)) / 864e5) + 1) / 7)}`; v[k] = (v[k] || 0) + (h.totalVolume || 0); });
                     if (ctx) { if (charts.vol) charts.vol.destroy(); charts.vol = new Chart(ctx, { type: 'bar', data: { labels: Object.keys(v), datasets: [{ data: Object.values(v), backgroundColor: '#10b98180' }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: false }, scales: { x: { display: false }, y: { grid: { color: '#ffffff0d' }, ticks: { color: '#666' } } } } }); }
-                    
+
                     // Muscle Balance Radar Chart Addition
                     const balCtx = document.getElementById('balanceChart');
                     if (balCtx) {
@@ -702,32 +702,32 @@
                             data: {
                                 labels: ['Push', 'Pull', 'Legs', 'Core'],
                                 datasets: [{
-                                    data: [this.cache.mgVol.Push||0, this.cache.mgVol.Pull||0, this.cache.mgVol.Legs||0, this.cache.mgVol.Core||0],
+                                    data: [this.cache.mgVol.Push || 0, this.cache.mgVol.Pull || 0, this.cache.mgVol.Legs || 0, this.cache.mgVol.Core || 0],
                                     backgroundColor: 'rgba(99, 102, 241, 0.2)',
                                     borderColor: '#6366f1',
                                     pointBackgroundColor: '#fff',
                                     borderWidth: 2
                                 }]
                             },
-                            options: { 
+                            options: {
                                 maintainAspectRatio: false,
-                                scales: { r: { ticks: { display: false, maxTicksLimit: 5 }, grid: { color: 'rgba(255,255,255,0.1)' }, angleLines: { color: 'rgba(255,255,255,0.1)' }, pointLabels: { color: '#94a3b8', font: { size: 10 } } } }, 
-                                plugins: { legend: false, tooltip: { enabled: false } } 
+                                scales: { r: { ticks: { display: false, maxTicksLimit: 5 }, grid: { color: 'rgba(255,255,255,0.1)' }, angleLines: { color: 'rgba(255,255,255,0.1)' }, pointLabels: { color: '#94a3b8', font: { size: 10 } } } },
+                                plugins: { legend: false, tooltip: { enabled: false } }
                             }
                         });
                     }
                 },
 
-                drawPRCharts() { 
-                    Object.keys(this.prs).forEach(l => { 
-                        const safeId = 'pr_' + l.replace(/\s+/g,'_');
-                        const ctx = document.getElementById(safeId); 
-                        const entries = (this.e1rmHistory[l] || []).slice(-15); 
-                        if (ctx && entries.length) { 
-                            if (charts[safeId]) charts[safeId].destroy(); 
-                            charts[safeId] = new Chart(ctx, { type: 'line', data: { labels: entries.map(e => e.date), datasets: [{ data: entries.map(e => e.e1rm), borderColor: '#6366f1', backgroundColor: '#6366f180', tension: .3, fill: true, pointRadius: 3, pointBackgroundColor: '#6366f1' }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: false }, scales: { x: { display: false }, y: { grid: { color: '#ffffff0d' }, ticks: { color: '#666' } } } } }); 
-                        } 
-                    }); 
+                drawPRCharts() {
+                    Object.keys(this.prs).forEach(l => {
+                        const safeId = 'pr_' + l.replace(/\s+/g, '_');
+                        const ctx = document.getElementById(safeId);
+                        const entries = (this.e1rmHistory[l] || []).slice(-15);
+                        if (ctx && entries.length) {
+                            if (charts[safeId]) charts[safeId].destroy();
+                            charts[safeId] = new Chart(ctx, { type: 'line', data: { labels: entries.map(e => e.date), datasets: [{ data: entries.map(e => e.e1rm), borderColor: '#6366f1', backgroundColor: '#6366f180', tension: .3, fill: true, pointRadius: 3, pointBackgroundColor: '#6366f1' }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: false }, scales: { x: { display: false }, y: { grid: { color: '#ffffff0d' }, ticks: { color: '#666' } } } } });
+                        }
+                    });
                 },
                 getAdaptedRecoveryCapacity(m) { return (DATA.baseRecoveryCapacity[m] || 20) * (1 + Math.min(0.5, this.getRecentMuscleFrequency(m, 28) * 0.08)); },
                 getRecentMuscleFrequency(m, d) { let hits = 0; this.history.filter(h => h.timestamp >= U.now() - d * 864e5).forEach(w => { if (impact(w.details?.t1)[m]) hits++; if (impact(w.setDetails?.t2Name)[m]) hits++; (w.setDetails?.accessories || []).forEach(a => { if (impact(a.name)[m]) hits += 0.5; }); }); return hits / (d / 7); },
@@ -745,22 +745,16 @@
     if(!sList || !name) return;
     const vol = sList.reduce((a,x)=>x.completed?a+(x.weight*(x.performed||x.reps)):a, 0);
     const imp = impact(name) || {};
-    
-    // Helper to get max impact
-    const getF = (ms) => Math.max(0, ...ms.map(m => imp[m] || 0));
 
-    // THE FIX: "Main Mover" Threshold
-    // If impact is > 0.5, count 100% of volume.
-    // If impact is <= 0.5 (stabilizer), count weighted volume.
-    const calc = (ms) => {
-        const f = getF(ms);
-        return vol * (f > 0.5 ? 1 : f); 
+    const groupImpact = (ms) => {
+        const f = Math.max(0, ...ms.map(m => imp[m] || 0));
+        return vol * Math.min(f, 1); // Always use weighted, capped at 1
     };
 
-    mgVol.Push += calc(['chest', 'frontDelt', 'tri', 'upperChest']);
-    mgVol.Pull += calc(['lats', 'bi', 'rearDelt', 'traps']);
-    mgVol.Legs += calc(['quads', 'hams', 'glutes', 'calves']);
-    mgVol.Core += calc(['abs', 'lowBack']);
+    mgVol.Push += groupImpact(['chest', 'frontDelt', 'tri', 'upperChest']);
+    mgVol.Pull += groupImpact(['lats', 'bi', 'rearDelt', 'traps']);
+    mgVol.Legs += groupImpact(['quads', 'hams', 'glutes', 'calves']);
+    mgVol.Core += groupImpact(['abs', 'lowBack']);
 };
                             pSet(w.setDetails?.t1, w.details?.t1);
                             pSet(w.setDetails?.t2, w.setDetails?.t2Name);
@@ -777,10 +771,21 @@
 
                         proc(w.details?.t1, w.setDetails?.t1); proc(w.setDetails?.t2Name, w.setDetails?.t2);
                         (w.setDetails?.accessories || []).forEach(a => {
-                            if (!a.completed) return;
-                            const m = impact(a.name) || {}, load = estimateAccFatigue(a.name, a.completed, a.reps || '10-12') * rpeS;
-                            Object.entries(m).forEach(([k, v]) => fatigue[k] = (fatigue[k] || 0) + (load * v * Math.pow(0.5, age / (DATA.halfLife[k] || 24))));
-                        });
+    if (!a.completed) return;
+    const accImp = impact(a.name) || {};
+    const avgReps = parseRepRange(a.reps || '10-12');
+    const estVol = a.completed * avgReps * (DATA.compoundAccessories.has(a.name) ? 50 : 30);
+    
+    const accGroupImpact = (ms) => {
+        const f = Math.max(0, ...ms.map(m => accImp[m] || 0));
+        return estVol * Math.min(f, 1);
+    };
+    
+    mgVol.Push += accGroupImpact(['chest', 'frontDelt', 'tri', 'upperChest']);
+    mgVol.Pull += accGroupImpact(['lats', 'bi', 'rearDelt', 'traps']);
+    mgVol.Legs += accGroupImpact(['quads', 'hams', 'glutes', 'calves']);
+    mgVol.Core += accGroupImpact(['abs', 'lowBack']);
+});
                     });
 
                     const rm = {};
@@ -837,7 +842,7 @@
                 },
 
                 finSetup() { if (Object.values(this.setup).some(v => v > 0)) { Object.keys(this.setup).forEach(k => this.tms[k] = U.rnd(this.setup[k] * .9, this.prefs.weightUnit)); this.save(); this.savePrefs(); this.view = 'dashboard'; } },
-                resume() { this.session = this.savedSession; if (this.session?.t2 && !this.session.t2.originalName) this.session.t2.originalName = this.session.t2.name; if (this.session?.acc) this.session.acc.forEach(a => { if (!a.originalName) a.originalName = a.name; if(a.supersetId===undefined) a.supersetId=null; }); if (!this.session.completedAcc) this.session.completedAcc = {}; const lastC = [...(this.session.t1?.sets || []), ...(this.session.t2?.sets || [])].filter(s => s.completedAt).sort((a, b) => b.completedAt - a.completedAt); this.lastSetCompletedAt = lastC.length ? lastC[0].completedAt : null; this.activeModal = null; this.view = 'workout'; this.reqWake(); },
+                resume() { this.session = this.savedSession; if (this.session?.t2 && !this.session.t2.originalName) this.session.t2.originalName = this.session.t2.name; if (this.session?.acc) this.session.acc.forEach(a => { if (!a.originalName) a.originalName = a.name; if (a.supersetId === undefined) a.supersetId = null; }); if (!this.session.completedAcc) this.session.completedAcc = {}; const lastC = [...(this.session.t1?.sets || []), ...(this.session.t2?.sets || [])].filter(s => s.completedAt).sort((a, b) => b.completedAt - a.completedAt); this.lastSetCompletedAt = lastC.length ? lastC[0].completedAt : null; this.activeModal = null; this.view = 'workout'; this.reqWake(); },
                 logBW() { if (this.tempBodyWeight) { this.bwLog.push({ date: U.now(), weight: this.tempBodyWeight }); DB.s(K.bw, this.bwLog); } this.activeModal = null; this.start(); },
                 getBW(t) { const w = this.bwLog.map(x => x.weight); return !w.length ? '-' : t === 'last' ? w[w.length - 1].toFixed(1) : t === 'min' ? Math.min(...w).toFixed(1) : Math.max(...w).toFixed(1); },
                 fmtVol: v => v > 1e6 ? (v / 1e6).toFixed(1) + 'M' : v > 1e3 ? (v / 1e3).toFixed(0) + 'K' : v, fmtVolS: v => v ? v > 1e3 ? (v / 1e3).toFixed(1) + 'k' : v : '-',
@@ -852,20 +857,20 @@
 
                 exportJSON() { const d = { version: 3 }; Object.values(K).forEach(k => d[k] = DB.g(k)); const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(d)], { type: 'application/json' })); a.download = `lift_backup_${U.iso(U.now())}.json`; a.click(); },
                 exportCSV() { const c = ['Date,Title,Duration(min),TotalVolume,Rating,RPE,PR,T1,TopSet,Est1RM,AvgActualRest,IntensityScore,Work(J),Power(W),Notes', ...this.history.map(x => [x.date, x.title, x.duration || '', x.totalVolume || '', x.rating || '', x.rpe || '', x.pr ? 'Yes' : 'No', x.details?.t1 || '', x.details?.weight || '', x.details?.est1rm || '', x.avgActualRest || '', x.intensityScore || '', x.workJoules || '', x.powerWatts || '', (x.notes || '').replace(/,/g, ';')].join(','))].join('\n'); const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([c], { type: 'text/csv' })); a.download = `lift_export_${U.iso(U.now())}.csv`; a.click(); },
-                importData(e) { 
-                    const r = new FileReader(); 
-                    r.onload = ev => { 
-                        try { 
-                            const d = JSON.parse(ev.target.result); 
+                importData(e) {
+                    const r = new FileReader();
+                    r.onload = ev => {
+                        try {
+                            const d = JSON.parse(ev.target.result);
                             if (!d.version || (!d.tms && !d.history)) {
                                 alert('Invalid file format: Missing key structural data.');
                                 return;
                             }
-                            Object.keys(d).forEach(k => { if (k !== 'version') DB.s(k, d[k]); }); 
-                            location.reload(); 
-                        } catch { alert('Invalid file format or corrupted JSON data.'); } 
-                    }; 
-                    r.readAsText(e.target.files[0]); 
+                            Object.keys(d).forEach(k => { if (k !== 'version') DB.s(k, d[k]); });
+                            location.reload();
+                        } catch { alert('Invalid file format or corrupted JSON data.'); }
+                    };
+                    r.readAsText(e.target.files[0]);
                 },
                 reset() { if (confirm('Reset EVERYTHING?')) { localStorage.clear(); location.reload(); } },
                 histFilt() { const l = this.history.slice().reverse(); return this.historyFilter !== 'all' ? l.filter(h => h.details?.t1 === this.historyFilter).slice(0, 50) : l.slice(0, 50); },
@@ -884,13 +889,13 @@
                     return null;
                 },
 
-                doZen() { 
-                    const z = this.getZen(); if (!z) return; 
-                    if (z.t === 'acc') this.togAcc(z.on, z.i); 
-                    else { 
-                        if (z.s.amrap) { if (this.zenAmrap === null || this.zenAmrap === '') return alert('Enter reps'); z.s.performed = this.zenAmrap; this.zenAmrap = null; } 
-                        this.toggleSet(z.s, z.t); 
-                    } 
+                doZen() {
+                    const z = this.getZen(); if (!z) return;
+                    if (z.t === 'acc') this.togAcc(z.on, z.i);
+                    else {
+                        if (z.s.amrap) { if (this.zenAmrap === null || this.zenAmrap === '') return alert('Enter reps'); z.s.performed = this.zenAmrap; this.zenAmrap = null; }
+                        this.toggleSet(z.s, z.t);
+                    }
                 },
                 cancel() { if (confirm('Cancel workout?')) { this.session = {}; this.savedSession = null; DB.d(K.session); DB.d('lift_active_session_backup'); this.timer.active = false; this.view = 'dashboard'; this.relWake(); this.$nextTick(() => this.draw()); } },
 
@@ -898,23 +903,23 @@
                     return { 'e1rm_trend': '📈 E1RM Trend', 'linear': '📏 Linear', 'linear_hold': '⏸️ Hold', 'linear_deload': '⬇️ Deload', 'nsuns_increase': '📈 nSuns +', 'nsuns_decrease': '⬇️ nSuns −', 'nsuns_hold': '⏸️ nSuns Hold', 'nsuns_hold_no_amrap': '⏸️ No AMRAP', 'nsuns_hold_incomplete': '⏸️ Incomplete', 'nsuns_t2_no_change': '— T2', 'ppl_linear': '📏 PPL Linear', 'ppl_amrap_linear': '📈 PPL AMRAP', 'ppl_hold_missed': '⏸️ PPL Hold', 'ppl_hold': '⏸️ PPL Hold', 'ppl_deload': '⬇️ PPL Deload', 'ppl_t2_no_change': '— T2', 'phul_t2_no_change': '— T2', 'gz_t1_linear': '📏 GZ T1 Linear', 'gz_t2_linear': '📏 GZ T2 Linear', 'gz_t1_stage_advance': '⬆️ GZ T1 Stage Up', 'gz_t2_stage_advance': '⬆️ GZ T2 Stage Up', 'gz_t1_stage_reset': '🔄 GZ T1 Reset', 'gz_t2_stage_reset': '🔄 GZ T2 Reset', 'sl_linear': '📏 SL Linear', 'sl_retry': '🔁 SL Retry', 'sl_deload': '⬇️ SL Deload', 'sl_to_3x5': '📉 SL → 3x5', 'sl_to_3x3': '📉 SL → 3x3', 'sl_to_1x3': '📉 SL → 1x3', '531_cycle': '🔄 531 Cycle', '531_in_cycle': '⏳ 531 In Cycle', '531_hold': '⏸️ 531 Hold', '531_deload': '⬇️ 531 Deload', '531_t2_no_change': '— T2', 'auto_deload_10pct': '⬇️ Auto Deload', 'hold_missed_reps': '⏸️ Hold', 'completion_deload': '⬇️ Completion Deload', 'none': '—' }[m] || '—';
                 },
                 getE1RMTrend(l) { const e = (this.e1rmHistory[l] || []).slice(-5); if (e.length < 2) return { direction: 'flat', change: 0 }; const c = e[e.length - 1].e1rm - e[0].e1rm; return { direction: c > 0 ? 'up' : c < 0 ? 'down' : 'flat', change: c }; },
-                
-                getWilksEstimate() { 
-                    const bw = this.bwLog.length ? this.bwLog[this.bwLog.length - 1].weight : 0; 
-                    const t = ((this.tms.Bench || 0) + (this.tms.Squat || 0) + (this.tms.Deadlift || 0)) / 0.9; 
-                    if (!bw || !t) return null; 
-                    const bwK = this.prefs.weightUnit === 'kg' ? bw : bw * 0.453592; 
-                    const tK = this.prefs.weightUnit === 'kg' ? t : t * 0.453592; 
-                    return Math.round(tK * (500 / (-216.0475144 + 16.2606339 * bwK - 0.002388645 * Math.pow(bwK, 2) - 0.00113732 * Math.pow(bwK, 3) + 7.01863e-6 * Math.pow(bwK, 4) - 1.291e-8 * Math.pow(bwK, 5)))); 
+
+                getWilksEstimate() {
+                    const bw = this.bwLog.length ? this.bwLog[this.bwLog.length - 1].weight : 0;
+                    const t = ((this.tms.Bench || 0) + (this.tms.Squat || 0) + (this.tms.Deadlift || 0)) / 0.9;
+                    if (!bw || !t) return null;
+                    const bwK = this.prefs.weightUnit === 'kg' ? bw : bw * 0.453592;
+                    const tK = this.prefs.weightUnit === 'kg' ? t : t * 0.453592;
+                    return Math.round(tK * (500 / (-216.0475144 + 16.2606339 * bwK - 0.002388645 * Math.pow(bwK, 2) - 0.00113732 * Math.pow(bwK, 3) + 7.01863e-6 * Math.pow(bwK, 4) - 1.291e-8 * Math.pow(bwK, 5))));
                 },
-                
+
                 getDotsEstimate() {
                     const bw = this.bwLog.length ? this.bwLog[this.bwLog.length - 1].weight : 0;
                     const t = ((this.tms.Bench || 0) + (this.tms.Squat || 0) + (this.tms.Deadlift || 0)) / 0.9;
                     if (!bw || !t) return null;
                     const w = this.prefs.weightUnit === 'kg' ? bw : bw * 0.453592;
                     const tK = this.prefs.weightUnit === 'kg' ? t : t * 0.453592;
-                    const d = -0.000001093 * Math.pow(w,4) + 0.0007391293 * Math.pow(w,3) - 0.1918759221 * Math.pow(w,2) + 24.0900756 * w - 307.75076;
+                    const d = -0.000001093 * Math.pow(w, 4) + 0.0007391293 * Math.pow(w, 3) - 0.1918759221 * Math.pow(w, 2) + 24.0900756 * w - 307.75076;
                     return Math.round((tK * 500) / d);
                 },
 
@@ -925,8 +930,7 @@
     </script>
 </head>
 
-<body x-data="app()" x-init="init()" @keydown.window.escape="handleEscape"
-    class="antialiased bg-black text-slate-200"
+<body x-data="app()" x-init="init()" @keydown.window.escape="handleEscape" class="antialiased bg-black text-slate-200"
     :class="{'overflow-hidden h-screen': view==='workout' || activeModal, 'min-h-screen overflow-y-auto': view!=='workout' && !activeModal}">
     <div x-show="undoState.visible" class="undo-toast" :class="undoState.leaving?'undo-toast-leave':'undo-toast-enter'"
         x-cloak>
@@ -1029,7 +1033,8 @@
                     </div>
                     <div class="pl-4 border-l-2 border-green-500">
                         <h4 class="lbl text-green-400 mb-1">Set RPE</h4>
-                        <p class="text-sm text-slate-300">Log 9.0+ RPE to trigger auto-rest extension & weight drop prompts</p>
+                        <p class="text-sm text-slate-300">Log 9.0+ RPE to trigger auto-rest extension & weight drop
+                            prompts</p>
                     </div>
                     <div class="pl-4 border-l-2 border-purple-500">
                         <h4 class="lbl text-purple-400 mb-1">Exercise Notes</h4>
@@ -1115,7 +1120,8 @@
                 <p class="text-xs text-slate-400 mb-4">Apply % change to all uncompleted sets</p>
                 <div class="flex flex-wrap gap-2 justify-center mb-6">
                     <template x-for="pct in [-15, -10, -5, -2.5, 2.5, 5, 10, 15]">
-                        <button @click="batchAdjust=pct" class="px-3 py-2 rounded-lg text-xs font-bold transition min-w-[3rem]"
+                        <button @click="batchAdjust=pct"
+                            class="px-3 py-2 rounded-lg text-xs font-bold transition min-w-[3rem]"
                             :class="batchAdjust===pct?'bg-indigo-600 text-white':'bg-black/30 text-slate-400 border border-white/10'"
                             x-text="(pct>0?'+':'')+pct+'%'">
                         </button>
@@ -1177,15 +1183,19 @@
                             <div class="text-[9px] text-slate-500 uppercase">Vol</div>
                         </div>
                         <div class="glass-item">
-                            <div class="text-lg font-bold text-white mono" x-text="selectedLog?.workJoules?(selectedLog.workJoules/1000).toFixed(1)+'kJ':'-'"></div>
+                            <div class="text-lg font-bold text-white mono"
+                                x-text="selectedLog?.workJoules?(selectedLog.workJoules/1000).toFixed(1)+'kJ':'-'">
+                            </div>
                             <div class="text-[9px] text-slate-500 uppercase">Est. Work</div>
                         </div>
                         <div class="glass-item">
-                            <div class="text-lg font-bold text-white mono" x-text="selectedLog?.powerWatts?selectedLog.powerWatts+'W':'-'"></div>
+                            <div class="text-lg font-bold text-white mono"
+                                x-text="selectedLog?.powerWatts?selectedLog.powerWatts+'W':'-'"></div>
                             <div class="text-[9px] text-slate-500 uppercase">Avg Power</div>
                         </div>
                         <div class="glass-item">
-                            <div class="text-lg font-bold text-white mono text-indigo-400" x-text="selectedLog?.intensityScore||'-'"></div>
+                            <div class="text-lg font-bold text-white mono text-indigo-400"
+                                x-text="selectedLog?.intensityScore||'-'"></div>
                             <div class="text-[9px] text-slate-500 uppercase">Intensity</div>
                         </div>
                     </div>
@@ -1263,7 +1273,9 @@
     <!-- SETUP VIEW -->
     <div x-show="view==='setup'" class="p-6 f-col h-full justify-center max-w-md mx-auto" x-transition x-cloak>
         <div class="text-center mb-10">
-            <h1 class="text-4xl font-black italic tracking-tighter mb-2 bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">LIFT ULTIMATE</h1>
+            <h1
+                class="text-4xl font-black italic tracking-tighter mb-2 bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
+                LIFT ULTIMATE</h1>
             <p class="text-slate-400">Enter your 1 Rep Maxes to begin</p>
         </div>
         <div class="space-y-4 mb-8">
@@ -1294,7 +1306,8 @@
                         class="text-indigo-500">ULTIMATE</span></div>
             </div>
             <div class="f-col items-end gap-1">
-                <div class="bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/20 text-[10px] text-indigo-400 font-bold uppercase tracking-wider shadow-[0_0_10px_rgba(99,102,241,0.2)]" x-text="'LVL ' + currentLevel + ' ' + currentTitle"></div>
+                <div class="bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/20 text-[10px] text-indigo-400 font-bold uppercase tracking-wider shadow-[0_0_10px_rgba(99,102,241,0.2)]"
+                    x-text="'LVL ' + currentLevel + ' ' + currentTitle"></div>
                 <div class="f-g2">
                     <div class="bg-white/5 rounded-full px-3 py-1 flex items-center gap-2 border border-white/10"
                         @click="activeModal='achievement'">
@@ -1315,14 +1328,16 @@
                 </div>
                 <div class="grid grid-cols-4 gap-2 mb-2">
                     <template x-for="g in cache.recovery">
-                        <div class="f-col items-center gap-1 cursor-pointer hover:opacity-80 transition" @click="expandedRecovery = (expandedRecovery === g.name ? null : g.name)">
+                        <div class="f-col items-center gap-1 cursor-pointer hover:opacity-80 transition"
+                            @click="expandedRecovery = (expandedRecovery === g.name ? null : g.name)">
                             <div class="h-16 w-3 bg-white/10 rounded-full overflow-hidden relative">
                                 <div class="absolute bottom-0 w-full rounded-full transition-all duration-1000"
                                     :style="`height:${g.recovery}%;`"
                                     :class="g.recovery>=80?'bg-green-500':g.recovery>=40?'bg-yellow-500':'bg-red-500'">
                                 </div>
                             </div>
-                            <span class="text-[9px] font-bold text-slate-500 uppercase" :class="expandedRecovery === g.name ? 'text-white' : ''" x-text="g.name"></span>
+                            <span class="text-[9px] font-bold text-slate-500 uppercase"
+                                :class="expandedRecovery === g.name ? 'text-white' : ''" x-text="g.name"></span>
                         </div>
                     </template>
                 </div>
@@ -1337,11 +1352,13 @@
                                         <span class="text-xs text-slate-300" x-text="m.name"></span>
                                         <div class="f-g2">
                                             <div class="w-24 h-1.5 bg-white/10 rounded-full overflow-hidden">
-                                                <div class="h-full rounded-full transition-all duration-500" 
-                                                     :class="m.recovery>=80?'bg-green-500':m.recovery>=40?'bg-yellow-500':'bg-red-500'" 
-                                                     :style="'width:'+m.recovery+'%'"></div>
+                                                <div class="h-full rounded-full transition-all duration-500"
+                                                    :class="m.recovery>=80?'bg-green-500':m.recovery>=40?'bg-yellow-500':'bg-red-500'"
+                                                    :style="'width:'+m.recovery+'%'"></div>
                                             </div>
-                                            <span class="text-xs font-mono font-bold w-8 text-right" :class="m.recovery>=80?'text-green-400':m.recovery>=40?'text-yellow-400':'text-red-400'" x-text="m.recovery+'%'"></span>
+                                            <span class="text-xs font-mono font-bold w-8 text-right"
+                                                :class="m.recovery>=80?'text-green-400':m.recovery>=40?'text-yellow-400':'text-red-400'"
+                                                x-text="m.recovery+'%'"></span>
                                         </div>
                                     </div>
                                 </template>
@@ -1350,11 +1367,16 @@
                     </template>
                 </div>
 
-                <div x-data="{adv: getRecoveryAdvice()}" x-show="adv" class="mt-3 p-2 bg-red-500/10 rounded border border-red-500/20 flex gap-2 items-center">
+                <div x-data="{adv: getRecoveryAdvice()}" x-show="adv"
+                    class="mt-3 p-2 bg-red-500/10 rounded border border-red-500/20 flex gap-2 items-center">
                     <template x-if="adv">
                         <div class="f-g2">
-                            <svg class="w-4 h-4 text-red-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="icons.warn" /></svg>
-                            <span class="text-xs text-red-300" x-text="adv.suggestion+' for '+adv.muscles.join(', ')"></span>
+                            <svg class="w-4 h-4 text-red-400 flex-shrink-0" fill="none" viewBox="0 0 24 24"
+                                stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="icons.warn" />
+                            </svg>
+                            <span class="text-xs text-red-300"
+                                x-text="adv.suggestion+' for '+adv.muscles.join(', ')"></span>
                         </div>
                     </template>
                 </div>
@@ -1363,7 +1385,7 @@
             <!-- Muscle Imbalance Radar Chart -->
             <div class="glass-card">
                 <div class="f-cb mb-2">
-                     <h3 class="lbl mb-0">Muscle Balance (30 Days)</h3>
+                    <h3 class="lbl mb-0">Muscle Balance (30 Days)</h3>
                 </div>
                 <div class="h-48 w-full relative"><canvas id="balanceChart"></canvas></div>
             </div>
@@ -1373,7 +1395,9 @@
                 <div class="f-cb mb-4">
                     <select x-model="chartLift" @change="$nextTick(()=>draw())"
                         class="bg-transparent text-sm font-bold text-white outline-none">
-                        <template x-for="l in lifts()"><option :value="l" x-text="l"></option></template>
+                        <template x-for="l in lifts()">
+                            <option :value="l" x-text="l"></option>
+                        </template>
                     </select>
                     <div class="f-g2 text-xs">
                         <span class="text-slate-500">TM</span><span class="font-bold text-white mono"
@@ -1388,20 +1412,22 @@
                 <div class="f-cb px-2">
                     <h3 class="lbl mb-0">Schedule</h3>
                     <div class="w-32 bg-white/10 h-1.5 rounded-full overflow-hidden">
-                        <div class="h-full bg-indigo-500 transition-all duration-500" :style="'width:' + xpProgress + '%'"></div>
+                        <div class="h-full bg-indigo-500 transition-all duration-500"
+                            :style="'width:' + xpProgress + '%'"></div>
                     </div>
                 </div>
                 <div class="snap-scroll">
                     <template x-for="(d, i) in PROGRAMS[prefs.program].days">
-                        <div @click="start(d)" class="glass-card snap-card cursor-pointer relative overflow-hidden transition active:scale-95 group"
-                             :class="i===pIdx ? 'bg-[#1A1A1E] border-indigo-500/50' : 'bg-[#101012] border-white/5 opacity-80'">
+                        <div @click="start(d)"
+                            class="glass-card snap-card cursor-pointer relative overflow-hidden transition active:scale-95 group"
+                            :class="i===pIdx ? 'bg-[#1A1A1E] border-indigo-500/50' : 'bg-[#101012] border-white/5 opacity-80'">
                             <div class="absolute top-2 right-2 text-[10px] font-bold px-2 py-1 rounded border"
-                                 :class="i===pIdx ? 'bg-indigo-500/20 text-indigo-400 border-indigo-500/30' : 'bg-white/5 text-slate-500 border-white/10'"
-                                 x-text="i===pIdx ? 'NEXT' : 'DAY '+(i+1)"></div>
-                            
+                                :class="i===pIdx ? 'bg-indigo-500/20 text-indigo-400 border-indigo-500/30' : 'bg-white/5 text-slate-500 border-white/10'"
+                                x-text="i===pIdx ? 'NEXT' : 'DAY '+(i+1)"></div>
+
                             <h2 class="text-xl font-black italic text-white mb-1" x-text="d.title||d.t"></h2>
                             <p class="text-xs text-slate-400 mb-4" x-text="d.focus || (d.t1 + ' + ' + d.t2)"></p>
-                            
+
                             <div class="flex items-center gap-3">
                                 <div class="flex-1 bg-black/30 rounded-lg p-2 text-center border border-white/5">
                                     <div class="text-[9px] text-slate-500 uppercase mb-0.5">T1</div>
@@ -1456,16 +1482,21 @@
                 </div>
             </div>
             <div class="f-g2">
-                <button @click="metronomeActive = !metronomeActive" 
-                        class="w-8 h-8 rounded-full f-c transition"
-                        :class="metronomeActive ? 'bg-black border-2 border-green-500 tempo-pulse' : 'bg-white/5 text-slate-400 border border-transparent'"
-                        title="Toggle Tempo Metronome (3-1-1-1)">
+                <button @click="metronomeActive = !metronomeActive" class="w-8 h-8 rounded-full f-c transition"
+                    :class="metronomeActive ? 'bg-black border-2 border-green-500 tempo-pulse' : 'bg-white/5 text-slate-400 border border-transparent'"
+                    title="Toggle Tempo Metronome (3-1-1-1)">
                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="icons.clock" />
                     </svg>
                 </button>
-                <button @click="toggleZen()" class="w-8 h-8 rounded-full f-c transition" :class="zenMode?'bg-indigo-600 text-white':'bg-white/5 text-slate-400'">
-                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                <button @click="toggleZen()" class="w-8 h-8 rounded-full f-c transition"
+                    :class="zenMode?'bg-indigo-600 text-white':'bg-white/5 text-slate-400'">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                    </svg>
                 </button>
                 <button @click="plate.open=!plate.open"
                     class="w-8 h-8 rounded-full bg-white/5 text-slate-400 f-c hover:bg-white/10 hover:text-white transition">
@@ -1486,45 +1517,59 @@
         </div>
 
         <!-- Timer Bar -->
-        <div x-show="timer.active" class="bg-[#1A1A1E] border-b border-white/5 px-6 py-4 f-cb transition-all" x-transition>
+        <div x-show="timer.active" class="bg-[#1A1A1E] border-b border-white/5 px-6 py-4 f-cb transition-all"
+            x-transition>
             <div class="f-g2">
-                <div class="w-12 h-12 rounded-full border-2 f-c relative" :class="timer.rem<0?'border-red-500':'border-indigo-500'">
-                    <span class="text-sm font-bold mono z-10" :class="timer.rem<0?'text-red-400':'text-white'" x-text="fmt(timer.rem)"></span>
+                <div class="w-12 h-12 rounded-full border-2 f-c relative"
+                    :class="timer.rem<0?'border-red-500':'border-indigo-500'">
+                    <span class="text-sm font-bold mono z-10" :class="timer.rem<0?'text-red-400':'text-white'"
+                        x-text="fmt(timer.rem)"></span>
                     <svg class="absolute inset-0 w-full h-full -rotate-90 text-indigo-900/30" viewBox="0 0 36 36">
-                        <path class="stroke-current" stroke-width="3" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                        <path class="transition-all duration-1000 ease-linear" :class="timer.rem<0?'stroke-red-500':'stroke-indigo-500'" :stroke-dasharray="timer.pct*100+', 100'" stroke-width="3" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                        <path class="stroke-current" stroke-width="3" fill="none"
+                            d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                        <path class="transition-all duration-1000 ease-linear"
+                            :class="timer.rem<0?'stroke-red-500':'stroke-indigo-500'"
+                            :stroke-dasharray="timer.pct*100+', 100'" stroke-width="3" fill="none"
+                            d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
                     </svg>
                 </div>
                 <div>
                     <div class="text-sm font-bold text-white mb-0.5" x-text="timer.label"></div>
                     <div class="f-g2">
-                        <button @click="timerAdj(-10)" class="text-xs bg-white/5 px-2 py-1 rounded hover:bg-white/10">-10</button>
-                        <button @click="timerAdj(30)" class="text-xs bg-white/5 px-2 py-1 rounded hover:bg-white/10">+30</button>
-                        <button @click="timer.active=false" class="text-xs text-red-400 hover:text-red-300 ml-1">Skip</button>
+                        <button @click="timerAdj(-10)"
+                            class="text-xs bg-white/5 px-2 py-1 rounded hover:bg-white/10">-10</button>
+                        <button @click="timerAdj(30)"
+                            class="text-xs bg-white/5 px-2 py-1 rounded hover:bg-white/10">+30</button>
+                        <button @click="timer.active=false"
+                            class="text-xs text-red-400 hover:text-red-300 ml-1">Skip</button>
                     </div>
                 </div>
             </div>
             <div x-show="restHistory.length>0" class="text-right hidden sm:block">
                 <div class="text-[10px] text-slate-500 uppercase">Avg Rest</div>
-                <div class="text-xs font-bold mono" x-text="fmt(getAvgActualRest(timer.label.includes('T1')?'t1':'t2')||0)"></div>
+                <div class="text-xs font-bold mono"
+                    x-text="fmt(getAvgActualRest(timer.label.includes('T1')?'t1':'t2')||0)"></div>
             </div>
         </div>
 
         <!-- Zen Mode Overlay -->
-        <div x-show="zenMode" class="flex-1 f-col items-center justify-center p-6 text-center space-y-6 bg-black" x-transition>
+        <div x-show="zenMode" class="flex-1 f-col items-center justify-center p-6 text-center space-y-6 bg-black"
+            x-transition>
             <template x-if="getZen()">
                 <div class="w-full max-w-sm swipe-row rounded-xl p-6 border border-white/10 bg-[#151518]"
-                     :style="getSwipeTransform(getZen().t, getZen().i)"
-                     @touchstart="handleSwipeStart($event, getZen().t, getZen().i)"
-                     @touchmove="handleSwipeMove($event)"
-                     @touchend="handleSwipeEnd()">
-                     
+                    :style="getSwipeTransform(getZen().t, getZen().i)"
+                    @touchstart="handleSwipeStart($event, getZen().t, getZen().i)" @touchmove="handleSwipeMove($event)"
+                    @touchend="handleSwipeEnd()">
+
                     <!-- Swipe Indicators (Behind) -->
-                    <div class="swipe-bg-left" :style="getSwipeBgOpacity(getZen().t, getZen().i, 'left')"><span class="font-bold text-red-500 text-xl">FAIL</span></div>
-                    <div class="swipe-bg-right" :style="getSwipeBgOpacity(getZen().t, getZen().i, 'right')"><span class="font-bold text-green-500 text-xl">COMPLETE</span></div>
+                    <div class="swipe-bg-left" :style="getSwipeBgOpacity(getZen().t, getZen().i, 'left')"><span
+                            class="font-bold text-red-500 text-xl">FAIL</span></div>
+                    <div class="swipe-bg-right" :style="getSwipeBgOpacity(getZen().t, getZen().i, 'right')"><span
+                            class="font-bold text-green-500 text-xl">COMPLETE</span></div>
 
                     <div class="swipe-content">
-                        <div class="text-sm text-slate-500 uppercase tracking-widest mb-2" x-text="getZen().t==='t1'?'Main Lift':getZen().t==='t2'?'Secondary':'Accessory'"></div>
+                        <div class="text-sm text-slate-500 uppercase tracking-widest mb-2"
+                            x-text="getZen().t==='t1'?'Main Lift':getZen().t==='t2'?'Secondary':'Accessory'"></div>
                         <h2 class="text-4xl font-black text-white mb-6" x-text="getZen().n"></h2>
                         <div class="f-c gap-8 mb-10">
                             <div @click="calcPlates(getZen().w)" class="cursor-pointer active:scale-95 transition">
@@ -1533,20 +1578,26 @@
                             </div>
                             <div class="text-4xl text-slate-700">×</div>
                             <div>
-                                <div class="text-6xl font-bold mono" :class="getZen().amrap?'text-yellow-500':'text-white'" x-text="getZen().r+(getZen().amrap?'+':'')"></div>
+                                <div class="text-6xl font-bold mono"
+                                    :class="getZen().amrap?'text-yellow-500':'text-white'"
+                                    x-text="getZen().r+(getZen().amrap?'+':'')"></div>
                                 <div class="text-sm text-slate-500 uppercase mt-2">Reps</div>
                             </div>
                         </div>
                         <div x-show="getZen().amrap" class="mb-6">
-                            <input type="number" x-model="zenAmrap" placeholder="Reps performed?" class="inp-lg text-2xl py-4 border-yellow-500/50 text-yellow-500">
+                            <input type="number" x-model="zenAmrap" placeholder="Reps performed?"
+                                class="inp-lg text-2xl py-4 border-yellow-500/50 text-yellow-500">
                         </div>
-                        <button @click="doZen()" class="w-full py-6 bg-white text-black font-black text-xl rounded-2xl active:scale-95 transition">COMPLETE SET</button>
+                        <button @click="doZen()"
+                            class="w-full py-6 bg-white text-black font-black text-xl rounded-2xl active:scale-95 transition">COMPLETE
+                            SET</button>
                         <div class="mt-8 text-slate-500 text-sm" x-text="'Set '+(getZen().i+1)"></div>
-                        
+
                         <!-- Prominent Timer in Focus Mode -->
                         <div x-show="timer.active" class="mt-8 p-4 bg-white/5 rounded-2xl border border-white/5">
                             <div class="text-xs text-slate-500 uppercase mb-1" x-text="timer.label"></div>
-                            <div class="text-4xl font-bold mono" :class="timer.rem<0?'text-red-500':'text-indigo-400'" x-text="fmt(timer.rem)"></div>
+                            <div class="text-4xl font-bold mono" :class="timer.rem<0?'text-red-500':'text-indigo-400'"
+                                x-text="fmt(timer.rem)"></div>
                         </div>
                     </div>
                 </div>
@@ -1569,27 +1620,40 @@
                             <h3 class="text-lg font-bold text-white leading-none" x-text="session.t1?.name"></h3>
                             <div class="text-xs text-slate-500 mt-1 f-g2">
                                 <span x-text="'TM: '+tms[session.t1?.name]"></span>
-                                <button @click="openExNote(session.t1?.name)" class="text-slate-400 hover:text-white">📝</button>
-                                <span x-show="getExNote(session.t1?.name)" class="w-1.5 h-1.5 rounded-full bg-purple-500"></span>
+                                <button @click="openExNote(session.t1?.name)"
+                                    class="text-slate-400 hover:text-white">📝</button>
+                                <span x-show="getExNote(session.t1?.name)"
+                                    class="w-1.5 h-1.5 rounded-full bg-purple-500"></span>
                             </div>
                         </div>
                     </div>
-                    <button @click="activeModal='batchAdjust'" class="text-xs bg-white/5 px-2 py-1 rounded hover:bg-white/10">Adjust</button>
+                    <button @click="activeModal='batchAdjust'"
+                        class="text-xs bg-white/5 px-2 py-1 rounded hover:bg-white/10">Adjust</button>
                 </div>
 
                 <!-- Warm-up UI addition -->
                 <div class="mb-4 bg-black/30 rounded-xl p-3 border border-white/5">
                     <div class="f-cb cursor-pointer" @click="showWarmups = !showWarmups">
                         <div class="f-g2">
-                            <svg class="w-4 h-4 text-orange-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="icons.zap_filled" /></svg>
+                            <svg class="w-4 h-4 text-orange-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    :d="icons.zap_filled" />
+                            </svg>
                             <span class="text-xs font-bold text-orange-400 uppercase tracking-widest">Warm-ups</span>
                         </div>
-                        <svg class="w-4 h-4 text-slate-500 transition-transform" :class="showWarmups ? 'rotate-180' : ''" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                        <svg class="w-4 h-4 text-slate-500 transition-transform"
+                            :class="showWarmups ? 'rotate-180' : ''" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                        </svg>
                     </div>
                     <div x-show="showWarmups" x-transition class="mt-3 space-y-2">
                         <template x-for="(w, i) in warmups()">
-                            <div class="f-cb px-3 py-2 bg-[#1A1A1E] rounded-lg border border-white/5 cursor-pointer hover:bg-white/5 transition" @click="calcPlates(w.w)">
-                                <div class="text-xs text-slate-500 font-bold" x-text="'Set ' + (i+1) + ' (' + Math.round(w.w / session.t1.sets[0].weight * 100) + '%)'"></div>
+                            <div class="f-cb px-3 py-2 bg-[#1A1A1E] rounded-lg border border-white/5 cursor-pointer hover:bg-white/5 transition"
+                                @click="calcPlates(w.w)">
+                                <div class="text-xs text-slate-500 font-bold"
+                                    x-text="'Set ' + (i+1) + ' (' + Math.round(w.w / session.t1.sets[0].weight * 100) + '%)'">
+                                </div>
                                 <div class="f-g2">
                                     <span class="text-sm font-bold text-white mono" x-text="w.w"></span>
                                     <span class="text-[10px] text-slate-500" x-text="prefs.weightUnit"></span>
@@ -1602,44 +1666,56 @@
                 </div>
 
                 <div class="space-y-1">
-                    <div class="grid grid-cols-[2rem_1fr_3rem_3rem] gap-2 px-2 pb-2 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-center">
-                        <div>#</div><div>Weight</div><div>Reps</div><div>Log</div>
+                    <div
+                        class="grid grid-cols-[2rem_1fr_3rem_3rem] gap-2 px-2 pb-2 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-center">
+                        <div>#</div>
+                        <div>Weight</div>
+                        <div>Reps</div>
+                        <div>Log</div>
                     </div>
                     <template x-for="(s,i) in session.t1?.sets">
-                        <div class="swipe-row rounded-xl bg-[#151518]"
-                             @touchstart="handleSwipeStart($event, 't1', i)"
-                             @touchmove="handleSwipeMove($event)"
-                             @touchend="handleSwipeEnd()">
-                            <div class="swipe-bg-left" :style="getSwipeBgOpacity('t1',i,'left')"><span class="font-bold text-red-500">FAIL</span></div>
-                            <div class="swipe-bg-right" :style="getSwipeBgOpacity('t1',i,'right')"><span class="font-bold text-green-500">COMPLETE</span></div>
-                            
+                        <div class="swipe-row rounded-xl bg-[#151518]" @touchstart="handleSwipeStart($event, 't1', i)"
+                            @touchmove="handleSwipeMove($event)" @touchend="handleSwipeEnd()">
+                            <div class="swipe-bg-left" :style="getSwipeBgOpacity('t1',i,'left')"><span
+                                    class="font-bold text-red-500">FAIL</span></div>
+                            <div class="swipe-bg-right" :style="getSwipeBgOpacity('t1',i,'right')"><span
+                                    class="font-bold text-green-500">COMPLETE</span></div>
+
                             <div class="swipe-content grid grid-cols-[2rem_1fr_3rem_3rem] gap-2 items-center p-3 rounded-xl border transition-all relative"
-                                 :style="getSwipeTransform('t1',i)"
-                                 :class="s.completed?(s.failed?'bg-red-900/10 border-red-500/30':'bg-green-900/10 border-green-500/30'):'bg-[#222] border-white/5'"
-                                 @click="!prefs.swipeToComplete && toggleSet(s, 't1')">
+                                :style="getSwipeTransform('t1',i)"
+                                :class="s.completed?(s.failed?'bg-red-900/10 border-red-500/30':'bg-green-900/10 border-green-500/30'):'bg-[#222] border-white/5'"
+                                @click="!prefs.swipeToComplete && toggleSet(s, 't1')">
                                 <div class="f-col items-center">
                                     <div class="text-xs font-bold text-slate-500" x-text="i+1"></div>
-                                    <div class="text-[9px] text-slate-500 mt-1" x-show="s.completedAt" x-text="fmtSet(s.completedAt)"></div>
+                                    <div class="text-[9px] text-slate-500 mt-1" x-show="s.completedAt"
+                                        x-text="fmtSet(s.completedAt)"></div>
                                 </div>
                                 <div class="f-c gap-2" @click.stop="calcPlates(s.weight)">
-                                    <span class="text-lg font-bold mono" :class="s.completed?'text-white':'text-indigo-200'" x-text="s.weight"></span>
-                                    <span x-show="previousWorkout && i===0 && s.weight > previousWorkout.topSet" class="text-[9px] bg-yellow-500/20 text-yellow-500 px-1 rounded">PR</span>
+                                    <span class="text-lg font-bold mono"
+                                        :class="s.completed?'text-white':'text-indigo-200'" x-text="s.weight"></span>
+                                    <span x-show="previousWorkout && i===0 && s.weight > previousWorkout.topSet"
+                                        class="text-[9px] bg-yellow-500/20 text-yellow-500 px-1 rounded">PR</span>
                                 </div>
                                 <div class="f-c flex-col" @click.stop="editSet('t1', i)">
-                                    <span class="text-lg font-bold" :class="s.amrap?'text-yellow-400':'text-white'" x-text="s.performed||s.reps+(s.amrap?'+':'')"></span>
-                                    <span x-show="s.rpe" class="text-[9px] text-indigo-400 font-bold" x-text="'@'+s.rpe"></span>
+                                    <span class="text-lg font-bold" :class="s.amrap?'text-yellow-400':'text-white'"
+                                        x-text="s.performed||s.reps+(s.amrap?'+':'')"></span>
+                                    <span x-show="s.rpe" class="text-[9px] text-indigo-400 font-bold"
+                                        x-text="'@'+s.rpe"></span>
                                 </div>
                                 <div class="f-c" @click.stop="toggleSet(s, 't1')">
                                     <div class="w-6 h-6 rounded border f-c transition-all"
-                                         :class="s.completed?(s.failed?'bg-red-500 border-red-500 text-white':'bg-green-500 border-green-500 text-white'):'border-white/20 hover:border-white/40'">
-                                        <span x-show="s.completed" x-text="s.failed?'✕':'✓'" class="text-xs font-bold"></span>
+                                        :class="s.completed?(s.failed?'bg-red-500 border-red-500 text-white':'bg-green-500 border-green-500 text-white'):'border-white/20 hover:border-white/40'">
+                                        <span x-show="s.completed" x-text="s.failed?'✕':'✓'"
+                                            class="text-xs font-bold"></span>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </template>
                 </div>
-                <button @click="addSet()" class="w-full mt-3 py-2 text-xs font-bold text-slate-500 hover:text-white hover:bg-white/5 rounded dashed border border-white/10 border-dashed">+ Add Set</button>
+                <button @click="addSet()"
+                    class="w-full mt-3 py-2 text-xs font-bold text-slate-500 hover:text-white hover:bg-white/5 rounded dashed border border-white/10 border-dashed">+
+                    Add Set</button>
             </div>
 
             <!-- T2 -->
@@ -1649,16 +1725,25 @@
                         <div class="w-8 h-8 rounded-full bg-blue-500/20 text-blue-400 f-c font-bold">T2</div>
                         <div class="flex-1 relative">
                             <div @click="swapState.t2=!swapState.t2;swapState.q=''" class="cursor-pointer f-g2">
-                                <h3 class="text-lg font-bold text-white leading-none" x-text="session.t2?.selectedExercise||session.t2?.name"></h3>
-                                <svg class="w-4 h-4 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="icons.swap" /></svg>
+                                <h3 class="text-lg font-bold text-white leading-none"
+                                    x-text="session.t2?.selectedExercise||session.t2?.name"></h3>
+                                <svg class="w-4 h-4 text-slate-500" viewBox="0 0 24 24" fill="none"
+                                    stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        :d="icons.swap" />
+                                </svg>
                             </div>
-                            <div x-show="swapState.t2" @click.outside="swapState.t2=false" class="ex-dropdown" x-transition>
-                                <input type="text" x-model="swapState.q" class="w-full bg-transparent p-3 text-sm border-b border-white/10 outline-none text-white" placeholder="Search..." autofocus>
+                            <div x-show="swapState.t2" @click.outside="swapState.t2=false" class="ex-dropdown"
+                                x-transition>
+                                <input type="text" x-model="swapState.q"
+                                    class="w-full bg-transparent p-3 text-sm border-b border-white/10 outline-none text-white"
+                                    placeholder="Search..." autofocus>
                                 <div class="max-h-48 overflow-y-auto no-scrollbar">
                                     <template x-for="alt in getT2Alts()">
                                         <div class="ex-opt f-cb" @click="swapT2(alt.id)">
                                             <span x-text="alt.name"></span>
-                                            <span class="text-xs bg-white/10 px-1.5 py-0.5 rounded" x-text="'x'+(alt.mult||1)"></span>
+                                            <span class="text-xs bg-white/10 px-1.5 py-0.5 rounded"
+                                                x-text="'x'+(alt.mult||1)"></span>
                                         </div>
                                     </template>
                                 </div>
@@ -1670,10 +1755,11 @@
                 <div class="space-y-2">
                     <template x-for="(s,i) in session.t2?.sets">
                         <div class="grid grid-cols-[2rem_1fr_3rem_3rem] gap-2 items-center p-3 rounded-xl border border-white/5 transition bg-[#1A1A1E]"
-                             :class="s.completed?'bg-green-900/10 border-green-500/30':''">
+                            :class="s.completed?'bg-green-900/10 border-green-500/30':''">
                             <div class="f-col items-center">
                                 <div class="text-xs font-bold text-slate-500" x-text="i+1"></div>
-                                <div class="text-[9px] text-slate-500 mt-1" x-show="s.completedAt" x-text="fmtSet(s.completedAt)"></div>
+                                <div class="text-[9px] text-slate-500 mt-1" x-show="s.completedAt"
+                                    x-text="fmtSet(s.completedAt)"></div>
                             </div>
                             <div class="text-center cursor-pointer" @click="calcPlates(s.weight)">
                                 <span class="font-bold text-white mono" x-text="s.weight"></span>
@@ -1683,8 +1769,12 @@
                             </div>
                             <div class="f-c" @click="toggleSet(s, 't2')">
                                 <div class="w-6 h-6 rounded border f-c transition-all"
-                                     :class="s.completed?'bg-green-500 border-green-500 text-white':'border-white/20'">
-                                    <svg x-show="s.completed" class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" :d="icons.check" /></svg>
+                                    :class="s.completed?'bg-green-500 border-green-500 text-white':'border-white/20'">
+                                    <svg x-show="s.completed" class="w-3 h-3" viewBox="0 0 24 24" fill="none"
+                                        stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3"
+                                            :d="icons.check" />
+                                    </svg>
                                 </div>
                             </div>
                         </div>
@@ -1704,14 +1794,24 @@
                             <div class="f-cb mb-2">
                                 <div class="relative flex-1">
                                     <div class="f-g2">
-                                        <div @click="swapState.acc=i;swapState.q=''" class="font-bold text-white cursor-pointer f-g2">
+                                        <div @click="swapState.acc=i;swapState.q=''"
+                                            class="font-bold text-white cursor-pointer f-g2">
                                             <span x-text="a.selectedExercise||a.name"></span>
-                                            <svg class="w-3 h-3 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="icons.swap" /></svg>
+                                            <svg class="w-3 h-3 text-slate-500" viewBox="0 0 24 24" fill="none"
+                                                stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    :d="icons.swap" />
+                                            </svg>
                                         </div>
-                                        <button @click="toggleSuperset(i)" class="ml-2 text-[10px] rounded p-1 transition" :class="a.supersetId ? 'bg-indigo-500 text-white' : 'bg-white/5 text-slate-500'">🔗</button>
+                                        <button @click="toggleSuperset(i)"
+                                            class="ml-2 text-[10px] rounded p-1 transition"
+                                            :class="a.supersetId ? 'bg-indigo-500 text-white' : 'bg-white/5 text-slate-500'">🔗</button>
                                     </div>
-                                    <div x-show="swapState.acc===i" @click.outside="swapState.acc=null" class="ex-dropdown" x-transition>
-                                        <input type="text" x-model="swapState.q" class="w-full bg-transparent p-3 text-sm border-b border-white/10 outline-none text-white" placeholder="Search..." autofocus>
+                                    <div x-show="swapState.acc===i" @click.outside="swapState.acc=null"
+                                        class="ex-dropdown" x-transition>
+                                        <input type="text" x-model="swapState.q"
+                                            class="w-full bg-transparent p-3 text-sm border-b border-white/10 outline-none text-white"
+                                            placeholder="Search..." autofocus>
                                         <div class="max-h-48 overflow-y-auto no-scrollbar">
                                             <template x-for="alt in getAccAlts(i)">
                                                 <div class="ex-opt" @click="swapAcc(i, alt.id)" x-text="alt.name"></div>
@@ -1721,7 +1821,8 @@
                                 </div>
                                 <div class="text-xs text-slate-400 f-g2">
                                     <span x-text="a.sets+' × '+a.reps"></span>
-                                    <button @click="openExNote(a.selectedExercise||a.name)" class="text-slate-500 hover:text-white">📝</button>
+                                    <button @click="openExNote(a.selectedExercise||a.name)"
+                                        class="text-slate-500 hover:text-white">📝</button>
                                 </div>
                             </div>
                             <div class="flex flex-wrap gap-2">
@@ -1735,10 +1836,11 @@
                             </div>
                         </div>
                     </template>
-                    <div x-show="!session.acc?.length" class="text-center text-slate-500 text-sm py-2">No accessories scheduled.</div>
+                    <div x-show="!session.acc?.length" class="text-center text-slate-500 text-sm py-2">No accessories
+                        scheduled.</div>
                 </div>
             </div>
-            
+
             <button @click="finish()" class="btn-p">Finish Workout</button>
             <!-- Cancel button removed from bottom, moved to header -->
         </div>
@@ -1748,15 +1850,21 @@
             <div class="w-full max-w-sm">
                 <div class="f-cb mb-8">
                     <h2 class="text-2xl font-bold text-white">Plate Calc</h2>
-                    <button @click="plate.open=false" class="bg-white/10 p-2 rounded-full text-white"><svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="icons.x" /></svg></button>
+                    <button @click="plate.open=false" class="bg-white/10 p-2 rounded-full text-white"><svg
+                            class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="icons.x" />
+                        </svg></button>
                 </div>
                 <div class="text-center mb-10 relative">
                     <div class="text-7xl font-black mono text-white" x-text="plate.w"></div>
-                    <div class="text-sm text-slate-500 uppercase font-bold tracking-widest mt-2" x-text="prefs.weightUnit"></div>
-                    
+                    <div class="text-sm text-slate-500 uppercase font-bold tracking-widest mt-2"
+                        x-text="prefs.weightUnit"></div>
+
                     <div class="absolute top-1/2 -translate-y-1/2 right-0 f-col gap-2">
-                        <button @click="calcPlates(closestWeight(plate.w + 5))" class="w-8 h-8 rounded bg-white/10 text-white f-c">▲</button>
-                        <button @click="calcPlates(closestWeight(plate.w - 5))" class="w-8 h-8 rounded bg-white/10 text-white f-c">▼</button>
+                        <button @click="calcPlates(closestWeight(plate.w + 5))"
+                            class="w-8 h-8 rounded bg-white/10 text-white f-c">▲</button>
+                        <button @click="calcPlates(closestWeight(plate.w - 5))"
+                            class="w-8 h-8 rounded bg-white/10 text-white f-c">▼</button>
                     </div>
                 </div>
 
@@ -1764,8 +1872,10 @@
                     <div class="h-4 w-full absolute bg-gray-600 rounded"></div>
                     <template x-for="p in plate.plates">
                         <div class="h-24 w-6 rounded border-x border-black/50 relative z-10 shadow-lg"
-                             :class="UI.colors[p]||'bg-gray-400 text-black'">
-                            <span class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 -rotate-90 text-[10px] font-bold" x-text="p"></span>
+                            :class="UI.colors[p]||'bg-gray-400 text-black'">
+                            <span
+                                class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 -rotate-90 text-[10px] font-bold"
+                                x-text="p"></span>
                         </div>
                     </template>
                 </div>
@@ -1789,18 +1899,27 @@
         <div class="f-cb mb-6">
             <h1 class="text-2xl font-black italic text-white">HISTORY</h1>
             <div class="f-g2">
-                <button @click="cal.offset--;calBuild()" class="btn-icon"><svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="icons.prev" /></svg></button>
+                <button @click="cal.offset--;calBuild()" class="btn-icon"><svg class="w-5 h-5" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="icons.prev" />
+                    </svg></button>
                 <div class="font-bold text-sm w-32 text-center" x-text="cal.monthName"></div>
-                <button @click="cal.offset++;calBuild()" class="btn-icon"><svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="icons.next" /></svg></button>
+                <button @click="cal.offset++;calBuild()" class="btn-icon"><svg class="w-5 h-5" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="icons.next" />
+                    </svg></button>
             </div>
         </div>
 
         <div class="cal-grid mb-2">
-            <template x-for="d in ['S','M','T','W','T','F','S']"><div class="text-center text-[10px] text-slate-600 font-bold" x-text="d"></div></template>
+            <template x-for="d in ['S','M','T','W','T','F','S']">
+                <div class="text-center text-[10px] text-slate-600 font-bold" x-text="d"></div>
+            </template>
         </div>
         <div class="cal-grid mb-6">
             <template x-for="d in cal.days">
-                <div class="cal-day" :class="calDayClass(d)+(d.isToday?' cal-today':'')" @click="d.hasLog && showDay(d)">
+                <div class="cal-day" :class="calDayClass(d)+(d.isToday?' cal-today':'')"
+                    @click="d.hasLog && showDay(d)">
                     <span x-text="d.num"></span>
                 </div>
             </template>
@@ -1808,37 +1927,54 @@
 
         <div class="glass-card mb-6">
             <div class="grid grid-cols-4 gap-2 text-center divide-x divide-white/5">
-                <div><div class="text-lg font-bold text-white" x-text="calSummary.count"></div><div class="text-[9px] text-slate-500 uppercase">Workouts</div></div>
-                <div><div class="text-lg font-bold text-white" x-text="fmtVolS(calSummary.totalVol)"></div><div class="text-[9px] text-slate-500 uppercase">Volume</div></div>
-                <div><div class="text-lg font-bold text-white" x-text="calSummary.avgDur"></div><div class="text-[9px] text-slate-500 uppercase">Avg Min</div></div>
-                <div><div class="text-lg font-bold text-yellow-500" x-text="calSummary.prs"></div><div class="text-[9px] text-slate-500 uppercase">PRs</div></div>
+                <div>
+                    <div class="text-lg font-bold text-white" x-text="calSummary.count"></div>
+                    <div class="text-[9px] text-slate-500 uppercase">Workouts</div>
+                </div>
+                <div>
+                    <div class="text-lg font-bold text-white" x-text="fmtVolS(calSummary.totalVol)"></div>
+                    <div class="text-[9px] text-slate-500 uppercase">Volume</div>
+                </div>
+                <div>
+                    <div class="text-lg font-bold text-white" x-text="calSummary.avgDur"></div>
+                    <div class="text-[9px] text-slate-500 uppercase">Avg Min</div>
+                </div>
+                <div>
+                    <div class="text-lg font-bold text-yellow-500" x-text="calSummary.prs"></div>
+                    <div class="text-[9px] text-slate-500 uppercase">PRs</div>
+                </div>
             </div>
         </div>
-        
+
         <div class="mb-4 f-cb">
             <h3 class="lbl mb-0">Recent Logs</h3>
             <select x-model="historyFilter" class="bg-transparent text-xs text-indigo-400 font-bold outline-none">
                 <option value="all">All Lifts</option>
-                <template x-for="l in lifts()"><option :value="l" x-text="l"></option></template>
+                <template x-for="l in lifts()">
+                    <option :value="l" x-text="l"></option>
+                </template>
             </select>
         </div>
-        
+
         <div class="space-y-3">
             <template x-for="h in histFilt()">
                 <div class="glass-card p-3 flex gap-3 cursor-pointer hover:bg-white/5 transition" @click="openLog(h)">
                     <div class="f-col items-center justify-center w-12 bg-white/5 rounded-lg border border-white/5">
-                        <span class="text-[10px] font-bold text-slate-500 uppercase" x-text="new Date(h.timestamp).toLocaleDateString(undefined,{month:'short'})"></span>
+                        <span class="text-[10px] font-bold text-slate-500 uppercase"
+                            x-text="new Date(h.timestamp).toLocaleDateString(undefined,{month:'short'})"></span>
                         <span class="text-lg font-bold text-white" x-text="new Date(h.timestamp).getDate()"></span>
                     </div>
                     <div class="flex-1">
                         <div class="f-cb mb-1">
                             <h4 class="font-bold text-white text-sm truncate" x-text="h.title"></h4>
                             <div class="f-g2">
-                                <span x-show="h.pr||h.t2PR" class="text-[9px] bg-yellow-500/20 text-yellow-500 px-1 rounded font-bold">PR</span>
+                                <span x-show="h.pr||h.t2PR"
+                                    class="text-[9px] bg-yellow-500/20 text-yellow-500 px-1 rounded font-bold">PR</span>
                                 <span class="text-xs text-slate-500" x-text="(h.rating||0)+'★'"></span>
                             </div>
                         </div>
-                        <div class="text-xs text-slate-500 truncate" x-text="h.details?.t1+' • '+fmtVolS(h.totalVolume)+' • '+(h.duration||0)+'m'"></div>
+                        <div class="text-xs text-slate-500 truncate"
+                            x-text="h.details?.t1+' • '+fmtVolS(h.totalVolume)+' • '+(h.duration||0)+'m'"></div>
                     </div>
                 </div>
             </template>
@@ -1848,40 +1984,47 @@
     <!-- RECORDS VIEW -->
     <div x-show="view==='records'" class="p-6 pb-24 max-w-md mx-auto" x-transition x-cloak>
         <h1 class="text-2xl font-black italic text-white mb-6">RECORDS</h1>
-        
+
         <div class="space-y-6">
             <template x-for="l in lifts()">
                 <div class="glass-card relative overflow-hidden">
                     <div class="f-cb mb-4 relative z-10">
                         <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 rounded-full bg-indigo-500/20 f-c text-indigo-400 font-bold text-lg" x-text="l[0]"></div>
+                            <div class="w-10 h-10 rounded-full bg-indigo-500/20 f-c text-indigo-400 font-bold text-lg"
+                                x-text="l[0]"></div>
                             <div>
                                 <h3 class="font-bold text-white" x-text="l"></h3>
-                                <div class="text-xs text-slate-500" x-text="(prs[l]?.weight||0)+' '+prefs.weightUnit"></div>
+                                <div class="text-xs text-slate-500" x-text="(prs[l]?.weight||0)+' '+prefs.weightUnit">
+                                </div>
                             </div>
                         </div>
                         <div class="text-right">
-                             <div class="text-xs text-slate-500">Est 1RM</div>
-                             <div class="text-xl font-bold mono text-white" x-text="e1rmHistory[l]?.slice(-1)[0]?.e1rm || '-'"></div>
-                             <div class="text-[10px]" :class="getE1RMTrend(l).direction==='up'?'text-green-400':getE1RMTrend(l).direction==='down'?'text-red-400':'text-slate-600'" 
-                                  x-show="getE1RMTrend(l).change"
-                                  x-text="(getE1RMTrend(l).change>0?'+':'')+getE1RMTrend(l).change"></div>
+                            <div class="text-xs text-slate-500">Est 1RM</div>
+                            <div class="text-xl font-bold mono text-white"
+                                x-text="e1rmHistory[l]?.slice(-1)[0]?.e1rm || '-'"></div>
+                            <div class="text-[10px]"
+                                :class="getE1RMTrend(l).direction==='up'?'text-green-400':getE1RMTrend(l).direction==='down'?'text-red-400':'text-slate-600'"
+                                x-show="getE1RMTrend(l).change"
+                                x-text="(getE1RMTrend(l).change>0?'+':'')+getE1RMTrend(l).change"></div>
                         </div>
                     </div>
-                    <div class="h-24 w-full relative z-0 opacity-50"><canvas :id="'pr_'+l.replace(/\s+/g,'_')"></canvas></div>
+                    <div class="h-24 w-full relative z-0 opacity-50"><canvas :id="'pr_'+l.replace(/\s+/g,'_')"></canvas>
+                    </div>
                 </div>
             </template>
-            
+
             <div class="mt-8">
                 <h3 class="lbl mb-4">Achievements</h3>
                 <div class="grid grid-cols-4 gap-2">
                     <template x-for="a in ACHIEVEMENTS">
                         <div class="aspect-square rounded-xl f-c text-2xl border relative group cursor-help transition-all duration-300"
-                             :class="achievements.includes(a.id)?'bg-indigo-900/20 border-indigo-500/50 grayscale-0 shadow-[0_0_15px_rgba(99,102,241,0.3)]':'bg-white/5 border-white/5 grayscale opacity-50'">
+                            :class="achievements.includes(a.id)?'bg-indigo-900/20 border-indigo-500/50 grayscale-0 shadow-[0_0_15px_rgba(99,102,241,0.3)]':'bg-white/5 border-white/5 grayscale opacity-50'">
                             <span x-text="a.icon"></span>
-                            <div class="absolute bottom-full mb-2 bg-black px-2 py-1 rounded text-[10px] whitespace-nowrap hidden group-hover:block border border-white/20 z-50">
+                            <div
+                                class="absolute bottom-full mb-2 bg-black px-2 py-1 rounded text-[10px] whitespace-nowrap hidden group-hover:block border border-white/20 z-50">
                                 <div class="font-bold text-white" x-text="a.title"></div>
-                                <div x-show="!achievements.includes(a.id)" class="text-slate-400 text-[9px]">Locked</div>
+                                <div x-show="!achievements.includes(a.id)" class="text-slate-400 text-[9px]">Locked
+                                </div>
                             </div>
                         </div>
                     </template>
@@ -1890,16 +2033,26 @@
 
             <div class="mt-8">
                 <div class="f-cb mb-4">
-                     <h3 class="lbl mb-0">Bodyweight</h3>
-                     <button @click="activeModal='weight'" class="text-xs text-blue-400 font-bold hover:text-white">+ Log</button>
+                    <h3 class="lbl mb-0">Bodyweight</h3>
+                    <button @click="activeModal='weight'" class="text-xs text-blue-400 font-bold hover:text-white">+
+                        Log</button>
                 </div>
                 <div class="glass-card mb-4">
-                     <div class="h-40 w-full"><canvas id="bodyWeightChart"></canvas></div>
+                    <div class="h-40 w-full"><canvas id="bodyWeightChart"></canvas></div>
                 </div>
                 <div class="grid grid-cols-3 gap-3 text-center">
-                    <div class="glass-item"><div class="text-lg font-bold text-white mono" x-text="getBW('current')"></div><div class="text-[9px] uppercase text-slate-500">Current</div></div>
-                    <div class="glass-item"><div class="text-lg font-bold text-white mono" x-text="getBW('min')"></div><div class="text-[9px] uppercase text-slate-500">Min</div></div>
-                    <div class="glass-item"><div class="text-lg font-bold text-white mono" x-text="getBW('max')"></div><div class="text-[9px] uppercase text-slate-500">Max</div></div>
+                    <div class="glass-item">
+                        <div class="text-lg font-bold text-white mono" x-text="getBW('current')"></div>
+                        <div class="text-[9px] uppercase text-slate-500">Current</div>
+                    </div>
+                    <div class="glass-item">
+                        <div class="text-lg font-bold text-white mono" x-text="getBW('min')"></div>
+                        <div class="text-[9px] uppercase text-slate-500">Min</div>
+                    </div>
+                    <div class="glass-item">
+                        <div class="text-lg font-bold text-white mono" x-text="getBW('max')"></div>
+                        <div class="text-[9px] uppercase text-slate-500">Max</div>
+                    </div>
                 </div>
                 <div class="mt-4 grid grid-cols-2 gap-3" x-show="getWilksEstimate()">
                     <div class="glass-item text-center">
@@ -1918,24 +2071,28 @@
     <!-- SETTINGS VIEW -->
     <div x-show="view==='preferences'" class="p-6 pb-24 max-w-md mx-auto" x-transition x-cloak>
         <h1 class="text-2xl font-black italic text-white mb-6">SETTINGS</h1>
-        
+
         <div class="space-y-8">
             <div class="glass-card space-y-4">
                 <h3 class="lbl">Program</h3>
                 <select x-model="prefs.program" class="inp text-sm mb-4" @change="pIdx=0;savePrefs();save()">
-                     <template x-for="(p,k) in PROGRAMS"><option :value="k" x-text="p.name"></option></template>
+                    <template x-for="(p,k) in PROGRAMS">
+                        <option :value="k" x-text="p.name"></option>
+                    </template>
                 </select>
                 <div class="text-xs text-slate-400 p-4 bg-white/5 rounded-lg leading-relaxed border border-white/5">
-                     <div class="font-bold text-white mb-2 text-sm" x-text="PROGRAMS[prefs.program].name"></div>
-                     <p class="mb-2" x-text="PROGRAMS[prefs.program].desc"></p>
-                     <div class="f-cb pt-2 border-t border-white/5 mt-2">
+                    <div class="font-bold text-white mb-2 text-sm" x-text="PROGRAMS[prefs.program].name"></div>
+                    <p class="mb-2" x-text="PROGRAMS[prefs.program].desc"></p>
+                    <div class="f-cb pt-2 border-t border-white/5 mt-2">
                         <span class="text-[10px] uppercase text-slate-500">Progression</span>
-                        <span class="text-xs font-bold text-indigo-400" x-text="PROGRAMS[prefs.program].progressionDesc"></span>
-                     </div>
-                     <div class="f-cb mt-1">
+                        <span class="text-xs font-bold text-indigo-400"
+                            x-text="PROGRAMS[prefs.program].progressionDesc"></span>
+                    </div>
+                    <div class="f-cb mt-1">
                         <span class="text-[10px] uppercase text-slate-500">Frequency</span>
-                        <span class="text-xs font-bold text-white" x-text="PROGRAMS[prefs.program].daysPerWeek+' days/week'"></span>
-                     </div>
+                        <span class="text-xs font-bold text-white"
+                            x-text="PROGRAMS[prefs.program].daysPerWeek+' days/week'"></span>
+                    </div>
                 </div>
             </div>
 
@@ -1945,23 +2102,28 @@
                     <div class="f-cb">
                         <span class="text-sm text-slate-300 w-24" x-text="l"></span>
                         <div class="flex-1 flex gap-2">
-                             <input type="number" x-model.number="tms[l]" class="inp py-1 text-right mono" step="1.25">
-                             <button @click="tms[l]=Math.round(tms[l]*0.9)" class="px-2 bg-white/5 rounded text-xs text-slate-500 hover:text-white">-10%</button>
+                            <input type="number" x-model.number="tms[l]" class="inp py-1 text-right mono" step="1.25">
+                            <button @click="tms[l]=Math.round(tms[l]*0.9)"
+                                class="px-2 bg-white/5 rounded text-xs text-slate-500 hover:text-white">-10%</button>
                         </div>
                     </div>
                 </template>
                 <div class="pt-4 border-t border-white/5">
-                     <button @click="save();updCache();alert('TMs Updated')" class="btn-s py-2 text-xs">Update All</button>
+                    <button @click="save();updCache();alert('TMs Updated')" class="btn-s py-2 text-xs">Update
+                        All</button>
                 </div>
             </div>
 
             <div class="glass-card space-y-1">
                 <h3 class="lbl mb-3">Options</h3>
                 <template x-for="o in UI.opts">
-                    <div class="f-cb py-3 border-b border-white/5 last:border-0" @click="prefs[o.k]=!prefs[o.k];savePrefs();if(o.k==='reduceMotion')applyRM()">
+                    <div class="f-cb py-3 border-b border-white/5 last:border-0"
+                        @click="prefs[o.k]=!prefs[o.k];savePrefs();if(o.k==='reduceMotion')applyRM()">
                         <span class="text-sm text-slate-300" x-text="o.l"></span>
-                        <div class="w-10 h-5 rounded-full relative transition-colors duration-300" :class="prefs[o.k]?'bg-indigo-600':'bg-white/10'">
-                             <div class="absolute top-1 left-1 w-3 h-3 bg-white rounded-full transition-transform duration-300" :class="prefs[o.k]?'translate-x-5':''"></div>
+                        <div class="w-10 h-5 rounded-full relative transition-colors duration-300"
+                            :class="prefs[o.k]?'bg-indigo-600':'bg-white/10'">
+                            <div class="absolute top-1 left-1 w-3 h-3 bg-white rounded-full transition-transform duration-300"
+                                :class="prefs[o.k]?'translate-x-5':''"></div>
                         </div>
                     </div>
                 </template>
@@ -1972,31 +2134,34 @@
                 <template x-for="t in UI.timers">
                     <div class="space-y-1 mb-2">
                         <div class="f-cb">
-                             <span class="text-sm text-slate-300" x-text="t.l"></span>
-                             <span class="text-xs font-bold mono text-indigo-400" x-text="fmt(prefs[t.k])"></span>
+                            <span class="text-sm text-slate-300" x-text="t.l"></span>
+                            <span class="text-xs font-bold mono text-indigo-400" x-text="fmt(prefs[t.k])"></span>
                         </div>
-                        <input type="range" x-model.number="prefs[t.k]" min="0" max="600" step="15" class="w-full accent-indigo-500 h-2 bg-white/10 rounded-lg appearance-none cursor-pointer">
+                        <input type="range" x-model.number="prefs[t.k]" min="0" max="600" step="15"
+                            class="w-full accent-indigo-500 h-2 bg-white/10 rounded-lg appearance-none cursor-pointer">
                     </div>
                 </template>
             </div>
 
             <div class="glass-card space-y-4">
-                 <h3 class="lbl">Data</h3>
-                 <div class="grid grid-cols-2 gap-3">
-                     <button @click="exportJSON()" class="btn bg-white/5 text-xs">Export JSON</button>
-                     <button @click="exportCSV()" class="btn bg-white/5 text-xs">Export CSV</button>
-                     <label class="btn bg-white/5 text-xs text-center cursor-pointer">
-                         Import JSON<input type="file" class="hidden" accept=".json" @change="importData">
-                     </label>
-                     <button @click="reset()" class="btn border border-red-500/20 text-red-500 text-xs">Reset All</button>
-                 </div>
-                 <div class="pt-4 border-t border-white/5 text-center">
-                      <button @click="togUnit(prefs.weightUnit==='lbs'?'kg':'lbs')" class="text-xs text-indigo-400 font-bold">
-                          Convert to <span x-text="prefs.weightUnit==='lbs'?'KG':'LBS'"></span>
-                      </button>
-                 </div>
+                <h3 class="lbl">Data</h3>
+                <div class="grid grid-cols-2 gap-3">
+                    <button @click="exportJSON()" class="btn bg-white/5 text-xs">Export JSON</button>
+                    <button @click="exportCSV()" class="btn bg-white/5 text-xs">Export CSV</button>
+                    <label class="btn bg-white/5 text-xs text-center cursor-pointer">
+                        Import JSON<input type="file" class="hidden" accept=".json" @change="importData">
+                    </label>
+                    <button @click="reset()" class="btn border border-red-500/20 text-red-500 text-xs">Reset
+                        All</button>
+                </div>
+                <div class="pt-4 border-t border-white/5 text-center">
+                    <button @click="togUnit(prefs.weightUnit==='lbs'?'kg':'lbs')"
+                        class="text-xs text-indigo-400 font-bold">
+                        Convert to <span x-text="prefs.weightUnit==='lbs'?'KG':'LBS'"></span>
+                    </button>
+                </div>
             </div>
-            
+
             <div class="text-center text-[10px] text-slate-600 font-mono">
                 v4.0.0 • LIFT ULTIMATE EXPANDED
             </div>
@@ -2004,18 +2169,23 @@
     </div>
 
     <!-- BOTTOM NAV -->
-    <div class="fixed bottom-0 left-0 w-full pb-safe nav-glass z-40" x-show="view!=='workout' && view!=='setup'" x-transition>
+    <div class="fixed bottom-0 left-0 w-full pb-safe nav-glass z-40" x-show="view!=='workout' && view!=='setup'"
+        x-transition>
         <div class="flex justify-around items-center px-2 py-3 max-w-md mx-auto">
             <template x-for="n in UI.nav">
                 <button @click="nav(n.id)" class="nav-btn" :class="view===n.id?'text-indigo-400':'text-slate-500'">
-                    <svg class="w-6 h-6 mb-0.5 transition-transform duration-300" :class="view===n.id?'scale-110 -translate-y-1':''" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <svg class="w-6 h-6 mb-0.5 transition-transform duration-300"
+                        :class="view===n.id?'scale-110 -translate-y-1':''" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="n.i" />
                     </svg>
                     <span class="text-[9px] font-bold" x-text="n.l"></span>
-                    <div class="w-1 h-1 rounded-full bg-indigo-500 mt-1 transition-opacity duration-300" :class="view===n.id?'opacity-100':'opacity-0'"></div>
+                    <div class="w-1 h-1 rounded-full bg-indigo-500 mt-1 transition-opacity duration-300"
+                        :class="view===n.id?'opacity-100':'opacity-0'"></div>
                 </button>
             </template>
         </div>
     </div>
 </body>
+
 </html>
