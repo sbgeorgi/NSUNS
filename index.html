@@ -97,7 +97,7 @@
                 Bench: { chest: 1, frontDelt: .7, tri: .7, lats: .2, bi: .15, cns: .45 },
                 OHP: { frontDelt: 1, tri: .6, upperChest: .4, traps: .3, abs: .3, cns: .55 },
                 Squat: { quads: 1, glutes: .75, lowBack: .65, hams: .5, abs: .4, calves: .15, cns: .9 },
-                Deadlift: { hams: 1, glutes: .9, lowBack: 1, traps: .6, lats: 0.7, quads: .4, grip: .8, cns: 1.2 },
+                Deadlift: { hams: 1, glutes: .9, lowBack: 1, traps: 1, lats: 0.8, quads: .4, grip: .8, cns: 1.2 },
                 Row: { lats: 1, bi: .6, rearDelt: .6, grip: .6, lowBack: .4, cns: .35 }
             },
             halfLife: {
@@ -181,7 +181,7 @@
 
         const MATCHERS = [
             [/(curl|bi|spider|preacher)/i, { bi: 1, forearm: .3, grip: .2 }], [/(pushdown|extension|skull|tri|dip|kickback)/i, { tri: 1, frontDelt: .2 }],
-            [/(pullup|chin|lat|pulldown)/i, { lats: 1, bi: .5, rearDelt: .3, grip: .4, traps: .2 }], [/(row|t-bar|seal)/i, { lats: .8, bi: .5, rearDelt: .5, traps: .4, grip: .6, lowBack: .3 }],
+            [/(pullup|chin|lat|pulldown)/i, { lats: 1, bi: .6, rearDelt: .4, grip: .5, traps: .3 }], [/(row|t-bar|seal)/i, { lats: 1, bi: .6, rearDelt: .6, traps: .6, grip: .6, lowBack: .4 }],
             [/(leg|press|lunge|split|squat)/i, { quads: .7, hams: .5, glutes: .6 }], [/(ham|rdl|stiff|good morning)/i, { hams: 1, glutes: .5, lowBack: .6 }],
             [/(calf|raise)/i, { calves: 1 }], [/(ab|core|plank|crunch|hanging|russian|dead bug)/i, { abs: 1, lowBack: .2 }],
             [/(arm|superset)/i, { tri: .5, bi: .5, forearm: .2 }], [/(shrug|trap|face)/i, { traps: 1, rearDelt: .5 }],
@@ -624,7 +624,7 @@
                     let autoProgNotes = [];
                     this.session.acc.forEach(a => {
                         const on = a.originalName || a.name;
-                        const completedSets = Object.keys(this.session.completedAcc).filter(k => k.startsWith(on)).length;
+                        const completedSets = Object.keys(this.session.completedAcc || {}).filter(k => (k.startsWith(on) || k.startsWith(a.name)) && this.session.completedAcc[k]).length;
                         if (completedSets === a.sets && a.reps) {
                             const rmax = typeof a.reps === 'string' && a.reps.includes('-') ? parseInt(a.reps.split('-')[1]) : parseInt(a.reps);
                             if (rmax) autoProgNotes.push(`+ Consider upping weight on ${on} (hit max reps)`);
@@ -638,7 +638,7 @@
                         effectiveVolume: all.reduce((a, s) => s.completed ? a + calculateSetFatigue(s.weight, s.performed || s.reps, (this.baseTM(l) ? this.tms[this.baseTM(l)] : 0) || 0, s.failed, this.sessionRPE != null) : a, 0),
                         totalSets: all.length, completedSets: all.filter(s => s.completed).length, avgRestTime: this.restTimes.length ? Math.round(this.restTimes.reduce((a, r) => a + r.target, 0) / this.restTimes.length) : null, avgActualRest: actualRests.length ? Math.round(actualRests.reduce((a, b) => a + b, 0) / actualRests.length) : null,
                         details: { t1: l, weight: this.findTopAMRAP(t1.sets)?.weight, est1rm: normalizedE1RM },
-                        setDetails: { t1: t1.sets, t2Name: t2.selectedExercise || t2.name, t2OriginalName: t2.originalName, t2: t2.sets, accessories: this.session.acc.map(a => ({ name: a.selectedExercise || a.name, originalName: a.originalName, total: a.sets, reps: a.reps || '10-12', completed: Object.keys(this.session.completedAcc).filter(k => k.startsWith(a.originalName) || k.startsWith(a.name)).length })) }
+                        setDetails: { t1: t1.sets, t2Name: t2.selectedExercise || t2.name, t2OriginalName: t2.originalName, t2: t2.sets, accessories: this.session.acc.map(a => ({ name: a.selectedExercise || a.name, originalName: a.originalName, total: a.sets, reps: a.reps || '10-12', completed: Object.keys(this.session.completedAcc || {}).filter(k => (k.startsWith(a.originalName || '') || k.startsWith(a.name || '')) && this.session.completedAcc[k]).length })) }
                     });
 
                     if (this.session.dayIdx !== null) { this.idx = (this.session.dayIdx + 1) % DATA.progs[p].days.length; if (this.idx === 0) this.week++; this.pIdx = this.idx; }
@@ -735,29 +735,36 @@
 
                 updCache() {
                     const fatigue = {}, now = U.now(), progScale = DATA.programCapacityScale[this.prefs.program] || 1.0, chronicMod = this.getChronicFatigueModifier(), allW = [...this.history];
-                    if (this.session?.start && this.session?.t1?.sets) allW.push({ timestamp: this.session.start, rpe: null, details: { t1: this.session.t1.name }, setDetails: { t1: this.session.t1.sets, t2Name: this.session.t2?.selectedExercise || this.session.t2?.name, t2: this.session.t2?.sets || [], accessories: (this.session.acc || []).map(a => ({ name: a.selectedExercise || a.name, originalName: a.originalName, total: a.sets, reps: a.reps || '10-12', completed: Object.keys(this.session.completedAcc || {}).filter(k => k.startsWith(a.originalName || a.name)).length })) } });
+                    if (this.session?.start && this.session?.t1?.sets) allW.push({ timestamp: this.session.start, rpe: null, details: { t1: this.session.t1.name }, setDetails: { t1: this.session.t1.sets, t2Name: this.session.t2?.selectedExercise || this.session.t2?.name, t2: this.session.t2?.sets || [], accessories: (this.session.acc || []).map(a => ({ name: a.selectedExercise || a.name, originalName: a.originalName, total: a.sets, reps: a.reps || '10-12', completed: Object.keys(this.session.completedAcc || {}).filter(k => (k.startsWith(a.originalName || '') || k.startsWith(a.name || '')) && this.session.completedAcc[k]).length })) } });
 
                     const mgVol = { Push: 0, Pull: 0, Legs: 0, Core: 0 };
 
                     allW.forEach(w => {
                         if (w.timestamp >= now - 30 * 864e5) {
-                            const pSet = (sList, name) => {
-    if(!sList || !name) return;
-    const vol = sList.reduce((a,x)=>x.completed?a+(x.weight*(x.performed||x.reps)):a, 0);
-    const imp = impact(name) || {};
+                            const pSet = (sList, name, isMain) => {
+                                if (!name) return;
+                                let vol = 0;
+                                if (sList && sList.length) {
+                                    vol = sList.reduce((a, x) => x.completed ? a + (x.weight * (x.performed || x.reps)) : a, 0);
+                                } else if (isMain && w.totalVolume) {
+                                    vol = w.totalVolume;
+                                }
+                                if (!vol) return;
 
-    const groupImpact = (ms) => {
-        const f = Math.max(0, ...ms.map(m => imp[m] || 0));
-        return vol * Math.min(f, 1); // Always use weighted, capped at 1
-    };
+                                const imp = impact(name) || {};
 
-    mgVol.Push += groupImpact(['chest', 'frontDelt', 'tri', 'upperChest']);
-    mgVol.Pull += groupImpact(['lats', 'bi', 'rearDelt', 'traps']);
-    mgVol.Legs += groupImpact(['quads', 'hams', 'glutes', 'calves']);
-    mgVol.Core += groupImpact(['abs', 'lowBack']);
-};
-                            pSet(w.setDetails?.t1, w.details?.t1);
-                            pSet(w.setDetails?.t2, w.setDetails?.t2Name);
+                                const groupImpact = (ms) => {
+                                    const f = Math.max(0, ...ms.map(m => imp[m] || 0));
+                                    return vol * Math.min(f, 1); // Always use weighted, capped at 1
+                                };
+
+                                mgVol.Push += groupImpact(['chest', 'frontDelt', 'tri', 'upperChest']);
+                                mgVol.Pull += groupImpact(['lats', 'bi', 'rearDelt', 'traps']);
+                                mgVol.Legs += groupImpact(['quads', 'hams', 'glutes', 'calves']);
+                                mgVol.Core += groupImpact(['abs', 'lowBack']);
+                            };
+                            pSet(w.setDetails?.t1, w.details?.t1, true);
+                            pSet(w.setDetails?.t2, w.setDetails?.t2Name, false);
                         }
 
                         if (w.timestamp < now - 14 * 864e5) return;
@@ -771,21 +778,27 @@
 
                         proc(w.details?.t1, w.setDetails?.t1); proc(w.setDetails?.t2Name, w.setDetails?.t2);
                         (w.setDetails?.accessories || []).forEach(a => {
-    if (!a.completed) return;
-    const accImp = impact(a.name) || {};
-    const avgReps = parseRepRange(a.reps || '10-12');
-    const estVol = a.completed * avgReps * (DATA.compoundAccessories.has(a.name) ? 50 : 30);
-    
-    const accGroupImpact = (ms) => {
-        const f = Math.max(0, ...ms.map(m => accImp[m] || 0));
-        return estVol * Math.min(f, 1);
-    };
-    
-    mgVol.Push += accGroupImpact(['chest', 'frontDelt', 'tri', 'upperChest']);
-    mgVol.Pull += accGroupImpact(['lats', 'bi', 'rearDelt', 'traps']);
-    mgVol.Legs += accGroupImpact(['quads', 'hams', 'glutes', 'calves']);
-    mgVol.Core += accGroupImpact(['abs', 'lowBack']);
-});
+                            if (!a.completed) return;
+                            const accImp = impact(a.name) || {};
+                            const avgReps = parseRepRange(a.reps || '10-12');
+                            
+                            let baseW = DATA.compoundAccessories.has(a.name) ? 50 : 30;
+                            if (this.prefs.weightUnit === 'lbs') baseW = Math.round(baseW * 2.2);
+                            if (/(pullup|chin|dip)/i.test(a.name)) {
+                                baseW = this.bwLog.length ? this.bwLog[this.bwLog.length - 1].weight : (this.prefs.weightUnit === 'lbs' ? 175 : 80);
+                            }
+                            const estVol = a.completed * avgReps * baseW;
+
+                            const accGroupImpact = (ms) => {
+                                const f = Math.max(0, ...ms.map(m => accImp[m] || 0));
+                                return estVol * Math.min(f, 1);
+                            };
+
+                            mgVol.Push += accGroupImpact(['chest', 'frontDelt', 'tri', 'upperChest']);
+                            mgVol.Pull += accGroupImpact(['lats', 'bi', 'rearDelt', 'traps']);
+                            mgVol.Legs += accGroupImpact(['quads', 'hams', 'glutes', 'calves']);
+                            mgVol.Core += accGroupImpact(['abs', 'lowBack']);
+                        });
                     });
 
                     const rm = {};
