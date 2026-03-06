@@ -501,67 +501,313 @@
                 }, drawPRCharts() { Object.keys(this.prs).forEach(l => { const e = (this.e1rmHistory[l] || []).slice(-15); if (e.length) upChrt('pr_' + l.replace(/\s+/g, '_'), 'line', { l: e.map(x => x.date), d: e.map(x => x.e1rm) }, '#6366f1'); }); },
                 // Fix #3, #4, #14: Complete recovery cache rewrite
                 updCache() {
-                    const f = {}, now = U.now(), mg = { Push: 0, Pull: 0, Legs: 0, Core: 0 }, pS = DATA.programCapacityScale[this.prefs.program] || 1;
-                    const LOOKBACK_HOURS = 504; // 21 days — beyond this, no meaningful fatigue signal
-                    const MIN_DECAY = 0.005; // Minimum decay threshold to prevent phantom fatigue
-                    const allW = [...this.history]; if (this.session?.start && this.session?.t1) allW.push({ timestamp: this.session.start, rpe: this.sessionRPE, details: { t1: this.session.t1?.name }, setDetails: { t1: this.session.t1?.sets, t2Name: this.session.t2?.selectedExercise || this.session.t2?.name, t2: this.session.t2?.sets, accessories: this.session.acc?.map(a => ({ name: a.selectedExercise || a.name, originalName: a.originalName, total: a.sets, reps: a.reps, completed: Object.keys(this.session.completedAcc || {}).filter(k => k.startsWith(a.originalName || a.name)).length })) } });
-                    for (let i = allW.length - 1; i >= 0; i--) {
-                        const w = allW[i], age = (now - w.timestamp) / 36e5; if (age >= LOOKBACK_HOURS) break;
-                        const wRPE = w.rpe || 7;
-                        const procSets = (n, sets) => {
-                            if (!n || !Array.isArray(sets)) return;
-                            const imp_map = impact(n), bLift = this.baseTM(n) || n, tm = this.tms[bLift] || 0;
-                            sets.forEach(s => {
-                                if (!s.completed) return;
-                                const reps = s.performed || s.reps || 0, wt = s.weight || 0;
-                                if (wt <= 0 || reps <= 0) return;
-                                const setVol = wt * reps;
-                                const gi = ms => setVol * M.min(1, M.max(0, ...ms.map(m => imp_map[m] || 0)));
-                                mg.Push += gi(DATA.groups.Push); mg.Pull += gi(DATA.groups.Pull); mg.Legs += gi(DATA.groups.Legs); mg.Core += gi(DATA.groups.Core);
-                                const setFat = U.fatigue(wt, reps, tm, s.failed, wRPE);
-                                Object.entries(imp_map).forEach(([k, v]) => {
-                                    const decay = M.pow(.5, age / (DATA.halfLife[k] || 36));
-                                    if (decay >= MIN_DECAY) { f[k] = (f[k] || 0) + setFat * v * decay; }
-                                });
-                            });
+                    const now = U.now();
+                    const LOOKBACK_HOURS = 21 * 24;
+                    const DENSITY_WINDOW_HOURS = 72;
+                    const MIN_DECAY = 0.003;
+                    const MAX_DENSITY_TAX = 12;
+                    const clamp = (n, min, max) => M.max(min, M.min(max, n));
+
+                    const avgTM = (() => {
+                        const vals = Object.values(this.tms || {}).filter(v => v > 0);
+                        return vals.length ? U.avg(vals) : (this.prefs.weightUnit === 'kg' ? 60 : 135);
+                    })();
+
+                    const latestBW = this.bwLog?.length ? U.safe(this.bwLog[this.bwLog.length - 1].weight, 0) : 0;
+                    const programScale = DATA.programCapacityScale[this.prefs.program] || 1;
+                    const levelScale = 1 + M.min(0.35, (this.currentLevel || 1) * 0.015);
+
+                    const fatigueByMuscle = {};
+                    const hitDensity = {};
+                    const mg = { Push: 0, Pull: 0, Legs: 0, Core: 0 };
+
+                    const metaCache = {};
+                    const groupShareCache = {};
+                    const cnsSensitivity = {
+                        chest: 0.08,
+                        upperChest: 0.08,
+                        frontDelt: 0.10,
+                        lats: 0.10,
+                        traps: 0.18,
+                        quads: 0.15,
+                        hams: 0.15,
+                        glutes: 0.15,
+                        lowBack: 0.30
+                    };
+
+                    const resolveImpactMap = (name) => {
+                        if (!name) return {};
+                        const direct = impact(name) || {};
+                        if (Object.keys(direct).length) return direct;
+
+                        const lc = String(name).toLowerCase();
+                        if (/(bench|incline|spoto|floor press|close grip bp|close grip bench|paused bench)/i.test(lc)) return DATA.muscles.Bench;
+                        if (/(ohp|overhead press|shoulder press|push press|arnold|z press|seated ohp|db ohp)/i.test(lc)) return DATA.muscles.OHP;
+                        if (/(squat|front squat|pause squat|box squat|ssb squat|leg press|lunge|split squat|hack squat)/i.test(lc)) return DATA.muscles.Squat;
+                        if (/(deadlift|sumo dl|trap bar dl|romanian dl|rdl|sldl|good morning|block pull|deficit dl|paused dl)/i.test(lc)) return DATA.muscles.Deadlift;
+                        if (/(row|pullup|chin|pulldown|latpd|lat pulldown)/i.test(lc)) return DATA.muscles.Row;
+                        return {};
+                    };
+
+                    const getMeta = (name) => {
+                        if (!name) return null;
+                        if (metaCache[name]) return metaCache[name];
+
+                        const impactMap = resolveImpactMap(name);
+                        const lc = String(name).toLowerCase();
+                        const mult = this.exMult(name) || 1;
+                        const base = this.baseTM(name) || name;
+                        const baseTMVal = this.tms[base] || 0;
+                        const hasExplicitCompoundImpact = !!DATA.getAccessoryImpact(name) || !!DATA.muscles[name];
+                        const isCompound = DATA.compoundAccessories.has(name) || hasExplicitCompoundImpact;
+
+                        let estWeight = this._estimateAccessoryWeight(name);
+                        if (/pullup|chin/.test(lc) && latestBW > 0) estWeight = latestBW * 0.9;
+                        else if (/dip/.test(lc) && latestBW > 0) estWeight = latestBW * 0.75;
+                        else if (!isCompound) estWeight = this.prefs.weightUnit === 'kg' ? 20 : 45;
+
+                        const refTM = baseTMVal > 0
+                            ? baseTMVal * mult
+                            : (isCompound ? avgTM * 0.8 : avgTM * 0.5);
+
+                        return metaCache[name] = {
+                            impactMap,
+                            isCompound,
+                            estWeight,
+                            refTM: M.max(1, refTM || estWeight * 1.4)
                         };
-                        const procAcc = (a) => {
-                            if (!a || !a.name || !a.completed) return;
-                            const imp_map = impact(a.name), isC = DATA.compoundAccessories.has(a.name), eW = this._estimateAccessoryWeight(a.name), reps = U.prs(a.reps), cc = a.completed || 0;
-                            if (cc <= 0) return;
-                            const setVol = eW * reps * cc;
-                            const gi = ms => setVol * M.min(1, M.max(0, ...ms.map(m => imp_map[m] || 0)));
-                            mg.Push += gi(DATA.groups.Push); mg.Pull += gi(DATA.groups.Pull); mg.Legs += gi(DATA.groups.Legs); mg.Core += gi(DATA.groups.Core);
-                            const accFat = cc * reps * (isC ? .4 : .2);
-                            Object.entries(imp_map).forEach(([k, v]) => {
-                                const decay = M.pow(.5, age / (DATA.halfLife[k] || 36));
-                                if (decay >= MIN_DECAY) { f[k] = (f[k] || 0) + accFat * v * decay; }
-                            });
-                        };
-                        procSets(w.details?.t1, w.setDetails?.t1); procSets(w.setDetails?.t2Name, w.setDetails?.t2); (w.setDetails?.accessories || []).forEach(procAcc);
-                    }
-                    const lb = 1 + M.min(.50, this.currentLevel * .02), rm = {};
-                    Object.keys(DATA.halfLife).forEach(m => { const cap = (DATA.baseRecoveryCapacity[m] || 90) * lb * pS; rm[m] = M.round(M.max(0, M.min(100, 100 * M.exp(-(f[m] || 0) / cap)))); });
-                    // Fix #4: Gentler CNS modifier (0.90-1.0), only for compound-heavy muscles
-                    const cM = .90 + .10 * ((rm.cns ?? 100) / 100);
-                    this.cache.recovery = Object.entries(DATA.groups).map(([n, ms]) => {
-                        const vs = ms.map(m => {
-                            let r = rm[m] ?? 100;
-                            // Only apply CNS modifier to non-isolation muscles, skip for CNS group itself
-                            if (n !== 'CNS' && !DATA.isolationDominant.has(m)) r = M.round(r * cM);
-                            return M.max(0, M.min(100, r));
+                    };
+
+                    const getGroupShares = (name, impactMap) => {
+                        if (groupShareCache[name]) return groupShareCache[name];
+                        const shares = {};
+                        Object.entries(DATA.groups).forEach(([groupName, muscles]) => {
+                            shares[groupName] = M.min(1, M.max(0, ...muscles.map(m => impactMap[m] || 0)));
                         });
-                        const min = M.min(...vs);
-                        return { name: n, recovery: M.round(U.avg(vs)), min, status: min >= 80 ? 'Ready' : min >= 40 ? 'Recovering' : 'Fatigued', muscles: ms.map(m => ({ name: m, recovery: n === 'CNS' ? (rm[m] ?? 100) : (DATA.isolationDominant.has(m) ? (rm[m] ?? 100) : M.max(0, M.min(100, M.round((rm[m] ?? 100) * cM)))) })) };
+                        return groupShareCache[name] = shares;
+                    };
+
+                    const addExposure = (exerciseName, weight, reps, count, ageHours, rpe, failed, isAccessory = false) => {
+                        if (!exerciseName || weight <= 0 || reps <= 0 || count <= 0) return;
+                        if (!Number.isFinite(ageHours) || ageHours < 0 || ageHours > LOOKBACK_HOURS) return;
+
+                        const meta = getMeta(exerciseName);
+                        if (!meta) return;
+
+                        const baseFatigue = U.fatigue(weight, reps, meta.refTM, !!failed, typeof rpe === 'number' ? rpe : 7);
+                        const fatigueScale = isAccessory ? (meta.isCompound ? 0.55 : 0.32) : 1;
+                        const totalFatigue = baseFatigue * count * fatigueScale;
+                        const totalVolume = weight * reps * count;
+                        const shares = getGroupShares(exerciseName, meta.impactMap);
+
+                        mg.Push += totalVolume * shares.Push;
+                        mg.Pull += totalVolume * shares.Pull;
+                        mg.Legs += totalVolume * shares.Legs;
+                        mg.Core += totalVolume * shares.Core;
+
+                        Object.entries(meta.impactMap).forEach(([muscle, share]) => {
+                            if (!share) return;
+
+                            const halfLife = DATA.halfLife[muscle] || 36;
+                            const decay = M.pow(0.5, ageHours / halfLife);
+                            if (decay < MIN_DECAY) return;
+
+                            fatigueByMuscle[muscle] = (fatigueByMuscle[muscle] || 0) + (totalFatigue * share * decay);
+
+                            if (ageHours <= DENSITY_WINDOW_HOURS) {
+                                const densityWeight = 1 - (ageHours / DENSITY_WINDOW_HOURS) * 0.5;
+                                const accessoryFactor = isAccessory ? 0.6 : 1;
+                                hitDensity[muscle] = (hitDensity[muscle] || 0) + (count * share * accessoryFactor * densityWeight);
+                            }
+                        });
+                    };
+
+                    const processWorkout = (w) => {
+                        if (!w?.timestamp) return;
+
+                        const workoutRPE = typeof w.rpe === 'number' ? w.rpe : 7;
+                        const workoutTs = w.timestamp;
+
+                        const t1Name = w.details?.t1;
+                        (w.setDetails?.t1 || []).forEach(s => {
+                            if (!s?.completed) return;
+                            const setTs = U.safe(s.completedAt, workoutTs);
+                            const ageHours = (now - setTs) / 36e5;
+                            addExposure(
+                                t1Name,
+                                U.safe(s.weight, 0),
+                                U.safe(s.performed ?? s.reps, 0),
+                                1,
+                                ageHours,
+                                typeof s.rpe === 'number' ? s.rpe : workoutRPE,
+                                s.failed,
+                                false
+                            );
+                        });
+
+                        const t2Name = w.setDetails?.t2Name;
+                        (w.setDetails?.t2 || []).forEach(s => {
+                            if (!s?.completed) return;
+                            const setTs = U.safe(s.completedAt, workoutTs);
+                            const ageHours = (now - setTs) / 36e5;
+                            addExposure(
+                                t2Name,
+                                U.safe(s.weight, 0),
+                                U.safe(s.performed ?? s.reps, 0),
+                                1,
+                                ageHours,
+                                typeof s.rpe === 'number' ? s.rpe : workoutRPE,
+                                s.failed,
+                                false
+                            );
+                        });
+
+                        (w.setDetails?.accessories || []).forEach(a => {
+                            const name = a?.name || a?.originalName;
+                            const completed = M.max(0, U.safe(a?.completed, 0));
+                            if (!name || completed <= 0) return;
+
+                            const meta = getMeta(name);
+                            const reps = U.prs(a.reps);
+                            const ageHours = (now - workoutTs) / 36e5;
+
+                            addExposure(
+                                name,
+                                meta.estWeight,
+                                reps,
+                                completed,
+                                ageHours,
+                                workoutRPE,
+                                false,
+                                true
+                            );
+                        });
+                    };
+
+                    const allWorkouts = [...this.history];
+
+                    if (this.session?.start && this.session?.t1) {
+                        const completedAcc = this.session.completedAcc || {};
+                        const sessionAccCounts = {};
+
+                        Object.keys(completedAcc).forEach(key => {
+                            if (!completedAcc[key]) return;
+                            const baseName = key.replace(/-\d+$/, '');
+                            sessionAccCounts[baseName] = (sessionAccCounts[baseName] || 0) + 1;
+                        });
+
+                        allWorkouts.push({
+                            timestamp: this.session.start,
+                            rpe: this.sessionRPE ?? 7,
+                            details: { t1: this.session.t1?.name },
+                            setDetails: {
+                                t1: this.session.t1?.sets || [],
+                                t2Name: this.session.t2?.selectedExercise || this.session.t2?.name,
+                                t2: this.session.t2?.sets || [],
+                                accessories: (this.session.acc || []).map(a => ({
+                                    name: a.selectedExercise || a.name,
+                                    originalName: a.originalName,
+                                    reps: a.reps,
+                                    completed: sessionAccCounts[a.originalName || a.name] || 0
+                                }))
+                            }
+                        });
+                    }
+
+                    for (let i = allWorkouts.length - 1; i >= 0; i--) {
+                        const w = allWorkouts[i];
+                        const ageHours = (now - (w?.timestamp || now)) / 36e5;
+                        if (ageHours > LOOKBACK_HOURS) break;
+                        processWorkout(w);
+                    }
+
+                    const rawRecovery = {};
+                    Object.keys(DATA.halfLife).forEach(muscle => {
+                        const capacity = (DATA.baseRecoveryCapacity[muscle] || 90) * programScale * levelScale;
+                        const load = (fatigueByMuscle[muscle] || 0) / M.max(1, capacity);
+
+                        let recovery = 100 / (1 + M.pow(load, 1.15));
+
+                        const freeHits = muscle === 'cns' ? 3 : (DATA.isolationDominant.has(muscle) ? 6 : 4);
+                        const hitPenaltyRate = muscle === 'cns' ? 3 : 2;
+                        const densityTax = M.min(MAX_DENSITY_TAX, M.max(0, (hitDensity[muscle] || 0) - freeHits) * hitPenaltyRate);
+
+                        recovery = clamp(M.round(recovery - densityTax), 0, 100);
+                        rawRecovery[muscle] = recovery;
                     });
-                    this.cache.recoveryMap = {}; Object.keys(DATA.halfLife).forEach(m => {
-                        this.cache.recoveryMap[m] = m === 'cns' ? (rm[m] ?? 100) : (DATA.isolationDominant.has(m) ? (rm[m] ?? 100) : M.max(0, M.min(100, M.round((rm[m] ?? 100) * cM))));
+
+                    const cnsRecovery = rawRecovery.cns ?? 100;
+                    const cnsDeficit = M.max(0, (70 - cnsRecovery) / 70);
+
+                    this.cache.recoveryMap = {};
+                    Object.keys(DATA.halfLife).forEach(muscle => {
+                        let recovery = rawRecovery[muscle] ?? 100;
+
+                        if (muscle !== 'cns' && !DATA.isolationDominant.has(muscle)) {
+                            recovery = clamp(
+                                M.round(recovery * (1 - cnsDeficit * (cnsSensitivity[muscle] || 0))),
+                                0,
+                                100
+                            );
+                        }
+
+                        this.cache.recoveryMap[muscle] = recovery;
                     });
+
+                    this.cache.recovery = Object.entries(DATA.groups).map(([name, muscles]) => {
+                        const values = muscles.map(m => this.cache.recoveryMap[m] ?? 100);
+                        const min = M.min(...values);
+                        return {
+                            name,
+                            recovery: M.round(U.avg(values)),
+                            min,
+                            status: min >= 80 ? 'Ready' : min >= 50 ? 'Recovering' : 'Fatigued',
+                            muscles: muscles.map(m => ({ name: m, recovery: this.cache.recoveryMap[m] ?? 100 }))
+                        };
+                    });
+
                     this.cache.mgVol = mg;
                 },
-                getReadinessScore() { const v = Object.values(this.cache.recoveryMap || {}); return v.length ? M.round(U.avg(v)) : 100; },
-                getRecoveryAdvice() { const fa = []; const chk = n => { if (!n) return; Object.keys(impact(n)).forEach(m => { if ((this.cache.recoveryMap?.[m] ?? 100) < 50 && !fa.includes(m)) fa.push(m); }); }; if (this.session?.t1) chk(this.session.t1.name); if (this.session?.t2) chk(this.session.t2.selectedExercise || this.session.t2.name); return (this.cache.recoveryMap?.cns ?? 100) < 40 ? { muscles: fa, suggestion: 'CNS heavily fatigued — consider lighter weights or skip heavy compounds', cnsWarning: true } : fa.length ? { muscles: fa, suggestion: 'Reduce volume on fatigued muscles' } : null; },
-                computeLongestStreak() { if (!this.history.length) return this.longestStreak = 0; const dpw = DATA.progs[this.prefs.program]?.daysPerWeek || 3; const maxGap = M.max(2, M.ceil(7 / dpw) + 1); const d = [...new Set(this.history.map(h => h.isoDate))].sort(); let l = 1, c = 1; for (let i = 1; i < d.length; i++) { if ((new D(d[i]) - new D(d[i - 1])) / 864e5 <= maxGap) { c++; l = M.max(l, c); } else c = 1; } this.longestStreak = l; },
+
+                getRecoveryAdvice() {
+                    const recoveryMap = this.cache.recoveryMap || {};
+                    const flagged = [];
+                    const seen = new Set();
+
+                    const inspect = (exerciseName) => {
+                        if (!exerciseName) return;
+                        Object.keys(impact(exerciseName) || {}).forEach(muscle => {
+                            if (seen.has(muscle)) return;
+                            const recovery = recoveryMap[muscle] ?? 100;
+                            if (recovery < 60) {
+                                seen.add(muscle);
+                                flagged.push({ muscle, recovery });
+                            }
+                        });
+                    };
+
+                    inspect(this.session?.t1?.name);
+                    inspect(this.session?.t2?.selectedExercise || this.session?.t2?.name);
+
+                    flagged.sort((a, b) => a.recovery - b.recovery);
+
+                    const cns = recoveryMap.cns ?? 100;
+                    if (cns < 45) {
+                        return {
+                            muscles: flagged.map(x => x.muscle),
+                            suggestion: 'CNS is low - keep compounds submaximal today and cap top sets around RPE 7-8.',
+                            cnsWarning: true
+                        };
+                    }
+
+                    if (!flagged.length) return null;
+
+                    const worst = flagged.slice(0, 3);
+                    return {
+                        muscles: worst.map(x => x.muscle),
+                        suggestion: `Back off ${worst.map(x => `${x.muscle} (${x.recovery}%)`).join(', ')} with about 20-30% less volume or lower-fatigue variations.`
+                    };
+                }, computeLongestStreak() { if (!this.history.length) return this.longestStreak = 0; const dpw = DATA.progs[this.prefs.program]?.daysPerWeek || 3; const maxGap = M.max(2, M.ceil(7 / dpw) + 1); const d = [...new Set(this.history.map(h => h.isoDate))].sort(); let l = 1, c = 1; for (let i = 1; i < d.length; i++) { if ((new D(d[i]) - new D(d[i - 1])) / 864e5 <= maxGap) { c++; l = M.max(l, c); } else c = 1; } this.longestStreak = l; },
                 computeFrequency() { const n = U.now(), f = {}; Object.entries({ '7d': 7, '14d': 14, '30d': 30 }).forEach(([l, d]) => { const ws = this.history.filter(h => h.timestamp >= n - d * 864e5), mh = {}; ws.forEach(x => Object.keys(impact(x.details?.t1) || {}).forEach(m => mh[m] = (mh[m] || 0) + 1)); f[l] = { total: ws.length, perWeek: M.round(ws.length / (d / 7) * 10) / 10, muscleHits: mh }; }); this.freqData = f; },
                 saveTemplate() { if (this.templateName.trim()) { this.templates.push({ name: this.templateName.trim(), created: U.now(), t1: this.session.t1?.name, t2: this.session.t2.originalName || this.session.t2.name, t2Selected: this.session.t2.selectedExercise || this.session.t2.name, acc: this.session.acc?.map(a => ({ name: a.originalName || a.name, selectedExercise: a.selectedExercise || a.name, sets: a.sets, reps: a.reps })) }); U.s('lift_templates', this.templates); this.templateName = ''; this.activeModal = null; } },
                 startFromTemplate(t) { this.start({ title: t.name, t1: t.t1, t2: t.t2, s: 'vol', t2s: 't2', acc: t.acc }); }, deleteTemplate(i) { this.templates.splice(i, 1); U.s('lift_templates', this.templates); },
