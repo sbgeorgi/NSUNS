@@ -28,7 +28,7 @@
             .glass-panel { @apply bg-[#1A1A1E] border border-white/10 rounded-3xl p-6 shadow-2xl relative w-full max-w-sm; }
             .glass-card { @apply bg-[#1A1A1E] border border-white/10 rounded-2xl p-4; }
             .glass-item { @apply bg-black/30 rounded-lg p-3 border border-white/5; }
-            .btn { @apply w-full font-bold py-3.5 rounded-xl active:scale-95 transition-transform text-sm; }
+            .btn { @apply w-full font-bold py-3.5 rounded-xl active:scale-95 transition-transform text-sm flex items-center justify-center; }
             .btn-p { @apply btn bg-indigo-600 text-white shadow-lg hover:bg-indigo-500; }
             .btn-s { @apply btn bg-[#333] text-white hover:bg-[#444]; }
             .btn-icon { @apply p-2 rounded hover:bg-white/10 text-slate-500 hover:text-white transition; }
@@ -82,22 +82,22 @@
     </style>
 
     <script>
-        /* OPTIMIZED LIFT TRACKER SCRIPT — REVIEWED & CORRECTED v2 */
+        const PANTRY_ID = '8f01b867-0669-4964-9042-792b6c8ebcd6';
+
+        // Custom Local Storage Interceptor for triggering syncs seamlessly
+        window.requestSync = () => { if (window.__app && window.__app.triggerSync) window.__app.triggerSync(); };
 
         // --- STATIC DATA ---
-        const ICONS = { warn: 'M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z', x: 'M6 18L18 6M6 6l12 12', check: 'M5 13l4 4L19 7', trash: 'M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16', edit: 'M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z', save: 'M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4', play: 'M8 5v14l11-7z', prev: 'M15 19l-7-7 7-7', next: 'M9 5l7 7-7 7', warn2: 'M12 8v4m0 4h.01', info: 'M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z', train: 'M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10', hist: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z', set: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z', chev_down: 'M19 9l-7 7-7-7', swap: 'M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4', expand: 'M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4', search: 'M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z', trophy: 'M12 15l-2 5h4l-2-5zm0 0a7 7 0 01-7-7V4h14v4a7 7 0 01-7 7zM5 4H3v2a3 3 0 003 3m10-5h2v2a3 3 0 01-3 3', target: 'M12 2a10 10 0 110 20 10 10 0 010-20zm0 4a6 6 0 100 12 6 6 0 000-12zm0 4a2 2 0 110 4 2 2 0 010-4z', clock: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z', trendUp: 'M13 7h8m0 0v8m0-8l-8 8-4-4-6 6', trendDown: 'M13 17h8m0 0V9m0 8l-8-8-4 4-6-6', copy: 'M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3', bookmark: 'M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z', zap: 'M13 10V3L4 14h7v7l9-11h-7z', bar_chart: 'M9 19V13a1 1 0 00-1-1H5a1 1 0 00-1 1v6m6 0H4m6 0h4m0 0V9a1 1 0 00-1-1h-3a1 1 0 00-1 1v10m6 0V7a1 1 0 00-1-1h-3a1 1 0 00-1 1v12m6 0h-4m4 0h1a1 1 0 001-1V11a1 1 0 00-1-1h-3a1 1 0 00-1 1v8', note: 'M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z', undo: 'M3 10h10a5 5 0 015 5v2M3 10l4-4m-4 4l4 4', zap_filled: 'M13 10V3L4 14h7v7l9-11h-7z' };
+        const ICONS = { warn: 'M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z', x: 'M6 18L18 6M6 6l12 12', check: 'M5 13l4 4L19 7', trash: 'M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16', edit: 'M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z', save: 'M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4', play: 'M8 5v14l11-7z', prev: 'M15 19l-7-7 7-7', next: 'M9 5l7 7-7 7', warn2: 'M12 8v4m0 4h.01', info: 'M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z', train: 'M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10', hist: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z', set: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z', chev_down: 'M19 9l-7 7-7-7', swap: 'M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4', expand: 'M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4', search: 'M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z', trophy: 'M12 15l-2 5h4l-2-5zm0 0a7 7 0 01-7-7V4h14v4a7 7 0 01-7 7zM5 4H3v2a3 3 0 003 3m10-5h2v2a3 3 0 01-3 3', target: 'M12 2a10 10 0 110 20 10 10 0 010-20zm0 4a6 6 0 100 12 6 6 0 000-12zm0 4a2 2 0 110 4 2 2 0 010-4z', clock: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z', trendUp: 'M13 7h8m0 0v8m0-8l-8 8-4-4-6 6', trendDown: 'M13 17h8m0 0V9m0 8l-8-8-4 4-6-6', copy: 'M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3', bookmark: 'M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z', zap: 'M13 10V3L4 14h7v7l9-11h-7z', bar_chart: 'M9 19V13a1 1 0 00-1-1H5a1 1 0 00-1 1v6m6 0H4m6 0h4m0 0V9a1 1 0 00-1-1h-3a1 1 0 00-1 1v10m6 0V7a1 1 0 00-1-1h-3a1 1 0 00-1 1v12m6 0h-4m4 0h1a1 1 0 001-1V11a1 1 0 00-1-1h-3a1 1 0 00-1 1v8', note: 'M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z', undo: 'M3 10h10a5 5 0 015 5v2M3 10l4-4m-4 4l4 4', zap_filled: 'M13 10V3L4 14h7v7l9-11h-7z', cloud: 'M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z' };
         const DATA = {
             muscles: { Bench: { chest: 1, upperChest: .4, frontDelt: .7, tri: .7, lats: .15, cns: .35 }, OHP: { frontDelt: 1, tri: .6, upperChest: .4, traps: .3, abs: .3, lowBack: .2, cns: .4 }, Squat: { quads: 1, glutes: .8, lowBack: .65, hams: .3, abs: .4, calves: .12, cns: .8 }, Deadlift: { glutes: 1, hams: .85, lowBack: 1, traps: .7, lats: .5, quads: .4, grip: .8, cns: 1 }, Row: { lats: 1, bi: .7, rearDelt: .7, grip: .6, lowBack: .4, traps: .4, cns: .3 } },
             halfLife: { chest: 36, upperChest: 36, frontDelt: 28, rearDelt: 24, tri: 28, bi: 28, lats: 36, traps: 30, quads: 48, hams: 44, glutes: 44, calves: 36, lowBack: 48, cns: 60, abs: 24, grip: 24, forearm: 24 },
             groups: { Push: ['chest', 'frontDelt', 'tri', 'upperChest'], Pull: ['lats', 'bi', 'rearDelt', 'traps'], Legs: ['quads', 'hams', 'glutes', 'calves'], Core: ['lowBack', 'abs'], CNS: ['cns'] },
-            // Isolation-dominant muscles unaffected by CNS modifier
             isolationDominant: new Set(['calves', 'forearm', 'grip', 'abs', 'bi', 'tri', 'rearDelt']),
             baseRecoveryCapacity: { chest: 90, upperChest: 90, frontDelt: 75, rearDelt: 60, tri: 80, bi: 80, lats: 100, traps: 90, quads: 120, hams: 110, glutes: 125, calves: 100, lowBack: 110, cns: 120, abs: 100, grip: 100, forearm: 100 },
-            // Narrowed range: high-volume programs expand capacity modestly, not 1.75x
             programCapacityScale: { nsuns: 1.3, ppl: 1.25, phul: 1.15, stronglifts: 1, gzclp: 1.1, '531': 1.1 },
             compoundAccessories: new Set(['Row', 'Pendlay Row', 'DB Row', 'Cable Row', 'T-Bar Row', 'Seal Row', 'Chest Supported Row', 'Meadows Row', 'Pullups', 'Chin-ups', 'Lat Pulldown', 'LatPD', 'Neutral Pullups', 'Chins', 'Wide Grip Pulldown', 'Close Grip Pulldown', 'Dips', 'Close Grip BP', 'Leg Press', 'Lunges', 'Bulgarian Split', 'Hip Thrust', 'Hack Squat', 'Nordic Curl', 'Good Morning', 'OHP', 'Seated OHP', 'DB OHP', 'Push Press', 'DL', 'Romanian DL', 'SLDL']),
             accessoryMuscleImpact: { 'DB Row': { lats: .85, bi: .6, rearDelt: .5, grip: .4, lowBack: .15, traps: .3 }, 'Cable Row': { lats: .8, bi: .5, rearDelt: .5, traps: .4, grip: .3 }, 'T-Bar Row': { lats: .9, bi: .6, rearDelt: .5, traps: .5, grip: .6, lowBack: .4 }, 'Seal Row': { lats: .9, bi: .5, rearDelt: .6, traps: .3 }, 'Chest Supported Row': { lats: .85, bi: .5, rearDelt: .6, traps: .3 }, 'Meadows Row': { lats: .7, bi: .4, rearDelt: .5, traps: .3, grip: .5 }, 'Pendlay Row': { lats: .95, bi: .6, rearDelt: .6, traps: .5, grip: .6, lowBack: .5 }, 'Incline Bench': { upperChest: .9, chest: .6, frontDelt: .6, tri: .6 }, 'Close Grip Bench': { tri: .9, chest: .7, frontDelt: .5 }, 'DB Bench': { chest: .9, upperChest: .4, frontDelt: .5, tri: .5 }, 'Front Squat': { quads: 1, glutes: .5, abs: .6, lowBack: .3, cns: .6 }, 'Romanian DL': { hams: 1, glutes: .7, lowBack: .7, grip: .5 }, SLDL: { hams: 1, glutes: .7, lowBack: .7, grip: .5 }, 'Sumo DL': { glutes: 1, hams: .7, lowBack: .7, quads: .6, grip: .8, cns: .9 }, 'Trap Bar DL': { quads: .6, glutes: .8, hams: .7, lowBack: .6, traps: .5, grip: .7, cns: .7 } },
-            // Case-insensitive lookup map built at init
             _accessoryImpactLower: null,
             getAccessoryImpact(id) {
                 if (!this._accessoryImpactLower) {
@@ -132,25 +132,26 @@
             }
         };
 
-        // --- UTILITIES & HELPERS ---
-        const M = Math, D = Date, LS = localStorage, J = JSON;
         const U = {
-            g: (k, d) => J.parse(LS.getItem(k) || "null") || d, s: (k, v) => LS.setItem(k, J.stringify(v)), d: k => LS.removeItem(k),
+            g: (k, d) => J.parse(LS.getItem(k) || "null") || d, 
+            s: (k, v) => {
+                LS.setItem(k, J.stringify(v));
+                if (k !== 'lift_last_sync' && k !== 'lift_user' && window.requestSync) window.requestSync();
+            }, 
+            d: k => LS.removeItem(k),
             now: () => D.now(), iso: t => new D(t).toISOString().split('T')[0],
             fmt: s => (s < 0 ? '-' : '') + M.floor(M.abs(s) / 60) + ':' + String(M.floor(M.abs(s) % 60)).padStart(2, '0'),
             rnd: (n, u, m) => { if (!Number.isFinite(n)) return 0; return m ? (u === 'kg' ? M.round(n / 1.25) * 1.25 : M.round(n / 2.5) * 2.5) : (u === 'kg' ? M.round(n / 2.5) * 2.5 : M.round(n / 5) * 5) },
             safe: (v, d = 0) => Number.isFinite(+v) ? +v : d, conv: (w, f, t) => f === t ? +w : f === 'lbs' ? +w * 0.453592 : +w / 0.453592,
             vol: s => (s || []).reduce((a, x) => x.completed ? a + (x.weight * (x.performed || x.reps)) : a, 0),
             sum: (a, k) => a.reduce((s, x) => s + (k ? (x[k] || 0) : x), 0), avg: a => a.length ? U.sum(a) / a.length : 0,
-            // Fix #1: Dual formula — Brzycki for ≤10 (more accurate), Epley for 11-15, cap at 15
             rm: (w, r) => {
                 if (r <= 0 || w <= 0) return 0;
                 if (r === 1) return w;
                 const c = M.min(r, 15);
-                if (c <= 10) return M.round(w * (36 / (37 - c))); // Brzycki
-                return M.round(w * (1 + c / 30)); // Epley for higher reps
+                if (c <= 10) return M.round(w * (36 / (37 - c)));
+                return M.round(w * (1 + c / 30));
             },
-            // Fix #2: Gentler intensity curve, higher cap for manual overrides
             fatigue: (w, r, tm, fail, rpe) => {
                 if (w <= 0 || r <= 0) return 0;
                 const i = tm > 0 ? M.min(w / tm, 1.25) : .75;
@@ -173,7 +174,6 @@
         const EX_INDEX = {}, MATCHERS = [[/(curl|bi|spider|preacher)/i, { bi: 1, forearm: .3, grip: .2 }], [/(pushdown|extension|skull|tri|dip|kickback)/i, { tri: 1, frontDelt: .2 }], [/(pullup|chin|lat|pulldown)/i, { lats: 1, bi: .5, rearDelt: .3, grip: .4, traps: .2 }], [/(row|t-bar|seal)/i, { lats: .8, bi: .5, rearDelt: .5, traps: .4, grip: .6, lowBack: .3 }], [/(leg press|lunge|split|hack squat)/i, { quads: .7, hams: .4, glutes: .6 }], [/(ham|rdl|stiff|good morning|nordic)/i, { hams: 1, glutes: .5, lowBack: .6 }], [/(calf|raise)/i, { calves: 1 }], [/(ab|core|plank|crunch|hanging|russian|dead bug|pallof)/i, { abs: 1, lowBack: .2 }], [/(arm|superset)/i, { tri: .5, bi: .5, forearm: .2 }], [/(shrug|trap|face)/i, { traps: 1, rearDelt: .5 }], [/(rear|reverse|fly)/i, { rearDelt: 1, traps: .3 }], [/(chest|fly|cable|pec)/i, { chest: .8, frontDelt: .2 }]];
         Object.entries(EX_OPTS).forEach(([k, g]) => g.opt.forEach(([id, m = 1]) => EX_INDEX[id] = { id, name: id, mult: m, groupKey: k, base: g.base }));
         const _imp = {};
-        // Fix #20: Case-insensitive accessory impact lookup
         const impact = id => {
             if (!id) return {};
             const lc = id.toLowerCase();
@@ -186,15 +186,12 @@
             return _imp[lc] = m ? m[1] : {};
         };
 
-        // --- APP LOGIC ---
         let charts = {};
         const upChrt = (id, t, d, c, f = true) => { const el = document.getElementById(id); if (!el) return; if (charts[id]) charts[id].destroy(); charts[id] = new Chart(el, { type: t, data: { labels: d.l, datasets: [{ data: d.d, borderColor: c, backgroundColor: c + '80', tension: .3, fill: f, pointRadius: t === 'line' ? 3 : 0, pointBackgroundColor: c }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: false }, scales: t === 'radar' ? { r: { ticks: { display: false }, grid: { color: 'rgba(255,255,255,0.1)' }, angleLines: { color: 'rgba(255,255,255,0.1)' }, pointLabels: { color: '#94a3b8', font: { size: 10 } } } } : { x: { display: false }, y: { grid: { color: '#ffffff0d' }, ticks: { color: '#666' } } } } }) };
 
-        // --- PROGRESSION STRATEGIES ---
         const PROG = {
             nsuns: c => {
                 const step = c.u === 'kg' ? 2.5 : 5;
-                // Fix #5: T2 uses half step and requires no failures
                 if (c.tier === 't2') {
                     const noFails = c.sets.every(s => !s.failed);
                     return c.all && noFails ? { add: step / 2, method: 'nsuns_t2_increase' } : { add: 0, method: 'nsuns_t2_hold' };
@@ -207,9 +204,7 @@
                 return { add, method: add > 0 ? 'nsuns_increase' : add < 0 ? 'nsuns_decrease' : 'nsuns_hold' };
             },
             '531': c => {
-                // Fix #7: T2 in 531 BBB shares TM with T1 — never independently adjust
                 if (c.tier !== 't1') return { add: 0, method: '531_t2_no_change' };
-                // cycle531 increments per rotation through all days, not per calendar week
                 if (((c.cycleWeek - 1) % 4) + 1 !== 4) return { add: 0, method: '531_in_cycle' };
                 if (c.top?.performed < c.top?.reps) {
                     const f = c.hist.slice(-16).filter(h => h.details?.t1 === c.lift && c.findTop(h.setDetails?.t1)?.performed < c.findTop(h.setDetails?.t1)?.reps).length;
@@ -236,7 +231,6 @@
                 return c.all ? { add: step, method: 'linear' } : { add: 0, method: 'hold' };
             },
             stronglifts: c => {
-                // Fix #8: Deadlift scheme regression now includes intermediate steps
                 const s = c.state[c.lift] = c.state[c.lift] || { cf: 0, dc: 0, slScheme: c.lift === 'Deadlift' ? 'dl' : 'std' };
                 if (!c.all) {
                     s.cf = (s.cf || 0) + 1;
@@ -256,15 +250,20 @@
                 return { add: c.lift === 'Deadlift' ? (c.u === 'kg' ? 5 : 10) : (c.u === 'kg' ? 2.5 : 5), method: 'sl_linear' };
             }
         };
-        // Strategy aliases for program config resolution
-        PROG.amrap_linear = PROG.linear;
-        PROG.lin = PROG.linear;
-        PROG.gz = PROG.gzclp;
-        PROG.sl = PROG.stronglifts;
+        PROG.amrap_linear = PROG.linear; PROG.lin = PROG.linear; PROG.gz = PROG.gzclp; PROG.sl = PROG.stronglifts;
+
+        // Crypto helper for secure-ish Pantry storage
+        const sha256 = async (message) => {
+            const msgBuffer = new TextEncoder().encode(message);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+            return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+        };
+        const M = Math, D = Date, LS = localStorage, J = JSON;
 
         function app() {
             return {
                 view: 'dashboard', icons: ICONS, UI: DATA.ui, PROGRAMS: DATA.progs, ACHIEVEMENTS,
+                user: null, auth: { username: '', password: '', error: '', loading: false }, syncing: false, _syncTimer: null,
                 tms: { Bench: 0, Squat: 0, Deadlift: 0, OHP: 0, Row: 0 }, state: { Bench: {}, Squat: {}, Deadlift: {}, OHP: {}, Row: {} },
                 prs: {}, history: [], bwLog: [], achievements: [], e1rmHistory: {}, templates: [], exerciseNotes: {}, tonnageGoal: 0, restHistory: [], xp: 0,
                 prefs: { weightUnit: 'lbs', program: 'nsuns', restT1: 180, restT2: 120, restT3: 60, timerSound: true, vibration: true, autoStartTimer: true, showPreviousWorkout: true, autoDeload: true, barWeight: 45, microplates: false, keepAwake: false, reduceMotion: false, showETR: true, heatmapCalendar: true, smartRest: true, swipeToComplete: true, warmupSteps: [40, 55, 75] },
@@ -275,7 +274,15 @@
                 expandedRecovery: null, chartLift: 'Bench', metronomeActive: false,
                 _cacheDebounce: null, _finishing: false,
 
-                init() {
+                init(isRehydrating = false) {
+                    window.__app = this;
+                    this.user = U.g('lift_user', null);
+
+                    if (!this.user && !isRehydrating) {
+                        this.view = 'login';
+                        return; // Halt bootup until logged in
+                    }
+
                     const d = U.g('nsuns_ultimate', {}), s = U.g('lift_preferences', {});
                     Object.assign(this, { tms: d.tms || this.tms, history: d.history || [], idx: d.idx || 0, week: d.week || 1, cycleWeek531: d.cycleWeek531 || 1, streak: d.streak || 0, state: d.state || this.state, prefs: { ...this.prefs, ...s }, bwLog: U.g('lift_bodyweight', []).filter(x => x.date), achievements: U.g('lift_achievements', []), prs: U.g('lift_prs', {}), e1rmHistory: U.g('lift_e1rm_history', {}), templates: U.g('lift_templates', []), exerciseNotes: U.g('lift_exercise_notes', {}), tonnageGoal: U.g('lift_tonnage_goal', 0), restHistory: U.g('lift_rest_history', []), xp: U.g('lift_xp', 0) });
                     this.savedSession = U.g('lift_active_session') || U.g('lift_active_session_backup');
@@ -285,24 +292,106 @@
                     if (Object.keys(this.tms).length) this.chartLift = Object.keys(this.tms)[0];
                     if (this.savedSession?.t1) this.activeModal = 'resume'; else if (!d.tms) this.view = 'setup';
                     window.addEventListener('pointerdown', this.unlockAudio, { once: true, passive: true });
-                    this.$nextTick(() => { this.draw(); this.calBuild(); this.chkAch(); this.scrollToActive() }); setInterval(() => this.tick(), 1000);
-                    // Fix #15: Auto-save without triggering updCache
-                    this.autoSaveTimer = setInterval(() => {
-                        if (this.session?.start && this.session?.t1 && !this._finishing) {
-                            this._saveSessionOnly();
-                            U.s('lift_active_session_backup', this.session);
-                        }
-                    }, 10000);
+                    this.$nextTick(() => { this.draw(); this.calBuild(); this.chkAch(); this.scrollToActive() }); 
+                    if (!isRehydrating) setInterval(() => this.tick(), 1000);
+                    
+                    if (!isRehydrating) {
+                        this.autoSaveTimer = setInterval(() => {
+                            if (this.session?.start && this.session?.t1 && !this._finishing) {
+                                this._saveSessionOnly();
+                                U.s('lift_active_session_backup', this.session);
+                            }
+                        }, 10000);
+                        this.pullFromCloud(); // Initial background sync check
+                    }
                 },
+
+                // --- CLOUD SYNC LOGIC ---
+                async pantryReq(method, basket, body = null) {
+                    const url = `https://getpantry.cloud/apiv1/pantry/${PANTRY_ID}/basket/${basket}`;
+                    const opts = { method, headers: { 'Content-Type': 'application/json' } };
+                    if (body) opts.body = JSON.stringify(body);
+                    try {
+                        const res = await fetch(url, opts);
+                        if (!res.ok) return null;
+                        return await res.json();
+                    } catch (e) { return null; }
+                },
+                async handleLogin() {
+                    this.auth.loading = true; this.auth.error = '';
+                    if (!this.auth.username || !this.auth.password) { this.auth.error = 'Enter username and password'; this.auth.loading = false; return; }
+                    const hash = await sha256(this.auth.password);
+                    const basketName = 'lift_' + this.auth.username.toLowerCase().replace(/[^a-z0-9]/g, '');
+                    const existing = await this.pantryReq('GET', basketName);
+
+                    if (existing) {
+                        if (existing.passwordHash !== hash) { this.auth.error = 'Invalid credentials'; this.auth.loading = false; return; }
+                        this.user = { username: this.auth.username, basket: basketName, hash };
+                        U.s('lift_user', this.user);
+                        await this.pullFromCloud(existing);
+                    } else {
+                        // Create new basket for new user
+                        this.user = { username: this.auth.username, basket: basketName, hash };
+                        U.s('lift_user', this.user);
+                        await this.pushToCloud(true);
+                    }
+                    this.auth.loading = false;
+                    this.view = 'dashboard';
+                    this.init(true); // Re-initialize Alpine data from local storage
+                },
+                logout() {
+                    this.user = null;
+                    U.d('lift_user');
+                    this.auth = { username: '', password: '', error: '', loading: false };
+                    this.view = 'login';
+                },
+                async pullFromCloud(data = null) {
+                    if (!this.user) return;
+                    this.syncing = true;
+                    try {
+                        const cloud = data || await this.pantryReq('GET', this.user.basket);
+                        if (cloud && cloud.payload) {
+                            const localLast = U.g('lift_last_sync', 0);
+                            if (cloud.lastUpdated > localLast) {
+                                const parsed = JSON.parse(cloud.payload);
+                                Object.keys(parsed).forEach(k => LS.setItem(k, JSON.stringify(parsed[k])));
+                                U.s('lift_last_sync', cloud.lastUpdated);
+                                this.init(true); // Re-hydrate UI with new cloud data
+                            }
+                        }
+                    } catch (e) { console.warn("Sync failed"); }
+                    this.syncing = false;
+                },
+                async pushToCloud() {
+                    if (!this.user) return;
+                    this.syncing = true;
+                    try {
+                        const now = Date.now();
+                        const keys = ['nsuns_ultimate', 'lift_preferences', 'lift_bodyweight', 'lift_achievements', 'lift_prs', 'lift_e1rm_history', 'lift_templates', 'lift_exercise_notes', 'lift_tonnage_goal', 'lift_rest_history', 'lift_xp'];
+                        const payloadObj = {};
+                        keys.forEach(k => { const v = LS.getItem(k); if(v) payloadObj[k] = JSON.parse(v); });
+
+                        const body = { passwordHash: this.user.hash, lastUpdated: now, payload: JSON.stringify(payloadObj) };
+                        await this.pantryReq('POST', this.user.basket, body);
+                        LS.setItem('lift_last_sync', now);
+                    } catch (e) { console.warn("Push failed"); }
+                    this.syncing = false;
+                },
+                triggerSync() {
+                    if (!this.user) return;
+                    if (this._syncTimer) clearTimeout(this._syncTimer);
+                    this._syncTimer = setTimeout(() => this.pushToCloud(), 2500);
+                },
+
+                // --- EXISTING APP LOGIC ---
                 get currentLevel() { return M.max(1, M.floor(M.pow(this.xp / 1000, 0.5))); },
                 get currentTitle() { const t = ['Initiate', 'Iron Novice', 'Steel Apprentice', 'Bronze Warrior', 'Silver Knight', 'Gold Spartan', 'Platinum Titan', 'Diamond Juggernaut', 'Astral Leviathan', 'Ultimate Lifter']; return t[M.min(t.length - 1, M.floor(this.currentLevel / 5))]; },
                 get xpProgress() { const c = M.pow(this.currentLevel, 2) * 1000, n = M.pow(this.currentLevel + 1, 2) * 1000; return M.min(100, M.max(0, ((this.xp - c) / (n - c)) * 100)); },
                 scrollToActive() { setTimeout(() => { document.getElementById('active-card')?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' }); }, 100); },
-                // Fix #11: Streak calculation uses program-aware gap tolerance
                 computeStreak() {
                     if (!this.history.length) { this.streak = 0; return; }
                     const dpw = DATA.progs[this.prefs.program]?.daysPerWeek || 3;
-                    const maxGap = M.max(2, M.ceil(7 / dpw) + 1); // e.g., 3-day program allows 3-day gaps
+                    const maxGap = M.max(2, M.ceil(7 / dpw) + 1);
                     const d = [...new Set(this.history.map(h => h.isoDate))].sort().reverse(), t = U.iso(U.now());
                     let s = 0, c = t;
                     for (let i = 0; i < d.length; i++) {
@@ -386,9 +475,7 @@
                 applyBatchAdjust() { ['t1', 't2'].forEach(t => { this.session?.[t]?.sets?.forEach(x => { if (!x.completed) x.weight = U.rnd(x.weight * (1 + this.batchAdjust / 100), this.prefs.weightUnit, this.prefs.microplates); }); }); this.batchAdjust = 0; this.saveSess(); },
                 finish() { const i = this.getInc(); if (i.total > 0 && !confirm(`Incomplete: ${i.total}. Finish?`)) return; this.sessionRating = 0; this.sessionNotes = this.session.notes || ''; this.sessionRPE = 7; this.timer.active = false; this.activeModal = 'rating'; },
                 getInc() { const m = [...(this.session?.t1?.sets || []), ...(this.session?.t2?.sets || [])].filter(s => !s.completed).length; let at = 0, ad = 0; (this.session?.acc || []).forEach(a => { for (let i = 1; i <= (a.sets || 0); i++) { at++; if (this.isAccDone(a.originalName || a.name, i)) ad++; } }); return { mainRemaining: m, accRemaining: M.max(0, at - ad), total: m + M.max(0, at - ad) }; },
-                // Exclude failed sets from top AMRAP consideration
                 findTopAMRAP(s) { if (!s) return null; const a = (s || []).filter(x => x.amrap && x.completed && !x.failed && x.performed != null); return a.length ? a.reduce((b, x) => (!b || x.weight > b.weight) ? x : b, null) : null; },
-                // Fix #16: Find best completed non-failed set for E1RM when no AMRAP exists
                 findBestCompletedSet(s) {
                     if (!s) return null;
                     const completed = (s || []).filter(x => x.completed && !x.failed && x.weight > 0);
@@ -401,33 +488,27 @@
                 },
                 computeProgression(l, s, p, t = 't1') {
                     const ctx = { tier: t, lift: l, sets: s, tm: this.tms[l] || 0, top: this.findTopAMRAP(s), all: s.every(x => x.completed && !x.failed), u: this.prefs.weightUnit, hist: this.history, state: this.state, wk: this.week, cycleWeek: this.cycleWeek531, findTop: st => this.findTopAMRAP(st) };
-                    // Record E1RM for non-failed AMRAP sets
                     if (ctx.top && !ctx.top.failed) {
                         const r = U.rm(ctx.top.weight, ctx.top.performed), m = this.exMult(this.session?.t1?.name || l);
                         const norm = m !== 1 ? M.round(r / m) : r;
                         if (norm > 0) { this.e1rmHistory[l] = [...(this.e1rmHistory[l] || []), { e1rm: norm, date: U.iso(U.now()), timestamp: U.now() }].slice(-20); U.s('lift_e1rm_history', this.e1rmHistory); }
                     }
-                    // Resolve strategy: check prog field on program config, then program key, then fallback
                     const progKey = DATA.progs[p]?.prog || p;
                     const fn = PROG[progKey] || PROG[p] || PROG.linear;
                     const res = fn(ctx);
                     if (res.add !== 0) this.tms[l] = U.rnd((this.tms[l] || 0) + U.rnd(res.add, ctx.u, this.prefs.microplates), ctx.u, this.prefs.microplates);
                     return res;
                 },
-                // Fix #10: Better accessory volume estimation using TM-derived scaling
                 _estimateAccessoryWeight(name) {
                     const isC = DATA.compoundAccessories.has(name);
-                    if (!isC) return 45; // Isolation baseline
-                    // Scale compound accessory estimate based on average TM
+                    if (!isC) return 45;
                     const tmVals = Object.values(this.tms).filter(v => v > 0);
                     const avgTM = tmVals.length ? U.avg(tmVals) : 135;
-                    return M.round(avgTM * 0.45); // Compound accessories ~45% of average TM
+                    return M.round(avgTM * 0.45);
                 },
                 saveFinish() {
                     this._finishing = true; const { t1, t2 } = this.session, l = t1.name, p = this.prefs.program;
-                    // Save T1 progression first
                     const prg = this.computeProgression(l, t1.sets, p, 't1');
-                    // Fix #7: Only compute T2 progression if T2 is a different lift than T1
                     const t2Base = this.baseTM(t2.originalName) || t2.originalName;
                     if (this.tms[t2Base] !== undefined && t2Base !== l) {
                         this.computeProgression(t2Base, t2.sets, p, 't2');
@@ -435,13 +516,11 @@
                     if (prg.add > 0 && typeof confetti === 'function') confetti({ particleCount: 100, spread: 70, origin: { y: .6 } });
                     const m = this.exMult(l), completedNF = t1.sets.filter(s => s.completed && !s.failed), bestE1RM = M.max(0, ...completedNF.map(s => U.rm(s.weight, s.performed || s.reps))), normE1RM = m !== 1 ? M.round(bestE1RM / m) : bestE1RM, isNewPR = normE1RM > 0 && normE1RM > (this.prs[l]?.weight || 0), iso = U.iso(U.now()), all = [...t1.sets, ...t2.sets];
                     if (isNewPR) { this.prs[l] = { weight: normE1RM, date: iso }; U.s('lift_prs', this.prs); }
-                    // Fix #10: Better accessory volume estimation
                     const mainVol = U.vol(all); let accVol = 0;
                     (this.session.acc || []).forEach(a => { const cc = Object.keys(this.session.completedAcc).filter(k => k.startsWith(a.originalName || a.name)).length; accVol += cc * U.prs(a.reps) * this._estimateAccessoryWeight(a.selectedExercise || a.name); });
                     const vol = mainVol + accVol, rCount = all.filter(s => s.completed && s.rpe).length, rSum = all.reduce((a, s) => s.completed && s.rpe ? a + s.rpe : a, 0);
                     const avgVol = this.history.length ? U.sum(this.history, 'totalVolume') / this.history.length : vol, scr = M.min(100, M.round(((vol / (avgVol || 1)) * 40) + (((rCount ? rSum / rCount : 7) / 10) * 60))), dur = M.max(60, (U.now() - this.session.start) / 1000), wJ = M.round(vol * 9.8 * .5), pW = M.round(wJ / dur);
                     this.xp += M.round(scr * 5 + (wJ / 150)); U.s('lift_xp', this.xp);
-                    // Fix #16: T2 E1RM — use best completed set if no AMRAP
                     const t2N = t2.selectedExercise || t2.name, t2NF = t2.sets.filter(s => s.completed && !s.failed);
                     let bT2 = 0;
                     const t2Amrap = this.findTopAMRAP(t2.sets);
@@ -466,19 +545,16 @@
                     if (this.session.dayIdx !== null && this.session.dayIdx !== undefined) { this.idx = (this.session.dayIdx + 1) % DATA.progs[p].days.length; if (this.idx === 0) this.week++; if (p === '531' && this.session.dayIdx === DATA.progs['531'].days.length - 1) this.cycleWeek531++; this.pIdx = this.idx; }
                     this.computeStreak(); this.computeLongestStreak(); this.computeFrequency(); this.session = {}; this.savedSession = null; this._finishing = false; U.d('lift_active_session'); U.d('lift_active_session_backup'); this.activeModal = null; this.save(); this.chkAch(); this.view = 'dashboard'; this.calBuild(); this.$nextTick(() => { this.draw(); this.scrollToActive(); });
                 },
-                // Fix #17: Deduplicated warmups
                 warmups() {
                     if (!this.session?.t1?.sets?.[0]) return [];
                     const w = this.session.t1.sets[0].weight, b = this.prefs.barWeight;
                     const raw = [{ w: b, r: 10 }, ...(this.prefs.warmupSteps || [40, 55, 75]).map(p => ({ w: U.rnd(w * (p / 100), this.prefs.weightUnit, this.prefs.microplates), r: p < 50 ? 5 : p < 70 ? 3 : 2 }))].filter(x => x.w >= b);
-                    // Deduplicate by weight
                     const seen = new Set(), deduped = [];
                     for (const s of raw) { if (!seen.has(s.w)) { seen.add(s.w); deduped.push(s); } }
                     return deduped;
                 },
                 calcPlates(w) { this.plate.open = true; this.plate.w = w; this.plate.plates = []; let r = (w - this.prefs.barWeight) / 2; if (r <= 0) return; DATA.ui.plates[this.prefs.weightUnit].forEach(p => { while (r >= p - .01) { this.plate.plates.push(p); r -= p; } }); },
                 openSmartPlateCalc() { let s = (this.session?.t1?.sets || []).find(x => !x.completed) || (this.session?.t2?.sets || []).find(x => !x.completed) || (this.session?.t1?.sets || []).slice(-1)[0]; if (s) this.calcPlates(s.weight); else this.plate.open = true; },
-                // Fix #18: Account for microplates
                 closestWeight(w) { const b = this.prefs.barWeight; let r = (w - b) / 2, t = b; DATA.ui.plates[this.prefs.weightUnit].forEach(p => { while (r >= p) { t += p * 2; r -= p; } }); return t; },
                 computeSessionVolume() {
                     let v = U.vol([...(this.session?.t1?.sets || []), ...(this.session?.t2?.sets || [])]);
@@ -493,17 +569,15 @@
                 getSwipeBgOpacity(t, i, d) { if (!this.swipeData.active || this.swipeData.tier !== t || this.swipeData.idx !== i) return 'opacity:0'; const dx = this.swipeData.dx; return (d === 'right' && dx > 20) ? `opacity:${M.min(1, dx / 80)}` : (d === 'left' && dx < -20) ? `opacity:${M.min(1, M.abs(dx) / 80)}` : 'opacity:0'; },
                 draw() {
                     upChrt('mainChart', 'line', { l: this.history.filter(h => h.details?.t1 === this.chartLift).map(x => x.date), d: this.history.filter(h => h.details?.t1 === this.chartLift).map(x => x.details?.est1rm || x.weight) }, '#6366f1');
-                    // Fix #19: Standardized date formatting
                     upChrt('bodyWeightChart', 'line', { l: this.bwLog.slice(-30).map(x => U.iso(x.date)), d: this.bwLog.slice(-30).map(x => x.weight) }, '#3b82f6');
                     const v = {}, now = new D(); this.history.slice(-20).forEach(h => { const ts = new D(h.timestamp), ys = new D(ts.getFullYear(), 0, 1), wn = M.ceil((M.floor((ts - ys) / 864e5) + ys.getDay() + 1) / 7), k = ts.getFullYear() === now.getFullYear() ? `W${wn}` : `${ts.getFullYear()}-W${wn}`; v[k] = (v[k] || 0) + (h.totalVolume || 0); });
                     upChrt('volumeChart', 'bar', { l: Object.keys(v), d: Object.values(v) }, '#10b981', false);
                     upChrt('balanceChart', 'radar', { l: ['Push', 'Pull', 'Legs', 'Core'], d: [this.cache.mgVol.Push, this.cache.mgVol.Pull, this.cache.mgVol.Legs, this.cache.mgVol.Core] }, '#6366f1', true);
                 }, drawPRCharts() { Object.keys(this.prs).forEach(l => { const e = (this.e1rmHistory[l] || []).slice(-15); if (e.length) upChrt('pr_' + l.replace(/\s+/g, '_'), 'line', { l: e.map(x => x.date), d: e.map(x => x.e1rm) }, '#6366f1'); }); },
-                // Fix #3, #4, #14: Complete recovery cache rewrite
                 updCache() {
                     const f = {}, now = U.now(), mg = { Push: 0, Pull: 0, Legs: 0, Core: 0 }, pS = DATA.programCapacityScale[this.prefs.program] || 1;
-                    const LOOKBACK_HOURS = 504; // 21 days — beyond this, no meaningful fatigue signal
-                    const MIN_DECAY = 0.005; // Minimum decay threshold to prevent phantom fatigue
+                    const LOOKBACK_HOURS = 504;
+                    const MIN_DECAY = 0.005; 
                     const allW = [...this.history]; if (this.session?.start && this.session?.t1) allW.push({ timestamp: this.session.start, rpe: this.sessionRPE, details: { t1: this.session.t1?.name }, setDetails: { t1: this.session.t1?.sets, t2Name: this.session.t2?.selectedExercise || this.session.t2?.name, t2: this.session.t2?.sets, accessories: this.session.acc?.map(a => ({ name: a.selectedExercise || a.name, originalName: a.originalName, total: a.sets, reps: a.reps, completed: Object.keys(this.session.completedAcc || {}).filter(k => k.startsWith(a.originalName || a.name)).length })) } });
                     for (let i = allW.length - 1; i >= 0; i--) {
                         const w = allW[i], age = (now - w.timestamp) / 36e5; if (age >= LOOKBACK_HOURS) break;
@@ -542,12 +616,10 @@
                     }
                     const lb = 1 + M.min(.50, this.currentLevel * .02), rm = {};
                     Object.keys(DATA.halfLife).forEach(m => { const cap = (DATA.baseRecoveryCapacity[m] || 90) * lb * pS; rm[m] = M.round(M.max(0, M.min(100, 100 * M.exp(-(f[m] || 0) / cap)))); });
-                    // Fix #4: Gentler CNS modifier (0.90-1.0), only for compound-heavy muscles
                     const cM = .90 + .10 * ((rm.cns ?? 100) / 100);
                     this.cache.recovery = Object.entries(DATA.groups).map(([n, ms]) => {
                         const vs = ms.map(m => {
                             let r = rm[m] ?? 100;
-                            // Only apply CNS modifier to non-isolation muscles, skip for CNS group itself
                             if (n !== 'CNS' && !DATA.isolationDominant.has(m)) r = M.round(r * cM);
                             return M.max(0, M.min(100, r));
                         });
@@ -568,18 +640,15 @@
                 openExNote(n) { this.exNoteTarget = n; this.exNoteText = this.exerciseNotes[n] || ''; this.activeModal = 'exNote'; }, saveExNote() { if (this.exNoteText.trim()) this.exerciseNotes[this.exNoteTarget] = this.exNoteText.trim(); else delete this.exerciseNotes[this.exNoteTarget]; U.s('lift_exercise_notes', this.exerciseNotes); this.activeModal = null; }, getExNote(n) { return this.exerciseNotes[n] || null; },
                 calBuild() { const n = new D(); n.setMonth(n.getMonth() + this.cal.offset); this.cal.monthName = n.toLocaleString('default', { month: 'long', year: 'numeric' }); const y = n.getFullYear(), m = n.getMonth(), ld = {}; this.history.forEach(h => ld[U.iso(h.timestamp)] = (ld[U.iso(h.timestamp)] || 0) + (h.totalVolume || 1)); const maxV = M.max(1, ...Object.values(ld)); this.cal.days = [...Array(new D(y, m, 1).getDay()).fill({}), ...Array.from({ length: new D(y, m + 1, 0).getDate() }, (_, i) => { const v = ld[U.iso(new D(y, m, i + 1))] || 0; return { num: i + 1, isToday: new D().getDate() === i + 1 && !this.cal.offset, hasLog: v > 0, intensity: v > 0 ? M.ceil((v / maxV) * 3) : 0 }; })]; const w = this.history.filter(h => new D(h.timestamp).getFullYear() === y && new D(h.timestamp).getMonth() === m); this.calSummary = { count: w.length, totalVol: U.sum(w, 'totalVolume'), avgDur: w.length ? M.round(U.avg(w.map(x => x.duration))) : 0, prs: w.filter(h => h.pr || h.t2PR).length }; }, calDayClass(d) { return !d.hasLog ? '' : this.prefs.heatmapCalendar ? (d.intensity >= 3 ? 'cal-hot3' : d.intensity >= 2 ? 'cal-hot2' : 'cal-hot1') : 'cal-active'; },
                 chkAch() { ACHIEVEMENTS.forEach(a => { if (!this.achievements.includes(a.id) && a.check(this.history, this.streak)) { this.achievements.push(a.id); this.currentAchievement = a; this.activeModal = 'achievement'; U.s('lift_achievements', this.achievements); } }); },
-                // Fix #15: Separate save-only (no cache update) from full save
                 _saveSessionOnly() { if (this.session?.start) U.s('lift_active_session', this.session); },
                 saveSess() {
                     if (this.session?.start) {
                         U.s('lift_active_session', this.session);
-                        // Debounce cache updates to prevent mid-interaction conflicts
                         if (this._cacheDebounce) clearTimeout(this._cacheDebounce);
                         this._cacheDebounce = setTimeout(() => this.updCache(), 200);
                     }
                 },
                 save() { U.s('nsuns_ultimate', { tms: this.tms, history: this.history, idx: this.idx, week: this.week, cycleWeek531: this.cycleWeek531, streak: this.streak, state: this.state }); this.updCache(); }, savePrefs() { U.s('lift_preferences', this.prefs); },
-                // Fix #12: Volume recalculation from set data during unit conversion
                 togUnit(u) {
                     if (u !== this.prefs.weightUnit && confirm(`Convert all weights to ${u}?`)) {
                         const f = this.prefs.weightUnit;
@@ -587,20 +656,16 @@
                         Object.keys(this.prs).forEach(k => { if (this.prs[k]) this.prs[k].weight = M.round(U.conv(this.prs[k].weight, f, u)); });
                         this.history.forEach(h => {
                             if (h.details) { if (h.details.weight) h.details.weight = M.round(U.conv(h.details.weight, f, u)); if (h.details.est1rm) h.details.est1rm = M.round(U.conv(h.details.est1rm, f, u)); }
-                            // Convert individual set weights
                             if (h.setDetails?.t1) h.setDetails.t1.forEach(s => { if (s.weight) s.weight = U.rnd(U.conv(s.weight, f, u), u, false); });
                             if (h.setDetails?.t2) h.setDetails.t2.forEach(s => { if (s.weight) s.weight = U.rnd(U.conv(s.weight, f, u), u, false); });
-                            // Recalculate totalVolume from set data instead of converting as a weight
                             if (h.setDetails?.t1 || h.setDetails?.t2) {
                                 const mainVol = U.vol([...(h.setDetails.t1 || []), ...(h.setDetails.t2 || [])]);
-                                // Accessories don't have weight data, estimate them
                                 let accVol = 0;
                                 (h.setDetails.accessories || []).forEach(a => {
                                     accVol += (a.completed || 0) * U.prs(a.reps) * (DATA.compoundAccessories.has(a.name) ? U.rnd(U.conv(90, f, u), u, false) : U.rnd(U.conv(45, f, u), u, false));
                                 });
                                 h.totalVolume = mainVol + accVol;
                             } else if (h.totalVolume) {
-                                // Legacy fallback: ratio conversion
                                 h.totalVolume = M.round(U.conv(h.totalVolume, f, u));
                             }
                         });
@@ -641,6 +706,35 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="icons.x" />
             </svg></button>
     </div>
+    
+    <!-- LOGIN VIEW -->
+    <div x-show="view==='login'" class="p-6 f-col h-full justify-center max-w-md mx-auto min-h-screen relative" x-transition x-cloak>
+        <div class="text-center mb-10">
+            <h1 class="text-4xl font-black italic tracking-tighter mb-2 bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">LIFT ULTIMATE</h1>
+            <p class="text-slate-400">Login or Create Account to Sync</p>
+        </div>
+        <div class="glass-panel w-full">
+            <div x-show="auth.error" class="bg-red-500/10 border border-red-500/30 text-red-400 p-3 rounded-xl mb-4 text-center text-sm font-bold" x-text="auth.error"></div>
+            <div class="space-y-4 mb-6">
+                <div>
+                    <label class="lbl">Username</label>
+                    <input type="text" x-model="auth.username" class="inp" placeholder="e.g. lifter99" @keydown.enter="handleLogin()">
+                </div>
+                <div>
+                    <label class="lbl">Password</label>
+                    <input type="password" x-model="auth.password" class="inp" placeholder="••••••••" @keydown.enter="handleLogin()">
+                </div>
+            </div>
+            <button @click="handleLogin()" class="btn-p relative overflow-hidden group">
+                <span x-show="!auth.loading">Login / Register</span>
+                <span x-show="auth.loading" class="animate-pulse">Connecting to Pantry...</span>
+            </button>
+            <p class="text-xs text-center text-slate-500 mt-4 leading-relaxed">
+                If the username doesn't exist, an account will be automatically created with this password and your current offline data will be synced.
+            </p>
+        </div>
+    </div>
+
     <div x-show="activeModal" class="modal-bg" x-transition x-cloak>
         <template x-if="activeModal==='resume'">
             <div class="glass-panel text-center">
@@ -648,7 +742,7 @@
                 <p class="text-xs text-slate-500 mb-6" x-text="savedSession?.title"></p>
                 <div class="space-y-3"><button @click="resume()" class="btn-p">Resume</button><button @click="finish()"
                         class="btn border border-green-500/30 text-green-400">Finish Now</button><button
-                        @click="session={};savedSession=null;DB.d('lift_active_session');DB.d('lift_active_session_backup');activeModal=null"
+                        @click="session={};savedSession=null;U.d('lift_active_session');U.d('lift_active_session_backup');activeModal=null"
                         class="btn border border-red-500/20 text-red-400">Discard</button></div>
             </div>
         </template>
@@ -911,6 +1005,11 @@
                 <div class="bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/20 text-[10px] text-indigo-400 font-bold uppercase tracking-wider shadow-[0_0_10px_rgba(99,102,241,0.2)]"
                     x-text="'LVL ' + currentLevel + ' ' + currentTitle"></div>
                 <div class="f-g2">
+                    <div class="bg-white/5 rounded-full px-2 py-1 flex items-center gap-1 border border-white/10 text-[10px] text-slate-400">
+                        <svg x-show="syncing" class="w-3 h-3 animate-spin text-indigo-400" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="icons.expand" /></svg>
+                        <svg x-show="!syncing" class="w-3 h-3 text-green-400" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="icons.cloud" /></svg>
+                        <span x-text="syncing ? 'Syncing...' : 'Synced'"></span>
+                    </div>
                     <div class="bg-white/5 rounded-full px-3 py-1 flex items-center gap-2 border border-white/10"
                         @click="activeModal='achievement'"><span class="text-lg">🔥</span><span
                             class="text-sm font-bold mono" x-text="streak"></span></div>
@@ -1491,6 +1590,13 @@
         <h1 class="text-2xl font-black italic text-white mb-6">SETTINGS</h1>
         <div class="space-y-8">
             <div class="glass-card space-y-4">
+                <h3 class="lbl">Account</h3>
+                <div class="f-cb">
+                    <span class="text-sm text-slate-300">Logged in as <span class="font-bold text-indigo-400 ml-1" x-text="user?.username"></span></span>
+                    <button @click="logout()" class="btn border border-red-500/20 text-red-500 text-xs px-4 py-2 w-auto">Logout</button>
+                </div>
+            </div>
+            <div class="glass-card space-y-4">
                 <h3 class="lbl">Program</h3><select x-model="prefs.program" class="inp text-sm mb-4"
                     @change="pIdx=0;savePrefs();save()"><template x-for="(p,k) in PROGRAMS">
                         <option :value="k" x-text="p.name"></option>
@@ -1555,7 +1661,7 @@
         </div>
     </div>
 
-    <div class="fixed bottom-0 left-0 w-full pb-safe nav-glass z-40" x-show="view!=='workout' && view!=='setup'"
+    <div class="fixed bottom-0 left-0 w-full pb-safe nav-glass z-40" x-show="view!=='workout' && view!=='setup' && view!=='login'"
         x-transition>
         <div class="flex justify-around items-center px-2 py-3 max-w-md mx-auto"><template x-for="n in UI.nav"><button
                     @click="nav(n.id)" class="nav-btn" :class="view===n.id?'text-indigo-400':'text-slate-500'"><svg
