@@ -106,6 +106,47 @@
                 }
                 return this._accessoryImpactLower[(id || '').toLowerCase()] || this.accessoryMuscleImpact[id] || null;
             },
+            // Volume landmarks per muscle group per week (sets)
+            // MEV = Minimum Effective Volume, MAV = Maximum Adaptive Volume, MRV = Maximum Recoverable Volume
+            volumeLandmarks: {
+                chest: { mev: 8, mav: 16, mrv: 22 },
+                upperChest: { mev: 4, mav: 10, mrv: 16 },
+                frontDelt: { mev: 6, mav: 12, mrv: 18 },
+                rearDelt: { mev: 6, mav: 14, mrv: 22 },
+                tri: { mev: 4, mav: 10, mrv: 18 },
+                bi: { mev: 4, mav: 12, mrv: 20 },
+                lats: { mev: 8, mav: 16, mrv: 22 },
+                traps: { mev: 4, mav: 10, mrv: 18 },
+                quads: { mev: 8, mav: 16, mrv: 22 },
+                hams: { mev: 6, mav: 12, mrv: 18 },
+                glutes: { mev: 4, mav: 12, mrv: 18 },
+                calves: { mev: 6, mav: 12, mrv: 20 },
+                lowBack: { mev: 4, mav: 10, mrv: 14 },
+                abs: { mev: 4, mav: 12, mrv: 22 },
+                cns: { mev: 2, mav: 8, mrv: 14 },
+                grip: { mev: 4, mav: 10, mrv: 18 },
+                forearm: { mev: 4, mav: 10, mrv: 18 }
+            },
+            // Supercompensation timing: peak hours after training, window width hours
+            supercompensation: {
+                chest: { peakHours: 72, windowHours: 24 },
+                upperChest: { peakHours: 72, windowHours: 24 },
+                frontDelt: { peakHours: 56, windowHours: 20 },
+                rearDelt: { peakHours: 48, windowHours: 18 },
+                tri: { peakHours: 56, windowHours: 20 },
+                bi: { peakHours: 56, windowHours: 20 },
+                lats: { peakHours: 72, windowHours: 24 },
+                traps: { peakHours: 60, windowHours: 22 },
+                quads: { peakHours: 96, windowHours: 30 },
+                hams: { peakHours: 88, windowHours: 28 },
+                glutes: { peakHours: 88, windowHours: 28 },
+                calves: { peakHours: 72, windowHours: 24 },
+                lowBack: { peakHours: 96, windowHours: 30 },
+                cns: { peakHours: 120, windowHours: 36 },
+                abs: { peakHours: 48, windowHours: 18 },
+                grip: { peakHours: 48, windowHours: 18 },
+                forearm: { peakHours: 48, windowHours: 18 }
+            },
             schemes: {
                 nsuns: { vol: [[.65, 8], [.75, 6], [.85, 4], [.85, 4], [.85, 4], [.8, 5], [.75, 6], [.7, 7], [.65, 8, '+']], heavy: [[.75, 5], [.85, 3], [.95, 1, '+'], [.9, 3], [.85, 3], [.8, 3], [.75, 5], [.7, 5], [.65, 5, '+']], dl: [[.75, 5], [.85, 3], [.95, 1, '+'], [.9, 3], [.85, 3], [.8, 3], [.75, 3], [.7, 3], [.65, 3]], t2: [[.5, 5], [.6, 6], [.7, 7], [.7, 4], [.7, 4], [.7, 4], [.7, 4], [.7, 4]] },
                 stronglifts: { std: [[1, 5], [1, 5], [1, 5], [1, 5], [1, 5, '+']], dl: [[1, 5, '+']], '3x5': [[1, 5], [1, 5], [1, 5, '+']], '3x3': [[1, 3], [1, 3], [1, 3, '+']], '1x3': [[1, 3, '+']] },
@@ -133,11 +174,11 @@
         };
 
         const U = {
-            g: (k, d) => J.parse(LS.getItem(k) || "null") || d, 
+            g: (k, d) => J.parse(LS.getItem(k) || "null") || d,
             s: (k, v) => {
                 LS.setItem(k, J.stringify(v));
                 if (k !== 'lift_last_sync' && k !== 'lift_user' && window.requestSync) window.requestSync();
-            }, 
+            },
             d: k => LS.removeItem(k),
             now: () => D.now(), iso: t => new D(t).toISOString().split('T')[0],
             fmt: s => (s < 0 ? '-' : '') + M.floor(M.abs(s) / 60) + ':' + String(M.floor(M.abs(s) % 60)).padStart(2, '0'),
@@ -145,12 +186,24 @@
             safe: (v, d = 0) => Number.isFinite(+v) ? +v : d, conv: (w, f, t) => f === t ? +w : f === 'lbs' ? +w * 0.453592 : +w / 0.453592,
             vol: s => (s || []).reduce((a, x) => x.completed ? a + (x.weight * (x.performed || x.reps)) : a, 0),
             sum: (a, k) => a.reduce((s, x) => s + (k ? (x[k] || 0) : x), 0), avg: a => a.length ? U.sum(a) / a.length : 0,
+            // IMPROVEMENT #6: Hybrid e1RM estimator
+            // Brzycki diverges near r=37 and is inaccurate >10 reps
+            // Epley is linear and better for mid-range
+            // Wathan handles high reps most accurately empirically
             rm: (w, r) => {
                 if (r <= 0 || w <= 0) return 0;
                 if (r === 1) return w;
-                const c = M.min(r, 15);
-                if (c <= 10) return M.round(w * (36 / (37 - c)));
-                return M.round(w * (1 + c / 30));
+                const c = M.min(r, 30);
+                if (c <= 6) {
+                    // Brzycki: most accurate 1-6 rep range
+                    return M.round(w * (36 / (37 - c)));
+                } else if (c <= 10) {
+                    // Epley: better 7-10 rep range
+                    return M.round(w * (1 + c / 30));
+                } else {
+                    // Wathan: most accurate >10 reps
+                    return M.round(w * (100 / (48.8 + 53.8 * M.exp(-0.075 * c))));
+                }
             },
             fatigue: (w, r, tm, fail, rpe) => {
                 if (w <= 0 || r <= 0) return 0;
@@ -158,7 +211,34 @@
                 const rf = r * (1 + .02 * M.max(0, r - 8));
                 return rf * M.pow(i, 1.3) * (1 + i) * (fail ? 1.6 : 1) * M.pow(1.05, (typeof rpe === 'number' ? rpe : 7) - 7);
             },
-            prs: r => { const s = String(r || '10'); return /amrap/i.test(s) ? 8 : s.split('-').length === 2 ? M.round((+s.split('-')[0] + +s.split('-')[1]) / 2) : +s || 10 }
+            prs: r => { const s = String(r || '10'); return /amrap/i.test(s) ? 8 : s.split('-').length === 2 ? M.round((+s.split('-')[0] + +s.split('-')[1]) / 2) : +s || 10 },
+            // IMPROVEMENT #4: Weekly effective set count per muscle
+            weeklyEffectiveSets: (history, muscle, nowTs) => {
+                const weekAgo = nowTs - 7 * 864e5;
+                let sets = 0;
+                for (let i = history.length - 1; i >= 0; i--) {
+                    const w = history[i];
+                    if (w.timestamp < weekAgo) break;
+                    const countSets = (name, sArr) => {
+                        if (!name || !Array.isArray(sArr)) return 0;
+                        const imp = impact(name);
+                        const contribution = imp[muscle] || 0;
+                        if (contribution < 0.3) return 0; // Only count meaningful stimulus
+                        return sArr.filter(s => s.completed && !s.failed).length * contribution;
+                    };
+                    sets += countSets(w.details?.t1, w.setDetails?.t1);
+                    sets += countSets(w.setDetails?.t2Name, w.setDetails?.t2);
+                    (w.setDetails?.accessories || []).forEach(a => {
+                        if (!a.name || !a.completed) return;
+                        const imp = impact(a.name);
+                        const contribution = imp[muscle] || 0;
+                        if (contribution >= 0.3) {
+                            sets += a.completed * contribution;
+                        }
+                    });
+                }
+                return M.round(sets * 10) / 10;
+            }
         };
 
         const ACHIEVEMENTS = [
@@ -166,7 +246,10 @@
             { id: 'pr1', title: 'PR Machine', icon: '📈', check: h => h.some(w => w.pr || w.t2PR) }, { id: 'pr5', title: 'Gains Train', icon: '🚂', check: h => h.filter(w => w.pr || w.t2PR).length >= 5 }, { id: 'vol', title: 'Volume King', icon: '👑', check: h => U.sum(h, 'totalVolume') >= 1e5 },
             { id: 'back', title: 'Comeback Kid', icon: '💫', check: h => { if (h.length < 3) return false; const s = [...h].sort((a, b) => a.timestamp - b.timestamp); for (let i = 2; i < s.length; i++) if ((s[i].timestamp - s[i - 1].timestamp) > 12096e5) return true; return false } },
             { id: 'star', title: 'Five Star', icon: '✨', check: h => h.some(w => w.rating === 5) }, { id: 'streak10', title: 'Consistency', icon: '🔗', check: (_, s) => s >= 10 },
-            { id: 'tonnage50k', title: 'Iron Mover', icon: '🏋️', check: h => h.some(w => (w.totalVolume || 0) >= 50000) }, { id: 'dawn', title: 'Early Bird', icon: '🌅', check: h => h.some(w => new D(w.timestamp).getHours() >= 4 && new D(w.timestamp).getHours() < 7) }
+            { id: 'tonnage50k', title: 'Iron Mover', icon: '🏋️', check: h => h.some(w => (w.totalVolume || 0) >= 50000) }, { id: 'dawn', title: 'Early Bird', icon: '🌅', check: h => h.some(w => new D(w.timestamp).getHours() >= 4 && new D(w.timestamp).getHours() < 7) },
+            // New achievements for volume/recovery awareness
+            { id: 'supercomp', title: 'Perfect Timing', icon: '⚡', check: (h, s, app) => app && app.cache?.recovery?.some(g => g.muscles?.some(m => m.recovery > 100)) },
+            { id: 'balanced', title: 'Balanced Athlete', icon: '⚖️', check: (h, s, app) => { if (!app?.cache?.mgVol) return false; const v = app.cache.mgVol; const vals = [v.Push, v.Pull, v.Legs].filter(x => x > 0); if (vals.length < 3) return false; const avg = U.avg(vals); return vals.every(x => M.abs(x - avg) / avg < 0.25); } }
         ];
 
         const EX_OPTS = { bench_variants: { base: 'Bench', opt: [['Bench', 1], ['Incline Bench', .85], ['Close Grip Bench', .9], ['DB Bench', .8], ['Paused Bench', .9], ['Spoto Press', .85], ['Floor Press', .9]] }, ohp_variants: { base: 'OHP', opt: [['OHP', 1], ['Seated OHP', .95], ['DB OHP', .85], ['Push Press', 1.1], ['Z Press', .75], ['Arnold Press', .7], ['Behind Neck Press', .8]] }, squat_variants: { base: 'Squat', opt: [['Squat', 1], ['Front Squat', .85], ['Pause Squat', .85], ['Box Squat', .9], ['SSB Squat', .9], ['Goblet Squat', .5], ['Tempo Squat', .8]] }, deadlift_variants: { base: 'Deadlift', opt: [['Deadlift', 1], ['Sumo DL', 1], ['Romanian DL', .7], ['Trap Bar DL', 1.05], ['Deficit DL', .9], ['Paused DL', .85], ['Block Pull', 1.1], ['SLDL', .7]] }, row_variants: { base: 'Row', opt: [['Row', 1], ['Pendlay Row', .95], ['DB Row', .85], ['Cable Row', .9], ['T-Bar Row', 1], ['Seal Row', .8], ['Chest Supported Row', .85], ['Meadows Row', .7]] }, triceps: { opt: [['Tri'], ['Pushdowns'], ['Skull Crushers'], ['Dips'], ['OH Tricep Ext'], ['Close Grip BP'], ['JM Press'], ['Tricep Kickbacks']] }, biceps: { opt: [['Bi'], ['Barbell Curl'], ['DB Curl'], ['Hammer Curl'], ['Preacher Curl'], ['Incline Curl'], ['Cable Curl'], ['Spider Curl']] }, vertical_pull: { opt: [['Pullups'], ['Chin-ups'], ['Lat Pulldown'], ['LatPD'], ['Neutral Pullups'], ['Chins'], ['Wide Grip Pulldown'], ['Close Grip Pulldown']] }, leg_accessories: { opt: [['Legs'], ['Leg Press'], ['Lunges'], ['Leg Curl'], ['Leg Ext'], ['Calf Raises'], ['Bulgarian Split'], ['Hip Thrust'], ['Hack Squat'], ['Nordic Curl']] }, core: { opt: [['Abs'], ['Hanging Leg Raise'], ['Cable Crunch'], ['Ab Wheel'], ['Planks'], ['Russian Twists'], ['Dead Bug'], ['Pallof Press']] }, arms: { opt: [['Arms'], ['Curls + Pushdowns'], ['Hammer + Dips'], ['Arm Circuit'], ['Supersets']] }, dl_accessory: { base: 'Deadlift', opt: [['DL', 1], ['Romanian DL', .7], ['SLDL', .7], ['Good Morning', .5], ['Back Extension', .3]] } };
@@ -198,9 +281,14 @@
                 }
                 if (!c.top) return { add: 0, method: c.all ? 'nsuns_hold_no_amrap' : 'nsuns_hold_incomplete' };
                 const target = c.top.reps, actual = c.top.performed, delta = actual - target;
+
+                // IMPROVEMENT #2: Trend-aware progression
+                const trendMod = c.trendMultiplier || 1.0;
                 let add = 0;
-                if (target >= 5) { add = delta < -2 ? -step : delta >= 3 ? step : delta >= 1 ? step / 2 : 0; }
-                else { add = actual < 1 ? -step * 3 : actual === 1 ? -step * 2 : actual === 2 ? -step : actual === 3 ? 0 : actual === 4 ? step : step * 2; }
+                if (target >= 5) { add = delta < -2 ? -step : delta >= 3 ? step * trendMod : delta >= 1 ? (step / 2) * trendMod : 0; }
+                else { add = actual < 1 ? -step * 3 : actual === 1 ? -step * 2 : actual === 2 ? -step : actual === 3 ? 0 : actual === 4 ? step * trendMod : step * 2 * trendMod; }
+                // Round the result to nearest valid increment
+                add = add > 0 ? M.max(step / 2, U.rnd(add, c.u, false)) : add < 0 ? M.min(-step / 2, -M.abs(U.rnd(add, c.u, false))) : 0;
                 return { add, method: add > 0 ? 'nsuns_increase' : add < 0 ? 'nsuns_decrease' : 'nsuns_hold' };
             },
             '531': c => {
@@ -210,7 +298,8 @@
                     const f = c.hist.slice(-16).filter(h => h.details?.t1 === c.lift && c.findTop(h.setDetails?.t1)?.performed < c.findTop(h.setDetails?.t1)?.reps).length;
                     return f >= 2 ? { add: -M.round(c.tm * .1), method: '531_deload' } : { add: 0, method: '531_hold' };
                 }
-                return { add: ['Bench', 'OHP'].includes(c.lift) ? (c.u === 'kg' ? 2.5 : 5) : (c.u === 'kg' ? 5 : 10), method: '531_cycle' };
+                const baseAdd = ['Bench', 'OHP'].includes(c.lift) ? (c.u === 'kg' ? 2.5 : 5) : (c.u === 'kg' ? 5 : 10);
+                return { add: baseAdd * (c.trendMultiplier || 1.0), method: '531_cycle' };
             },
             gzclp: c => {
                 const k = c.tier === 't1' ? 't1Stage' : 't2Stage', s = c.state[c.lift] = c.state[c.lift] || { t1Stage: 1, t2Stage: 1 }, st = s[k] || 1;
@@ -219,16 +308,20 @@
                     if (st >= 3) { s[k] = 1; return { add: -M.round(c.tm * .15), method: `gz_${c.tier}_stage_reset` }; }
                     s[k] = st + 1; return { add: 0, method: `gz_${c.tier}_stage_advance` };
                 }
-                return { add: c.u === 'kg' ? 2.5 : 5, method: `gz_${c.tier}_linear` };
+                const baseStep = c.u === 'kg' ? 2.5 : 5;
+                return { add: baseStep * (c.trendMultiplier || 1.0), method: `gz_${c.tier}_linear` };
             },
             linear: c => {
                 const step = c.u === 'kg' ? 2.5 : 5;
-                if (c.tier !== 't1') return c.all ? { add: step, method: 't2_linear' } : { add: 0, method: 't2_hold' };
+                const trendMod = c.trendMultiplier || 1.0;
+                if (c.tier !== 't1') return c.all ? { add: step * trendMod, method: 't2_linear' } : { add: 0, method: 't2_hold' };
                 if (c.top?.performed != null) {
                     const d = c.top.performed - c.top.reps;
-                    return { add: d < 0 ? 0 : d <= 2 ? step : step * 2, method: d < 0 ? 'hold_missed' : 'amrap_linear' };
+                    let add = d < 0 ? 0 : d <= 2 ? step * trendMod : step * 2 * trendMod;
+                    add = add > 0 ? M.max(step / 2, U.rnd(add, c.u, false)) : 0;
+                    return { add, method: d < 0 ? 'hold_missed' : 'amrap_linear' };
                 }
-                return c.all ? { add: step, method: 'linear' } : { add: 0, method: 'hold' };
+                return c.all ? { add: step * trendMod, method: 'linear' } : { add: 0, method: 'hold' };
             },
             stronglifts: c => {
                 const s = c.state[c.lift] = c.state[c.lift] || { cf: 0, dc: 0, slScheme: c.lift === 'Deadlift' ? 'dl' : 'std' };
@@ -247,7 +340,8 @@
                     return { add: 0, method: 'sl_retry' };
                 }
                 s.cf = 0;
-                return { add: c.lift === 'Deadlift' ? (c.u === 'kg' ? 5 : 10) : (c.u === 'kg' ? 2.5 : 5), method: 'sl_linear' };
+                const baseStep = c.lift === 'Deadlift' ? (c.u === 'kg' ? 5 : 10) : (c.u === 'kg' ? 2.5 : 5);
+                return { add: baseStep * (c.trendMultiplier || 1.0), method: 'sl_linear' };
             }
         };
         PROG.amrap_linear = PROG.linear; PROG.lin = PROG.linear; PROG.gz = PROG.gzclp; PROG.sl = PROG.stronglifts;
@@ -270,9 +364,11 @@
                 activeModal: null, session: {}, savedSession: null, timer: { active: false, start: null, dur: 0, rem: 0, pct: 0, label: 'Rest', zeroCrossed: false },
                 tempBodyWeight: null, showWarmups: false, plate: { open: false, w: 0, plates: [], originalW: 0 }, cal: { monthName: '', days: [], offset: 0 }, sessionTimerStr: '0:00', deloadInfo: {}, sessionRating: 0, sessionNotes: '', sessionRPE: 7,
                 currentAchievement: null, selectedLog: null, historyFilter: 'all', previousWorkout: null, isEditingLog: false, swapState: { t2: false, acc: null, q: '' }, zenMode: false, zenAmrap: null, setEdit: { tier: 't1', idx: 0, weight: 0, reps: 0, performed: null, failed: false, amrap: false, completed: false, rpe: null },
-                setup: {}, idx: 0, pIdx: 0, week: 1, cycleWeek531: 1, streak: 0, cache: { recovery: [], volume: [], recoveryMap: {}, mgVol: { Push: 0, Pull: 0, Legs: 0, Core: 0 } }, wakeLock: null, sessionVolume: 0, restTimes: [], templateName: '', showExNoteModal: false, exNoteTarget: '', exNoteText: '', calSummary: {}, freqData: {}, longestStreak: 0, batchAdjust: 0, undoState: { visible: false, timer: null, action: null, label: '', leaving: false }, autoSaveTimer: null, lastSetCompletedAt: null, swipeData: { startX: 0, startY: 0, dx: 0, active: false, tier: null, idx: null },
+                setup: {}, idx: 0, pIdx: 0, week: 1, cycleWeek531: 1, streak: 0, cache: { recovery: [], volume: [], recoveryMap: {}, mgVol: { Push: 0, Pull: 0, Legs: 0, Core: 0 }, volumeLandmarks: {}, fatigueDeloadWarning: null }, wakeLock: null, sessionVolume: 0, restTimes: [], templateName: '', showExNoteModal: false, exNoteTarget: '', exNoteText: '', calSummary: {}, freqData: {}, longestStreak: 0, batchAdjust: 0, undoState: { visible: false, timer: null, action: null, label: '', leaving: false }, autoSaveTimer: null, lastSetCompletedAt: null, swipeData: { startX: 0, startY: 0, dx: 0, active: false, tier: null, idx: null },
                 expandedRecovery: null, chartLift: 'Bench', metronomeActive: false,
                 _cacheDebounce: null, _finishing: false,
+                // Track sustained low-recovery for proactive deload (IMPROVEMENT #7)
+                _lowRecoveryStreak: 0,
 
                 init(isRehydrating = false) {
                     window.__app = this;
@@ -280,7 +376,7 @@
 
                     if (!this.user && !isRehydrating) {
                         this.view = 'login';
-                        return; // Halt bootup until logged in
+                        return;
                     }
 
                     const d = U.g('nsuns_ultimate', {}), s = U.g('lift_preferences', {});
@@ -292,9 +388,9 @@
                     if (Object.keys(this.tms).length) this.chartLift = Object.keys(this.tms)[0];
                     if (this.savedSession?.t1) this.activeModal = 'resume'; else if (!d.tms) this.view = 'setup';
                     window.addEventListener('pointerdown', this.unlockAudio, { once: true, passive: true });
-                    this.$nextTick(() => { this.draw(); this.calBuild(); this.chkAch(); this.scrollToActive() }); 
+                    this.$nextTick(() => { this.draw(); this.calBuild(); this.chkAch(); this.scrollToActive() });
                     if (!isRehydrating) setInterval(() => this.tick(), 1000);
-                    
+
                     if (!isRehydrating) {
                         this.autoSaveTimer = setInterval(() => {
                             if (this.session?.start && this.session?.t1 && !this._finishing) {
@@ -302,7 +398,7 @@
                                 U.s('lift_active_session_backup', this.session);
                             }
                         }, 10000);
-                        this.pullFromCloud(); // Initial background sync check
+                        this.pullFromCloud();
                     }
                 },
 
@@ -330,14 +426,13 @@
                         U.s('lift_user', this.user);
                         await this.pullFromCloud(existing);
                     } else {
-                        // Create new basket for new user
                         this.user = { username: this.auth.username, basket: basketName, hash };
                         U.s('lift_user', this.user);
                         await this.pushToCloud(true);
                     }
                     this.auth.loading = false;
                     this.view = 'dashboard';
-                    this.init(true); // Re-initialize Alpine data from local storage
+                    this.init(true);
                 },
                 logout() {
                     this.user = null;
@@ -356,7 +451,7 @@
                                 const parsed = JSON.parse(cloud.payload);
                                 Object.keys(parsed).forEach(k => LS.setItem(k, JSON.stringify(parsed[k])));
                                 U.s('lift_last_sync', cloud.lastUpdated);
-                                this.init(true); // Re-hydrate UI with new cloud data
+                                this.init(true);
                             }
                         }
                     } catch (e) { console.warn("Sync failed"); }
@@ -369,7 +464,7 @@
                         const now = Date.now();
                         const keys = ['nsuns_ultimate', 'lift_preferences', 'lift_bodyweight', 'lift_achievements', 'lift_prs', 'lift_e1rm_history', 'lift_templates', 'lift_exercise_notes', 'lift_tonnage_goal', 'lift_rest_history', 'lift_xp'];
                         const payloadObj = {};
-                        keys.forEach(k => { const v = LS.getItem(k); if(v) payloadObj[k] = JSON.parse(v); });
+                        keys.forEach(k => { const v = LS.getItem(k); if (v) payloadObj[k] = JSON.parse(v); });
 
                         const body = { passwordHash: this.user.hash, lastUpdated: now, payload: JSON.stringify(payloadObj) };
                         await this.pantryReq('POST', this.user.basket, body);
@@ -430,7 +525,18 @@
                 chkDeload() {
                     const o = this.daysOff(), l = [[42, 25, '6+ weeks off'], [28, 20, '4 weeks off'], [14, 10, '2 weeks off']].find(x => o >= x[0]);
                     if (l && this.prefs.autoDeload) { this.deloadInfo = { needed: true, percentage: l[1], reason: l[2], protocol: 'Reduce_TMs' }; this.activeModal = 'deload'; }
-                    else { const pd = this.checkPerformanceDeload(); if (pd && this.prefs.autoDeload) { this.deloadInfo = pd; this.activeModal = 'deload'; } else this.activeModal = 'weight'; }
+                    else {
+                        // IMPROVEMENT #7: Check for proactive fatigue-based deload
+                        const fatigueDeload = this.checkFatigueDeload();
+                        if (fatigueDeload && this.prefs.autoDeload) {
+                            this.deloadInfo = fatigueDeload;
+                            this.activeModal = 'deload';
+                        } else {
+                            const pd = this.checkPerformanceDeload();
+                            if (pd && this.prefs.autoDeload) { this.deloadInfo = pd; this.activeModal = 'deload'; }
+                            else this.activeModal = 'weight';
+                        }
+                    }
                 },
                 checkPerformanceDeload() {
                     if (this.history.length < 6) return null;
@@ -440,6 +546,45 @@
                     const lastThree = liftHist.slice(-3);
                     const cf = lastThree.every(h => { const t = this.findTopAMRAP(h.setDetails?.t1); return t && t.performed != null && t.performed < t.reps; });
                     return cf ? { needed: true, percentage: 10, reason: `3 consecutive missed AMRAPs on ${l}`, protocol: 'Performance_Deload' } : null;
+                },
+                // IMPROVEMENT #7: Proactive fatigue-based deload detection
+                checkFatigueDeload() {
+                    if (this.history.length < 8) return null;
+                    const readiness = this.getReadinessScore();
+                    // Check if last 3 workouts were all done with low readiness
+                    const lastThree = this.history.slice(-3);
+                    const allLowReadiness = lastThree.every(h => {
+                        // Reconstruct approximate readiness at time of workout
+                        // Use RPE as proxy: RPE > 8.5 on routine weights suggests accumulated fatigue
+                        return (h.rpe || 7) >= 8.5;
+                    });
+                    if (readiness < 45 && allLowReadiness) {
+                        return {
+                            needed: true,
+                            percentage: 10,
+                            reason: `Sustained high fatigue detected (readiness ${readiness}%, RPE trending high)`,
+                            protocol: 'Fatigue_Deload'
+                        };
+                    }
+                    // Check for declining e1RM trend across multiple lifts
+                    let decliningLifts = 0;
+                    let totalLifts = 0;
+                    Object.keys(this.tms).forEach(l => {
+                        const trend = this.getE1RMTrend(l);
+                        if (trend.direction !== 'flat' || (this.e1rmHistory[l] || []).length >= 3) {
+                            totalLifts++;
+                            if (trend.direction === 'down') decliningLifts++;
+                        }
+                    });
+                    if (totalLifts >= 3 && decliningLifts >= M.ceil(totalLifts * 0.6)) {
+                        return {
+                            needed: true,
+                            percentage: 10,
+                            reason: `E1RM declining on ${decliningLifts}/${totalLifts} lifts — systemic fatigue likely`,
+                            protocol: 'Fatigue_Deload'
+                        };
+                    }
+                    return null;
                 },
                 doDeload() { Object.keys(this.tms).forEach(k => this.tms[k] = U.rnd((this.tms[k] || 0) * (1 - this.deloadInfo.percentage / 100), this.prefs.weightUnit, this.prefs.microplates)); this.save(); this.activeModal = 'weight'; },
                 async reqWake() { if (this.prefs.keepAwake && 'wakeLock' in navigator) try { this.wakeLock = await navigator.wakeLock.request('screen'); } catch { } }, relWake() { this.wakeLock?.release().catch(() => { }); this.wakeLock = null; },
@@ -486,8 +631,40 @@
                         return e1 > e2 ? x : b;
                     }, null);
                 },
+                // IMPROVEMENT #2: Compute trend multiplier from recent AMRAP history
+                _computeTrendMultiplier(lift) {
+                    const liftHist = this.history.filter(h => h.details?.t1 === lift).slice(-5);
+                    if (liftHist.length < 3) return 1.0;
+
+                    // Collect AMRAP deltas (performed - target) from recent sessions
+                    const deltas = [];
+                    for (const h of liftHist) {
+                        const top = this.findTopAMRAP(h.setDetails?.t1);
+                        if (top && top.performed != null) {
+                            deltas.push(top.performed - top.reps);
+                        }
+                    }
+                    if (deltas.length < 2) return 1.0;
+
+                    const avgDelta = U.avg(deltas);
+                    const recentDelta = deltas[deltas.length - 1];
+
+                    // If consistently smashing AMRAPs (avg delta >= 3), increase faster
+                    if (avgDelta >= 3 && recentDelta >= 3) return 1.5;
+                    if (avgDelta >= 2 && recentDelta >= 2) return 1.25;
+                    // If consistently barely hitting (avg delta <= 0), slow down
+                    if (avgDelta <= 0) return 0.75;
+                    // Declining trend (getting fewer reps each time)
+                    if (deltas.length >= 3) {
+                        const declining = deltas.slice(-3).every((d, i, a) => i === 0 || d <= a[i - 1]);
+                        if (declining && recentDelta <= 1) return 0.75;
+                    }
+                    return 1.0;
+                },
                 computeProgression(l, s, p, t = 't1') {
-                    const ctx = { tier: t, lift: l, sets: s, tm: this.tms[l] || 0, top: this.findTopAMRAP(s), all: s.every(x => x.completed && !x.failed), u: this.prefs.weightUnit, hist: this.history, state: this.state, wk: this.week, cycleWeek: this.cycleWeek531, findTop: st => this.findTopAMRAP(st) };
+                    // IMPROVEMENT #2: Add trend awareness to progression context
+                    const trendMultiplier = this._computeTrendMultiplier(l);
+                    const ctx = { tier: t, lift: l, sets: s, tm: this.tms[l] || 0, top: this.findTopAMRAP(s), all: s.every(x => x.completed && !x.failed), u: this.prefs.weightUnit, hist: this.history, state: this.state, wk: this.week, cycleWeek: this.cycleWeek531, findTop: st => this.findTopAMRAP(st), trendMultiplier };
                     if (ctx.top && !ctx.top.failed) {
                         const r = U.rm(ctx.top.weight, ctx.top.performed), m = this.exMult(this.session?.t1?.name || l);
                         const norm = m !== 1 ? M.round(r / m) : r;
@@ -534,13 +711,22 @@
                     if (bT2 > 0 && bT2 > (this.prs[t2N]?.weight || 0)) { this.prs[t2N] = { weight: bT2, date: iso }; U.s('lift_prs', this.prs); t2PR = true; }
                     if (bT2 > 0) { this.e1rmHistory[t2N] = [...(this.e1rmHistory[t2N] || []), { e1rm: bT2, date: iso, timestamp: U.now() }].slice(-20); U.s('lift_e1rm_history', this.e1rmHistory); }
                     let aN = []; this.session.acc.forEach(a => { const cc = Object.keys(this.session.completedAcc).filter(k => k.startsWith(a.originalName || a.name)).length; if (cc >= a.sets && a.reps) aN.push(`+ Consider upping weight on ${a.selectedExercise || a.originalName || a.name}`); });
+
+                    // IMPROVEMENT #4: Volume landmark warnings in session notes
+                    const volWarnings = this.getVolumeLandmarkWarnings();
+                    if (volWarnings.length) {
+                        aN.push('--- Volume Alerts ---');
+                        volWarnings.forEach(w => aN.push(w));
+                    }
+
                     if (aN.length) this.sessionNotes = (this.sessionNotes ? this.sessionNotes + '\n' : '') + aN.join('\n');
                     const effVol = all.reduce((a, s) => { if (!s.completed) return a; return a + U.fatigue(s.weight, s.performed || s.reps, this.tms[this.baseTM(l)] || 0, s.failed, this.sessionRPE ?? 7); }, 0);
                     this.history.push({
                         date: new D().toLocaleDateString(), isoDate: iso, timestamp: U.now(), title: this.session.title, increase: prg.add, pr: prg.add > 0 || isNewPR, progressionMethod: prg.method, duration: M.round(dur / 60), rating: this.sessionRating, rpe: this.sessionRPE ?? 7, notes: this.sessionNotes, totalVolume: vol, intensityScore: scr, workJoules: wJ, powerWatts: pW, t2PR,
                         effectiveVolume: effVol, totalSets: all.length, completedSets: all.filter(s => s.completed).length, avgRestTime: this.restTimes.length ? M.round(U.avg(this.restTimes.map(r => r.target))) : null, avgActualRest: (() => { const wr = all.filter(s => s.timeSincePrev); return wr.length ? M.round(U.avg(wr.map(s => s.timeSincePrev))) : null; })(),
                         details: { t1: l, weight: this.findTopAMRAP(t1.sets)?.weight, est1rm: normE1RM }, setDetails: { t1: t1.sets, t2Name: t2N, t2OriginalName: t2.originalName, t2: t2.sets, accessories: this.session.acc.map(a => ({ name: a.selectedExercise || a.name, originalName: a.originalName, total: a.sets, reps: a.reps, completed: Object.keys(this.session.completedAcc).filter(k => k.startsWith(a.originalName) || k.startsWith(a.name)).length })) },
-                        avgSetDuration: M.round(U.avg(all.filter(s => s.setDuration).map(s => s.setDuration)))
+                        avgSetDuration: M.round(U.avg(all.filter(s => s.setDuration).map(s => s.setDuration))),
+                        trendMultiplier: this._computeTrendMultiplier(l)
                     });
                     if (this.session.dayIdx !== null && this.session.dayIdx !== undefined) { this.idx = (this.session.dayIdx + 1) % DATA.progs[p].days.length; if (this.idx === 0) this.week++; if (p === '531' && this.session.dayIdx === DATA.progs['531'].days.length - 1) this.cycleWeek531++; this.pIdx = this.idx; }
                     this.computeStreak(); this.computeLongestStreak(); this.computeFrequency(); this.session = {}; this.savedSession = null; this._finishing = false; U.d('lift_active_session'); U.d('lift_active_session_backup'); this.activeModal = null; this.save(); this.chkAch(); this.view = 'dashboard'; this.calBuild(); this.$nextTick(() => { this.draw(); this.scrollToActive(); });
@@ -577,10 +763,13 @@
                 updCache() {
                     const f = {}, now = U.now(), mg = { Push: 0, Pull: 0, Legs: 0, Core: 0 }, pS = DATA.programCapacityScale[this.prefs.program] || 1;
                     const LOOKBACK_HOURS = 504;
-                    const MIN_DECAY = 0.005; 
+                    const MIN_DECAY = 0.005;
+                    // IMPROVEMENT #3: Track per-muscle last-trained time for supercompensation
+                    const lastTrainedAge = {}; // muscle -> hours since last trained
                     const allW = [...this.history]; if (this.session?.start && this.session?.t1) allW.push({ timestamp: this.session.start, rpe: this.sessionRPE, details: { t1: this.session.t1?.name }, setDetails: { t1: this.session.t1?.sets, t2Name: this.session.t2?.selectedExercise || this.session.t2?.name, t2: this.session.t2?.sets, accessories: this.session.acc?.map(a => ({ name: a.selectedExercise || a.name, originalName: a.originalName, total: a.sets, reps: a.reps, completed: Object.keys(this.session.completedAcc || {}).filter(k => k.startsWith(a.originalName || a.name)).length })) } });
                     for (let i = allW.length - 1; i >= 0; i--) {
                         const w = allW[i], age = (now - w.timestamp) / 36e5; if (age >= LOOKBACK_HOURS) break;
+                        // IMPROVEMENT #5: Use stored RPE instead of flat 7
                         const wRPE = w.rpe || 7;
                         const procSets = (n, sets) => {
                             if (!n || !Array.isArray(sets)) return;
@@ -596,6 +785,10 @@
                                 Object.entries(imp_map).forEach(([k, v]) => {
                                     const decay = M.pow(.5, age / (DATA.halfLife[k] || 36));
                                     if (decay >= MIN_DECAY) { f[k] = (f[k] || 0) + setFat * v * decay; }
+                                    // Track when each muscle was last meaningfully trained
+                                    if (v >= 0.3 && (lastTrainedAge[k] === undefined || age < lastTrainedAge[k])) {
+                                        lastTrainedAge[k] = age;
+                                    }
                                 });
                             });
                         };
@@ -610,36 +803,159 @@
                             Object.entries(imp_map).forEach(([k, v]) => {
                                 const decay = M.pow(.5, age / (DATA.halfLife[k] || 36));
                                 if (decay >= MIN_DECAY) { f[k] = (f[k] || 0) + accFat * v * decay; }
+                                if (v >= 0.3 && (lastTrainedAge[k] === undefined || age < lastTrainedAge[k])) {
+                                    lastTrainedAge[k] = age;
+                                }
                             });
                         };
                         procSets(w.details?.t1, w.setDetails?.t1); procSets(w.setDetails?.t2Name, w.setDetails?.t2); (w.setDetails?.accessories || []).forEach(procAcc);
                     }
+
+                    // IMPROVEMENT #1: Sigmoid-based recovery with supercompensation
                     const lb = 1 + M.min(.50, this.currentLevel * .02), rm = {};
-                    Object.keys(DATA.halfLife).forEach(m => { const cap = (DATA.baseRecoveryCapacity[m] || 90) * lb * pS; rm[m] = M.round(M.max(0, M.min(100, 100 * M.exp(-(f[m] || 0) / cap)))); });
+                    Object.keys(DATA.halfLife).forEach(m => {
+                        const cap = (DATA.baseRecoveryCapacity[m] || 90) * lb * pS;
+                        const fatigue = f[m] || 0;
+                        // Sigmoid recovery curve: more realistic transition from fatigued to recovered
+                        // Uses logistic function: 100 / (1 + e^(k*(fatigue - midpoint)))
+                        // Midpoint at cap * 0.6 gives good sensitivity range
+                        const midpoint = cap * 0.6;
+                        const steepness = 4.0 / cap; // Normalized steepness
+                        const baseRecovery = M.round(100 / (1 + M.exp(steepness * (fatigue - midpoint))));
+
+                        // IMPROVEMENT #3: Supercompensation window
+                        const sc = DATA.supercompensation[m];
+                        const ageHrs = lastTrainedAge[m];
+                        if (sc && ageHrs !== undefined && baseRecovery >= 85) {
+                            // Check if within supercompensation window
+                            const distFromPeak = M.abs(ageHrs - sc.peakHours);
+                            if (distFromPeak <= sc.windowHours) {
+                                // Gaussian supercompensation bonus, max +10%
+                                const bonus = 10 * M.exp(-M.pow(distFromPeak / (sc.windowHours * 0.6), 2));
+                                rm[m] = M.min(110, M.round(baseRecovery + bonus));
+                            } else {
+                                rm[m] = M.max(0, M.min(100, baseRecovery));
+                            }
+                        } else {
+                            rm[m] = M.max(0, M.min(100, baseRecovery));
+                        }
+                    });
+
                     const cM = .90 + .10 * ((rm.cns ?? 100) / 100);
                     this.cache.recovery = Object.entries(DATA.groups).map(([n, ms]) => {
                         const vs = ms.map(m => {
                             let r = rm[m] ?? 100;
                             if (n !== 'CNS' && !DATA.isolationDominant.has(m)) r = M.round(r * cM);
-                            return M.max(0, M.min(100, r));
+                            return M.max(0, M.min(110, r)); // Allow up to 110 for supercompensation
                         });
                         const min = M.min(...vs);
-                        return { name: n, recovery: M.round(U.avg(vs)), min, status: min >= 80 ? 'Ready' : min >= 40 ? 'Recovering' : 'Fatigued', muscles: ms.map(m => ({ name: m, recovery: n === 'CNS' ? (rm[m] ?? 100) : (DATA.isolationDominant.has(m) ? (rm[m] ?? 100) : M.max(0, M.min(100, M.round((rm[m] ?? 100) * cM)))) })) };
+                        const avg = M.round(U.avg(vs));
+                        // Supercompensation status
+                        const hasSupercomp = vs.some(v => v > 100);
+                        return {
+                            name: n,
+                            recovery: avg,
+                            min,
+                            status: hasSupercomp ? 'Primed' : min >= 80 ? 'Ready' : min >= 40 ? 'Recovering' : 'Fatigued',
+                            muscles: ms.map(m => ({
+                                name: m,
+                                recovery: n === 'CNS' ? (rm[m] ?? 100) : (DATA.isolationDominant.has(m) ? (rm[m] ?? 100) : M.max(0, M.min(110, M.round((rm[m] ?? 100) * cM)))),
+                                supercompensating: (rm[m] ?? 100) > 100
+                            }))
+                        };
                     });
                     this.cache.recoveryMap = {}; Object.keys(DATA.halfLife).forEach(m => {
-                        this.cache.recoveryMap[m] = m === 'cns' ? (rm[m] ?? 100) : (DATA.isolationDominant.has(m) ? (rm[m] ?? 100) : M.max(0, M.min(100, M.round((rm[m] ?? 100) * cM))));
+                        this.cache.recoveryMap[m] = m === 'cns' ? (rm[m] ?? 100) : (DATA.isolationDominant.has(m) ? (rm[m] ?? 100) : M.max(0, M.min(110, M.round((rm[m] ?? 100) * cM))));
                     });
                     this.cache.mgVol = mg;
+
+                    // IMPROVEMENT #4: Compute volume landmarks
+                    this._computeVolumeLandmarks();
                 },
+
+                // IMPROVEMENT #4: Volume landmark computation
+                _computeVolumeLandmarks() {
+                    const now = U.now();
+                    const landmarks = {};
+                    Object.keys(DATA.volumeLandmarks).forEach(muscle => {
+                        const weekSets = U.weeklyEffectiveSets(this.history, muscle, now);
+                        const lm = DATA.volumeLandmarks[muscle];
+                        let status = 'optimal';
+                        let message = '';
+                        if (weekSets < lm.mev) {
+                            status = 'below_mev';
+                            message = `Below MEV (${weekSets.toFixed(1)}/${lm.mev} sets)`;
+                        } else if (weekSets > lm.mrv) {
+                            status = 'above_mrv';
+                            message = `Exceeding MRV! (${weekSets.toFixed(1)}/${lm.mrv} sets)`;
+                        } else if (weekSets > lm.mav) {
+                            status = 'above_mav';
+                            message = `Above MAV (${weekSets.toFixed(1)}/${lm.mav} sets)`;
+                        } else if (weekSets >= lm.mev && weekSets <= lm.mav) {
+                            status = 'optimal';
+                            message = `Optimal (${weekSets.toFixed(1)} sets)`;
+                        }
+                        landmarks[muscle] = { sets: weekSets, ...lm, status, message };
+                    });
+                    this.cache.volumeLandmarks = landmarks;
+                },
+
+                // IMPROVEMENT #4: Get actionable volume warnings
+                getVolumeLandmarkWarnings() {
+                    const warnings = [];
+                    const lm = this.cache.volumeLandmarks || {};
+                    Object.entries(lm).forEach(([muscle, data]) => {
+                        if (data.status === 'above_mrv') {
+                            warnings.push(`⚠️ ${muscle}: ${data.message} — reduce volume to recover`);
+                        } else if (data.status === 'below_mev' && data.sets > 0) {
+                            warnings.push(`📉 ${muscle}: ${data.message} — add sets for growth`);
+                        }
+                    });
+                    return warnings;
+                },
+
+                // IMPROVEMENT #4: Get volume status for a muscle (for UI display)
+                getVolumeStatus(muscle) {
+                    return this.cache.volumeLandmarks?.[muscle] || null;
+                },
+
                 getReadinessScore() { const v = Object.values(this.cache.recoveryMap || {}); return v.length ? M.round(U.avg(v)) : 100; },
-                getRecoveryAdvice() { const fa = []; const chk = n => { if (!n) return; Object.keys(impact(n)).forEach(m => { if ((this.cache.recoveryMap?.[m] ?? 100) < 50 && !fa.includes(m)) fa.push(m); }); }; if (this.session?.t1) chk(this.session.t1.name); if (this.session?.t2) chk(this.session.t2.selectedExercise || this.session.t2.name); return (this.cache.recoveryMap?.cns ?? 100) < 40 ? { muscles: fa, suggestion: 'CNS heavily fatigued — consider lighter weights or skip heavy compounds', cnsWarning: true } : fa.length ? { muscles: fa, suggestion: 'Reduce volume on fatigued muscles' } : null; },
+                getRecoveryAdvice() {
+                    const fa = [];
+                    const chk = n => { if (!n) return; Object.keys(impact(n)).forEach(m => { if ((this.cache.recoveryMap?.[m] ?? 100) < 50 && !fa.includes(m)) fa.push(m); }); };
+                    if (this.session?.t1) chk(this.session.t1.name);
+                    if (this.session?.t2) chk(this.session.t2.selectedExercise || this.session.t2.name);
+
+                    // IMPROVEMENT #4: Add volume landmark warnings to advice
+                    const volWarnings = this.getVolumeLandmarkWarnings();
+
+                    // IMPROVEMENT #3: Detect supercompensation opportunities
+                    const primedMuscles = [];
+                    Object.entries(this.cache.recoveryMap || {}).forEach(([m, r]) => {
+                        if (r > 100) primedMuscles.push(m);
+                    });
+
+                    if ((this.cache.recoveryMap?.cns ?? 100) < 40) {
+                        return { muscles: fa, suggestion: 'CNS heavily fatigued — consider lighter weights or skip heavy compounds', cnsWarning: true, volumeWarnings: volWarnings, primedMuscles };
+                    }
+                    if (fa.length) {
+                        return { muscles: fa, suggestion: 'Reduce volume on fatigued muscles', volumeWarnings: volWarnings, primedMuscles };
+                    }
+                    if (primedMuscles.length > 0) {
+                        return { muscles: [], suggestion: `Supercompensation window open for: ${primedMuscles.join(', ')} — ideal time to train!`, volumeWarnings: volWarnings, primedMuscles, primed: true };
+                    }
+                    if (volWarnings.length) {
+                        return { muscles: [], suggestion: 'Volume adjustments recommended', volumeWarnings: volWarnings, primedMuscles };
+                    }
+                    return null;
+                },
                 computeLongestStreak() { if (!this.history.length) return this.longestStreak = 0; const dpw = DATA.progs[this.prefs.program]?.daysPerWeek || 3; const maxGap = M.max(2, M.ceil(7 / dpw) + 1); const d = [...new Set(this.history.map(h => h.isoDate))].sort(); let l = 1, c = 1; for (let i = 1; i < d.length; i++) { if ((new D(d[i]) - new D(d[i - 1])) / 864e5 <= maxGap) { c++; l = M.max(l, c); } else c = 1; } this.longestStreak = l; },
                 computeFrequency() { const n = U.now(), f = {}; Object.entries({ '7d': 7, '14d': 14, '30d': 30 }).forEach(([l, d]) => { const ws = this.history.filter(h => h.timestamp >= n - d * 864e5), mh = {}; ws.forEach(x => Object.keys(impact(x.details?.t1) || {}).forEach(m => mh[m] = (mh[m] || 0) + 1)); f[l] = { total: ws.length, perWeek: M.round(ws.length / (d / 7) * 10) / 10, muscleHits: mh }; }); this.freqData = f; },
                 saveTemplate() { if (this.templateName.trim()) { this.templates.push({ name: this.templateName.trim(), created: U.now(), t1: this.session.t1?.name, t2: this.session.t2.originalName || this.session.t2.name, t2Selected: this.session.t2.selectedExercise || this.session.t2.name, acc: this.session.acc?.map(a => ({ name: a.originalName || a.name, selectedExercise: a.selectedExercise || a.name, sets: a.sets, reps: a.reps })) }); U.s('lift_templates', this.templates); this.templateName = ''; this.activeModal = null; } },
                 startFromTemplate(t) { this.start({ title: t.name, t1: t.t1, t2: t.t2, s: 'vol', t2s: 't2', acc: t.acc }); }, deleteTemplate(i) { this.templates.splice(i, 1); U.s('lift_templates', this.templates); },
                 openExNote(n) { this.exNoteTarget = n; this.exNoteText = this.exerciseNotes[n] || ''; this.activeModal = 'exNote'; }, saveExNote() { if (this.exNoteText.trim()) this.exerciseNotes[this.exNoteTarget] = this.exNoteText.trim(); else delete this.exerciseNotes[this.exNoteTarget]; U.s('lift_exercise_notes', this.exerciseNotes); this.activeModal = null; }, getExNote(n) { return this.exerciseNotes[n] || null; },
                 calBuild() { const n = new D(); n.setMonth(n.getMonth() + this.cal.offset); this.cal.monthName = n.toLocaleString('default', { month: 'long', year: 'numeric' }); const y = n.getFullYear(), m = n.getMonth(), ld = {}; this.history.forEach(h => ld[U.iso(h.timestamp)] = (ld[U.iso(h.timestamp)] || 0) + (h.totalVolume || 1)); const maxV = M.max(1, ...Object.values(ld)); this.cal.days = [...Array(new D(y, m, 1).getDay()).fill({}), ...Array.from({ length: new D(y, m + 1, 0).getDate() }, (_, i) => { const v = ld[U.iso(new D(y, m, i + 1))] || 0; return { num: i + 1, isToday: new D().getDate() === i + 1 && !this.cal.offset, hasLog: v > 0, intensity: v > 0 ? M.ceil((v / maxV) * 3) : 0 }; })]; const w = this.history.filter(h => new D(h.timestamp).getFullYear() === y && new D(h.timestamp).getMonth() === m); this.calSummary = { count: w.length, totalVol: U.sum(w, 'totalVolume'), avgDur: w.length ? M.round(U.avg(w.map(x => x.duration))) : 0, prs: w.filter(h => h.pr || h.t2PR).length }; }, calDayClass(d) { return !d.hasLog ? '' : this.prefs.heatmapCalendar ? (d.intensity >= 3 ? 'cal-hot3' : d.intensity >= 2 ? 'cal-hot2' : 'cal-hot1') : 'cal-active'; },
-                chkAch() { ACHIEVEMENTS.forEach(a => { if (!this.achievements.includes(a.id) && a.check(this.history, this.streak)) { this.achievements.push(a.id); this.currentAchievement = a; this.activeModal = 'achievement'; U.s('lift_achievements', this.achievements); } }); },
+                chkAch() { ACHIEVEMENTS.forEach(a => { if (!this.achievements.includes(a.id) && a.check(this.history, this.streak, this)) { this.achievements.push(a.id); this.currentAchievement = a; this.activeModal = 'achievement'; U.s('lift_achievements', this.achievements); } }); },
                 _saveSessionOnly() { if (this.session?.start) U.s('lift_active_session', this.session); },
                 saveSess() {
                     if (this.session?.start) {
@@ -681,8 +997,7 @@
                 exportCSV() { const c = ['Date,Title,Dur,Vol,RPE,PR,T1,TopSet', ...this.history.map(x => [x.date, x.title, x.duration, x.totalVolume, x.rpe, x.pr ? 'Y' : 'N', x.details?.t1, x.details?.weight].join(','))].join('\n'); const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([c], { type: 'text/csv' })); a.download = `lift_export_${U.iso(U.now())}.csv`; a.click(); },
                 importData(e) { const r = new FileReader(); r.onload = ev => { try { const d = J.parse(ev.target.result); if (!d.version) return alert('Invalid'); U.s('nsuns_ultimate', d.main); U.s('lift_preferences', d.prefs); U.s('lift_bodyweight', d.bw); U.s('lift_achievements', d.ach); U.s('lift_prs', d.prs); U.s('lift_e1rm_history', d.e1rm); U.s('lift_templates', d.tmpl); U.s('lift_exercise_notes', d.notes); U.s('lift_tonnage_goal', d.ton); U.s('lift_rest_history', d.rh); U.s('lift_xp', d.xp); location.reload(); } catch { alert('Error'); } }; r.readAsText(e.target.files[0]); },
                 reset() { if (confirm('Reset ALL?')) { LS.clear(); location.reload(); } }, histFilt() { const l = this.history.slice().reverse(); return this.historyFilter !== 'all' ? l.filter(h => h.details?.t1 === this.historyFilter).slice(0, 50) : l.slice(0, 50); }, showDay(d) { const n = new D(); n.setMonth(n.getMonth() + this.cal.offset); const l = this.history.find(h => h.isoDate === U.iso(new D(n.getFullYear(), n.getMonth(), d.num).getTime())); if (l) this.openLog(l); }, openLog(l) { this.selectedLog = l; this.isEditingLog = false; this.activeModal = 'detail'; }, delLog() { if (confirm('Delete?')) { this.history = this.history.filter(h => h.timestamp !== this.selectedLog.timestamp); this.save(); this.computeStreak(); this.activeModal = null; this.calBuild(); this.$nextTick(() => this.draw()); } }, saveLog() { const i = this.history.findIndex(h => h.timestamp === this.selectedLog.timestamp); if (i !== -1) { Object.assign(this.history[i], { notes: this.selectedLog.notes, duration: parseInt(this.selectedLog.duration) || 0, rating: parseInt(this.selectedLog.rating) || 0 }); this.save(); this.isEditingLog = false; this.$nextTick(() => this.draw()); } },
-                beep() { if (!window.ac) window.ac = new (window.AudioContext || window.webkitAudioContext); const o = ac.createOscillator(), g = ac.createGain(); o.connect(g); g.connect(ac.destination); o.frequency.value = 800; g.gain.setValueAtTime(0.5, ac.currentTime); g.gain.exponentialRampToValueAtTime(1e-5, ac.currentTime + .5); o.start(); o.stop(ac.currentTime + .5); }, toggleZen() { this.zenMode = !this.zenMode; document.body.style.overflow = this.zenMode ? 'hidden' : ''; },
-                getZen() { if (!this.session) return null; const f = (t, k) => { const s = this.session[t]?.sets?.find(x => !x.completed); return s ? { t, n: k === 'n' ? this.session[t].name : (this.session[t].selectedExercise || this.session[t].name), w: s.weight, r: s.reps, amrap: s.amrap, s, i: this.session[t].sets.indexOf(s) } : null; }; let z = f('t1', 'n') || f('t2', 'e'); if (z) return z; for (const a of (this.session.acc || [])) { const o = a.originalName || a.name; for (let i = 1; i <= a.sets; i++) { if (!this.isAccDone(o, i)) return { t: 'acc', n: a.selectedExercise || a.name, w: '-', r: (a.reps || '10-12'), amrap: false, on: o, i }; } } return null; }, doZen() { const z = this.getZen(); if (!z) return; if (z.t === 'acc') this.togAcc(z.on, z.i); else { if (z.s.amrap) { if (this.zenAmrap === null || this.zenAmrap === '') return alert('Enter reps'); z.s.performed = parseInt(this.zenAmrap); this.zenAmrap = null; } this.toggleSet(z.s, z.t); } }, cancel() { if (confirm('Cancel?')) { this.session = {}; this.savedSession = null; U.d('lift_active_session'); U.d('lift_active_session_backup'); this.timer.active = false; this.view = 'dashboard'; this.relWake(); this.$nextTick(() => { this.draw(); this.scrollToActive(); }); } }, getProgressionLabel(m) { return { 'nsuns_increase': '📈 nSuns +', 'nsuns_decrease': '⬇️ nSuns −', 'nsuns_hold': '⏸️ nSuns Hold', 'nsuns_hold_no_amrap': '⏸️ nSuns Hold', 'nsuns_hold_incomplete': '⏸️ nSuns Hold', 'nsuns_t2_increase': '📈 nSuns T2 +', 'nsuns_t2_hold': '⏸️ nSuns T2 Hold', 'ppl_amrap_linear': '📈 PPL AMRAP', 'amrap_linear': '📈 AMRAP +', 'linear': '📏 Linear +', 't2_linear': '📈 T2 +', 't2_hold': '⏸️ T2 Hold', '531_cycle': '🔄 531 Cycle +', '531_deload': '⬇️ 531 Deload', '531_in_cycle': '🔄 531 In Cycle', '531_hold': '⏸️ 531 Hold', '531_t2_no_change': '⏸️ 531 BBB Hold', 'sl_linear': '📏 SL Linear', 'sl_retry': '🔁 SL Retry', 'sl_deload': '⬇️ SL Deload', 'sl_to_3x5': '📉 SL→3×5', 'sl_to_3x3': '📉 SL→3×3', 'sl_to_1x3': '📉 SL→1×3', 'gz_t1_linear': '📈 GZ T1 +', 'gz_t2_linear': '📈 GZ T2 +', 'gz_t1_stage_advance': '⬆️ GZ T1 Stage', 'gz_t2_stage_advance': '⬆️ GZ T2 Stage', 'gz_t1_stage_reset': '🔄 GZ T1 Reset', 'gz_t2_stage_reset': '🔄 GZ T2 Reset', 'hold_missed': '⏸️ Hold (Missed)', 'hold': '⏸️ Hold' }[m] || '—' },
+                beep() { if (!window.ac) window.ac = new (window.AudioContext || window.webkitAudioContext); const o = ac.createOscillator(), g = ac.createGain(); o.connect(g); g.connect(ac.destination); o.frequency.value = 800; g.gain.setValueAtTime(0.5, ac.currentTime); g.gain.exponentialRampToValueAtTime(1e-5, ac.currentTime + .5); o.start(); o.stop(ac.currentTime + .5); }, toggleZen() { this.zenMode = !this.zenMode; document.body.style.overflow = this.zenMode ? 'hidden' : ''; }, getZen() { if (!this.session) return null; const f = (t, k) => { const s = this.session[t]?.sets?.find(x => !x.completed); return s ? { t, n: k === 'n' ? this.session[t].name : (this.session[t].selectedExercise || this.session[t].name), w: s.weight, r: s.reps, amrap: s.amrap, s, i: this.session[t].sets.indexOf(s) } : null; }; let z = f('t1', 'n') || f('t2', 'e'); if (z) return z; for (const a of (this.session.acc || [])) { const o = a.originalName || a.name; for (let i = 1; i <= a.sets; i++) { if (!this.isAccDone(o, i)) return { t: 'acc', n: a.selectedExercise || a.name, w: '-', r: (a.reps || '10-12'), amrap: false, on: o, i }; } } return null; }, doZen() { const z = this.getZen(); if (!z) return; if (z.t === 'acc') this.togAcc(z.on, z.i); else { if (z.s.amrap) { if (this.zenAmrap === null || this.zenAmrap === '') return alert('Enter reps'); z.s.performed = parseInt(this.zenAmrap); this.zenAmrap = null; } this.toggleSet(z.s, z.t); } }, cancel() { if (confirm('Cancel?')) { this.session = {}; this.savedSession = null; U.d('lift_active_session'); U.d('lift_active_session_backup'); this.timer.active = false; this.view = 'dashboard'; this.relWake(); this.$nextTick(() => { this.draw(); this.scrollToActive(); }); } }, getProgressionLabel(m) { return { 'nsuns_increase': '📈 nSuns +', 'nsuns_decrease': '⬇️ nSuns −', 'nsuns_hold': '⏸️ nSuns Hold', 'nsuns_hold_no_amrap': '⏸️ nSuns Hold', 'nsuns_hold_incomplete': '⏸️ nSuns Hold', 'nsuns_t2_increase': '📈 nSuns T2 +', 'nsuns_t2_hold': '⏸️ nSuns T2 Hold', 'ppl_amrap_linear': '📈 PPL AMRAP', 'amrap_linear': '📈 AMRAP +', 'linear': '📏 Linear +', 't2_linear': '📈 T2 +', 't2_hold': '⏸️ T2 Hold', '531_cycle': '🔄 531 Cycle +', '531_deload': '⬇️ 531 Deload', '531_in_cycle': '🔄 531 In Cycle', '531_hold': '⏸️ 531 Hold', '531_t2_no_change': '⏸️ 531 BBB Hold', 'sl_linear': '📏 SL Linear', 'sl_retry': '🔁 SL Retry', 'sl_deload': '⬇️ SL Deload', 'sl_to_3x5': '📉 SL→3×5', 'sl_to_3x3': '📉 SL→3×3', 'sl_to_1x3': '📉 SL→1×3', 'gz_t1_linear': '📈 GZ T1 +', 'gz_t2_linear': '📈 GZ T2 +', 'gz_t1_stage_advance': '⬆️ GZ T1 Stage', 'gz_t2_stage_advance': '⬆️ GZ T2 Stage', 'gz_t1_stage_reset': '🔄 GZ T1 Reset', 'gz_t2_stage_reset': '🔄 GZ T2 Reset', 'hold_missed': '⏸️ Hold (Missed)', 'hold': '⏸️ Hold' }[m] || '—' },
                 getE1RMTrend(l) { const e = (this.e1rmHistory[l] || []).slice(-5); if (e.length < 2) return { direction: 'flat', change: 0 }; const c = e[e.length - 1].e1rm - e[0].e1rm; return { direction: c > 0 ? 'up' : c < 0 ? 'down' : 'flat', change: c } },
                 _getTotalWeights() { const b = this.bwLog.slice(-1)[0]?.weight, t = ((this.tms.Bench || 0) + (this.tms.Squat || 0) + (this.tms.Deadlift || 0)) / .9; if (!b || !t) return null; const k = this.prefs.weightUnit === 'kg'; return { w: k ? b : b * .453592, tk: k ? t : t * .453592 } },
                 getWilksEstimate() { const d = this._getTotalWeights(); if (!d || d.w <= 0) return null; const x = d.w, denom = -216.0475144 + 16.2606339 * x - 0.002388645 * M.pow(x, 2) - 0.00113732 * M.pow(x, 3) + 7.01863e-6 * M.pow(x, 4) - 1.291e-8 * M.pow(x, 5); return denom <= 0 ? null : M.round(d.tk * (500 / denom)) },
@@ -706,23 +1021,30 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="icons.x" />
             </svg></button>
     </div>
-    
+
     <!-- LOGIN VIEW -->
-    <div x-show="view==='login'" class="p-6 f-col h-full justify-center max-w-md mx-auto min-h-screen relative" x-transition x-cloak>
+    <div x-show="view==='login'" class="p-6 f-col h-full justify-center max-w-md mx-auto min-h-screen relative"
+        x-transition x-cloak>
         <div class="text-center mb-10">
-            <h1 class="text-4xl font-black italic tracking-tighter mb-2 bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">LIFT ULTIMATE</h1>
+            <h1
+                class="text-4xl font-black italic tracking-tighter mb-2 bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
+                LIFT ULTIMATE</h1>
             <p class="text-slate-400">Login or Create Account to Sync</p>
         </div>
         <div class="glass-panel w-full">
-            <div x-show="auth.error" class="bg-red-500/10 border border-red-500/30 text-red-400 p-3 rounded-xl mb-4 text-center text-sm font-bold" x-text="auth.error"></div>
+            <div x-show="auth.error"
+                class="bg-red-500/10 border border-red-500/30 text-red-400 p-3 rounded-xl mb-4 text-center text-sm font-bold"
+                x-text="auth.error"></div>
             <div class="space-y-4 mb-6">
                 <div>
                     <label class="lbl">Username</label>
-                    <input type="text" x-model="auth.username" class="inp" placeholder="e.g. lifter99" @keydown.enter="handleLogin()">
+                    <input type="text" x-model="auth.username" class="inp" placeholder="e.g. lifter99"
+                        @keydown.enter="handleLogin()">
                 </div>
                 <div>
                     <label class="lbl">Password</label>
-                    <input type="password" x-model="auth.password" class="inp" placeholder="••••••••" @keydown.enter="handleLogin()">
+                    <input type="password" x-model="auth.password" class="inp" placeholder="••••••••"
+                        @keydown.enter="handleLogin()">
                 </div>
             </div>
             <button @click="handleLogin()" class="btn-p relative overflow-hidden group">
@@ -730,7 +1052,8 @@
                 <span x-show="auth.loading" class="animate-pulse">Connecting to Pantry...</span>
             </button>
             <p class="text-xs text-center text-slate-500 mt-4 leading-relaxed">
-                If the username doesn't exist, an account will be automatically created with this password and your current offline data will be synced.
+                If the username doesn't exist, an account will be automatically created with this password and your
+                current offline data will be synced.
             </p>
         </div>
     </div>
@@ -1005,9 +1328,16 @@
                 <div class="bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/20 text-[10px] text-indigo-400 font-bold uppercase tracking-wider shadow-[0_0_10px_rgba(99,102,241,0.2)]"
                     x-text="'LVL ' + currentLevel + ' ' + currentTitle"></div>
                 <div class="f-g2">
-                    <div class="bg-white/5 rounded-full px-2 py-1 flex items-center gap-1 border border-white/10 text-[10px] text-slate-400">
-                        <svg x-show="syncing" class="w-3 h-3 animate-spin text-indigo-400" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="icons.expand" /></svg>
-                        <svg x-show="!syncing" class="w-3 h-3 text-green-400" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="icons.cloud" /></svg>
+                    <div
+                        class="bg-white/5 rounded-full px-2 py-1 flex items-center gap-1 border border-white/10 text-[10px] text-slate-400">
+                        <svg x-show="syncing" class="w-3 h-3 animate-spin text-indigo-400" viewBox="0 0 24 24"
+                            fill="none" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="icons.expand" />
+                        </svg>
+                        <svg x-show="!syncing" class="w-3 h-3 text-green-400" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="icons.cloud" />
+                        </svg>
                         <span x-text="syncing ? 'Syncing...' : 'Synced'"></span>
                     </div>
                     <div class="bg-white/5 rounded-full px-3 py-1 flex items-center gap-2 border border-white/10"
@@ -1592,8 +1922,10 @@
             <div class="glass-card space-y-4">
                 <h3 class="lbl">Account</h3>
                 <div class="f-cb">
-                    <span class="text-sm text-slate-300">Logged in as <span class="font-bold text-indigo-400 ml-1" x-text="user?.username"></span></span>
-                    <button @click="logout()" class="btn border border-red-500/20 text-red-500 text-xs px-4 py-2 w-auto">Logout</button>
+                    <span class="text-sm text-slate-300">Logged in as <span class="font-bold text-indigo-400 ml-1"
+                            x-text="user?.username"></span></span>
+                    <button @click="logout()"
+                        class="btn border border-red-500/20 text-red-500 text-xs px-4 py-2 w-auto">Logout</button>
                 </div>
             </div>
             <div class="glass-card space-y-4">
@@ -1661,8 +1993,8 @@
         </div>
     </div>
 
-    <div class="fixed bottom-0 left-0 w-full pb-safe nav-glass z-40" x-show="view!=='workout' && view!=='setup' && view!=='login'"
-        x-transition>
+    <div class="fixed bottom-0 left-0 w-full pb-safe nav-glass z-40"
+        x-show="view!=='workout' && view!=='setup' && view!=='login'" x-transition>
         <div class="flex justify-around items-center px-2 py-3 max-w-md mx-auto"><template x-for="n in UI.nav"><button
                     @click="nav(n.id)" class="nav-btn" :class="view===n.id?'text-indigo-400':'text-slate-500'"><svg
                         class="w-6 h-6 mb-0.5 transition-transform duration-300"
