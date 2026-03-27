@@ -81,7 +81,7 @@
         @keyframes tempo { 0% { transform: scale(1); opacity: 1; background: #ef4444; } 75% { transform: scale(0.8); opacity: 0.5; background: #eab308; } 85% { transform: scale(1.2); opacity: 1; background: #22c55e; } 100% { transform: scale(1); opacity: 1; background: #3b82f6; } }
     </style>
 
-    <script>
+<script>
         const PANTRY_ID = '8f01b867-0669-4964-9042-792b6c8ebcd6';
 
         // Custom Local Storage Interceptor for triggering syncs seamlessly
@@ -106,8 +106,6 @@
                 }
                 return this._accessoryImpactLower[(id || '').toLowerCase()] || this.accessoryMuscleImpact[id] || null;
             },
-            // Volume landmarks per muscle group per week (sets)
-            // MEV = Minimum Effective Volume, MAV = Maximum Adaptive Volume, MRV = Maximum Recoverable Volume
             volumeLandmarks: {
                 chest: { mev: 8, mav: 16, mrv: 22 },
                 upperChest: { mev: 4, mav: 10, mrv: 16 },
@@ -127,7 +125,6 @@
                 grip: { mev: 4, mav: 10, mrv: 18 },
                 forearm: { mev: 4, mav: 10, mrv: 18 }
             },
-            // Supercompensation timing: peak hours after training, window width hours
             supercompensation: {
                 chest: { peakHours: 72, windowHours: 24 },
                 upperChest: { peakHours: 72, windowHours: 24 },
@@ -186,22 +183,15 @@
             safe: (v, d = 0) => Number.isFinite(+v) ? +v : d, conv: (w, f, t) => f === t ? +w : f === 'lbs' ? +w * 0.453592 : +w / 0.453592,
             vol: s => (s || []).reduce((a, x) => x.completed ? a + (x.weight * (x.performed || x.reps)) : a, 0),
             sum: (a, k) => a.reduce((s, x) => s + (k ? (x[k] || 0) : x), 0), avg: a => a.length ? U.sum(a) / a.length : 0,
-            // IMPROVEMENT #6: Hybrid e1RM estimator
-            // Brzycki diverges near r=37 and is inaccurate >10 reps
-            // Epley is linear and better for mid-range
-            // Wathan handles high reps most accurately empirically
             rm: (w, r) => {
                 if (r <= 0 || w <= 0) return 0;
                 if (r === 1) return w;
                 const c = M.min(r, 30);
                 if (c <= 6) {
-                    // Brzycki: most accurate 1-6 rep range
                     return M.round(w * (36 / (37 - c)));
                 } else if (c <= 10) {
-                    // Epley: better 7-10 rep range
                     return M.round(w * (1 + c / 30));
                 } else {
-                    // Wathan: most accurate >10 reps
                     return M.round(w * (100 / (48.8 + 53.8 * M.exp(-0.075 * c))));
                 }
             },
@@ -212,7 +202,6 @@
                 return rf * M.pow(i, 1.3) * (1 + i) * (fail ? 1.6 : 1) * M.pow(1.05, (typeof rpe === 'number' ? rpe : 7) - 7);
             },
             prs: r => { const s = String(r || '10'); return /amrap/i.test(s) ? 8 : s.split('-').length === 2 ? M.round((+s.split('-')[0] + +s.split('-')[1]) / 2) : +s || 10 },
-            // IMPROVEMENT #4: Weekly effective set count per muscle
             weeklyEffectiveSets: (history, muscle, nowTs) => {
                 const weekAgo = nowTs - 7 * 864e5;
                 let sets = 0;
@@ -223,7 +212,7 @@
                         if (!name || !Array.isArray(sArr)) return 0;
                         const imp = impact(name);
                         const contribution = imp[muscle] || 0;
-                        if (contribution < 0.3) return 0; // Only count meaningful stimulus
+                        if (contribution < 0.3) return 0;
                         return sArr.filter(s => s.completed && !s.failed).length * contribution;
                     };
                     sets += countSets(w.details?.t1, w.setDetails?.t1);
@@ -247,7 +236,6 @@
             { id: 'back', title: 'Comeback Kid', icon: '💫', check: h => { if (h.length < 3) return false; const s = [...h].sort((a, b) => a.timestamp - b.timestamp); for (let i = 2; i < s.length; i++) if ((s[i].timestamp - s[i - 1].timestamp) > 12096e5) return true; return false } },
             { id: 'star', title: 'Five Star', icon: '✨', check: h => h.some(w => w.rating === 5) }, { id: 'streak10', title: 'Consistency', icon: '🔗', check: (_, s) => s >= 10 },
             { id: 'tonnage50k', title: 'Iron Mover', icon: '🏋️', check: h => h.some(w => (w.totalVolume || 0) >= 50000) }, { id: 'dawn', title: 'Early Bird', icon: '🌅', check: h => h.some(w => new D(w.timestamp).getHours() >= 4 && new D(w.timestamp).getHours() < 7) },
-            // New achievements for volume/recovery awareness
             { id: 'supercomp', title: 'Perfect Timing', icon: '⚡', check: (h, s, app) => app && app.cache?.recovery?.some(g => g.muscles?.some(m => m.recovery > 100)) },
             { id: 'balanced', title: 'Balanced Athlete', icon: '⚖️', check: (h, s, app) => { if (!app?.cache?.mgVol) return false; const v = app.cache.mgVol; const vals = [v.Push, v.Pull, v.Legs].filter(x => x > 0); if (vals.length < 3) return false; const avg = U.avg(vals); return vals.every(x => M.abs(x - avg) / avg < 0.25); } }
         ];
@@ -280,14 +268,21 @@
                     return c.all && noFails ? { add: step / 2, method: 'nsuns_t2_increase' } : { add: 0, method: 'nsuns_t2_hold' };
                 }
                 if (!c.top) return { add: 0, method: c.all ? 'nsuns_hold_no_amrap' : 'nsuns_hold_incomplete' };
+                
                 const target = c.top.reps, actual = c.top.performed, delta = actual - target;
-
-                // IMPROVEMENT #2: Trend-aware progression
                 const trendMod = c.trendMultiplier || 1.0;
                 let add = 0;
-                if (target >= 5) { add = delta < -2 ? -step : delta >= 3 ? step * trendMod : delta >= 1 ? (step / 2) * trendMod : 0; }
-                else { add = actual < 1 ? -step * 3 : actual === 1 ? -step * 2 : actual === 2 ? -step : actual === 3 ? 0 : actual === 4 ? step * trendMod : step * 2 * trendMod; }
-                // Round the result to nearest valid increment
+
+                if (target >= 5) { 
+                    add = delta < -2 ? -step : delta >= 3 ? step * trendMod : delta >= 1 ? (step / 2) * trendMod : 0; 
+                } else { 
+                    // FIXED: Official nSuns 1+ Progression Logic
+                    if (actual <= 1) add = 0; // Hold TM for 0-1 reps
+                    else if (actual <= 3) add = step * trendMod;          // 2-3 reps = +5 lbs
+                    else if (actual <= 5) add = step * 2 * trendMod;      // 4-5 reps = +10 lbs
+                    else add = step * 3 * trendMod;                       // 6+ reps = +15 lbs
+                }
+                
                 add = add > 0 ? M.max(step / 2, U.rnd(add, c.u, false)) : add < 0 ? M.min(-step / 2, -M.abs(U.rnd(add, c.u, false))) : 0;
                 return { add, method: add > 0 ? 'nsuns_increase' : add < 0 ? 'nsuns_decrease' : 'nsuns_hold' };
             },
@@ -346,7 +341,6 @@
         };
         PROG.amrap_linear = PROG.linear; PROG.lin = PROG.linear; PROG.gz = PROG.gzclp; PROG.sl = PROG.stronglifts;
 
-        // Crypto helper for secure-ish Pantry storage
         const sha256 = async (message) => {
             const msgBuffer = new TextEncoder().encode(message);
             const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
@@ -367,7 +361,6 @@
                 setup: {}, idx: 0, pIdx: 0, week: 1, cycleWeek531: 1, streak: 0, cache: { recovery: [], volume: [], recoveryMap: {}, mgVol: { Push: 0, Pull: 0, Legs: 0, Core: 0 }, volumeLandmarks: {}, fatigueDeloadWarning: null }, wakeLock: null, sessionVolume: 0, restTimes: [], templateName: '', showExNoteModal: false, exNoteTarget: '', exNoteText: '', calSummary: {}, freqData: {}, longestStreak: 0, batchAdjust: 0, undoState: { visible: false, timer: null, action: null, label: '', leaving: false }, autoSaveTimer: null, lastSetCompletedAt: null, swipeData: { startX: 0, startY: 0, dx: 0, active: false, tier: null, idx: null },
                 expandedRecovery: null, chartLift: 'Bench', metronomeActive: false,
                 _cacheDebounce: null, _finishing: false,
-                // Track sustained low-recovery for proactive deload (IMPROVEMENT #7)
                 _lowRecoveryStreak: 0,
 
                 init(isRehydrating = false) {
@@ -384,6 +377,39 @@
                     this.savedSession = U.g('lift_active_session') || U.g('lift_active_session_backup');
                     this.prefs.barWeight = this.prefs.barWeight || (this.prefs.weightUnit === 'kg' ? 20 : 45); this.applyRM();
                     this.history.forEach(h => { h.timestamp = h.timestamp || new D(h.date).getTime(); h.isoDate = h.isoDate || U.iso(h.timestamp) });
+                    
+                    // =========================================================
+                    // SMART TM SYNC: Derive TM from actual weight lifted in history
+                    // =========================================================
+                    if (this.prefs.program === 'nsuns' && this.history.length > 0) {
+                        Object.keys(this.tms).forEach(lift => {
+                            // Find the most recent workout for this lift
+                            const lastWk = this.history.slice().reverse().find(h => h.details?.t1 === lift);
+                            if (!lastWk) return;
+                            
+                            // Look for a successful 1+ AMRAP set in that workout's history
+                            const top = (lastWk.setDetails?.t1 || []).find(x => x.amrap && x.completed && !x.failed && x.reps === 1 && x.performed != null);
+                            
+                            if (top) {
+                                const step = this.prefs.weightUnit === 'kg' ? 2.5 : 5;
+                                const reps = top.performed;
+                                
+                                // Standard nSuns progression rewards
+                                let earned = 0;
+                                if (reps >= 6) earned = step * 3;
+                                else if (reps >= 4) earned = step * 2;
+                                else if (reps >= 2) earned = step;
+                                
+                                // Reverse engineer the TM from the ACTUAL weight on the bar (1+ is 95% of TM)
+                                const impliedTM = top.weight / 0.95;
+                                
+                                // Overwrite the saved TM with the truth
+                                this.tms[lift] = U.rnd(impliedTM + earned, this.prefs.weightUnit, this.prefs.microplates);
+                            }
+                        });
+                    }
+                    // =========================================================
+
                     this.pIdx = this.idx; this.computeLongestStreak(); this.computeFrequency(); this.computeStreak(); this.updCache();
                     if (Object.keys(this.tms).length) this.chartLift = Object.keys(this.tms)[0];
                     if (this.savedSession?.t1) this.activeModal = 'resume'; else if (!d.tms) this.view = 'setup';
@@ -402,7 +428,6 @@
                     }
                 },
 
-                // --- CLOUD SYNC LOGIC ---
                 async pantryReq(method, basket, body = null) {
                     const url = `https://getpantry.cloud/apiv1/pantry/${PANTRY_ID}/basket/${basket}`;
                     const opts = { method, headers: { 'Content-Type': 'application/json' } };
@@ -478,7 +503,6 @@
                     this._syncTimer = setTimeout(() => this.pushToCloud(), 2500);
                 },
 
-                // --- EXISTING APP LOGIC ---
                 get currentLevel() { return M.max(1, M.floor(M.pow(this.xp / 1000, 0.5))); },
                 get currentTitle() { const t = ['Initiate', 'Iron Novice', 'Steel Apprentice', 'Bronze Warrior', 'Silver Knight', 'Gold Spartan', 'Platinum Titan', 'Diamond Juggernaut', 'Astral Leviathan', 'Ultimate Lifter']; return t[M.min(t.length - 1, M.floor(this.currentLevel / 5))]; },
                 get xpProgress() { const c = M.pow(this.currentLevel, 2) * 1000, n = M.pow(this.currentLevel + 1, 2) * 1000; return M.min(100, M.max(0, ((this.xp - c) / (n - c)) * 100)); },
@@ -526,7 +550,6 @@
                     const o = this.daysOff(), l = [[42, 25, '6+ weeks off'], [28, 20, '4 weeks off'], [14, 10, '2 weeks off']].find(x => o >= x[0]);
                     if (l && this.prefs.autoDeload) { this.deloadInfo = { needed: true, percentage: l[1], reason: l[2], protocol: 'Reduce_TMs' }; this.activeModal = 'deload'; }
                     else {
-                        // IMPROVEMENT #7: Check for proactive fatigue-based deload
                         const fatigueDeload = this.checkFatigueDeload();
                         if (fatigueDeload && this.prefs.autoDeload) {
                             this.deloadInfo = fatigueDeload;
@@ -547,15 +570,11 @@
                     const cf = lastThree.every(h => { const t = this.findTopAMRAP(h.setDetails?.t1); return t && t.performed != null && t.performed < t.reps; });
                     return cf ? { needed: true, percentage: 10, reason: `3 consecutive missed AMRAPs on ${l}`, protocol: 'Performance_Deload' } : null;
                 },
-                // IMPROVEMENT #7: Proactive fatigue-based deload detection
                 checkFatigueDeload() {
                     if (this.history.length < 8) return null;
                     const readiness = this.getReadinessScore();
-                    // Check if last 3 workouts were all done with low readiness
                     const lastThree = this.history.slice(-3);
                     const allLowReadiness = lastThree.every(h => {
-                        // Reconstruct approximate readiness at time of workout
-                        // Use RPE as proxy: RPE > 8.5 on routine weights suggests accumulated fatigue
                         return (h.rpe || 7) >= 8.5;
                     });
                     if (readiness < 45 && allLowReadiness) {
@@ -566,7 +585,6 @@
                             protocol: 'Fatigue_Deload'
                         };
                     }
-                    // Check for declining e1RM trend across multiple lifts
                     let decliningLifts = 0;
                     let totalLifts = 0;
                     Object.keys(this.tms).forEach(l => {
@@ -631,12 +649,28 @@
                         return e1 > e2 ? x : b;
                     }, null);
                 },
-                // IMPROVEMENT #2: Compute trend multiplier from recent AMRAP history
+                /**
+                 * Compute the best e1RM from a set array using ACTUAL weights lifted.
+                 * This is the key fix: we look at the real weight on each completed set,
+                 * not the TM or any pre-adjustment value. If someone batch-adjusted
+                 * mid-session, the set's .weight already reflects that adjustment.
+                 */
+                _computeBestE1RMFromSets(sets) {
+                    if (!sets || !Array.isArray(sets)) return 0;
+                    let best = 0;
+                    for (const s of sets) {
+                        if (!s.completed || s.failed || s.weight <= 0) continue;
+                        const reps = s.performed != null ? s.performed : s.reps;
+                        if (reps <= 0) continue;
+                        const e = U.rm(s.weight, reps);
+                        if (e > best) best = e;
+                    }
+                    return best;
+                },
                 _computeTrendMultiplier(lift) {
                     const liftHist = this.history.filter(h => h.details?.t1 === lift).slice(-5);
                     if (liftHist.length < 3) return 1.0;
 
-                    // Collect AMRAP deltas (performed - target) from recent sessions
                     const deltas = [];
                     for (const h of liftHist) {
                         const top = this.findTopAMRAP(h.setDetails?.t1);
@@ -649,12 +683,9 @@
                     const avgDelta = U.avg(deltas);
                     const recentDelta = deltas[deltas.length - 1];
 
-                    // If consistently smashing AMRAPs (avg delta >= 3), increase faster
                     if (avgDelta >= 3 && recentDelta >= 3) return 1.5;
                     if (avgDelta >= 2 && recentDelta >= 2) return 1.25;
-                    // If consistently barely hitting (avg delta <= 0), slow down
                     if (avgDelta <= 0) return 0.75;
-                    // Declining trend (getting fewer reps each time)
                     if (deltas.length >= 3) {
                         const declining = deltas.slice(-3).every((d, i, a) => i === 0 || d <= a[i - 1]);
                         if (declining && recentDelta <= 1) return 0.75;
@@ -662,17 +693,71 @@
                     return 1.0;
                 },
                 computeProgression(l, s, p, t = 't1') {
-                    // IMPROVEMENT #2: Add trend awareness to progression context
                     const trendMultiplier = this._computeTrendMultiplier(l);
                     const ctx = { tier: t, lift: l, sets: s, tm: this.tms[l] || 0, top: this.findTopAMRAP(s), all: s.every(x => x.completed && !x.failed), u: this.prefs.weightUnit, hist: this.history, state: this.state, wk: this.week, cycleWeek: this.cycleWeek531, findTop: st => this.findTopAMRAP(st), trendMultiplier };
-                    if (ctx.top && !ctx.top.failed) {
-                        const r = U.rm(ctx.top.weight, ctx.top.performed), m = this.exMult(this.session?.t1?.name || l);
-                        const norm = m !== 1 ? M.round(r / m) : r;
-                        if (norm > 0) { this.e1rmHistory[l] = [...(this.e1rmHistory[l] || []), { e1rm: norm, date: U.iso(U.now()), timestamp: U.now() }].slice(-20); U.s('lift_e1rm_history', this.e1rmHistory); }
+
+                    const actualBestE1RM = this._computeBestE1RMFromSets(s);
+
+                    if (actualBestE1RM > 0) {
+                        const exerciseName = t === 't1' ? (this.session?.t1?.name || l) : l;
+                        const mult = this.exMult(exerciseName);
+                        const normE1RM = mult !== 1 ? M.round(actualBestE1RM / mult) : actualBestE1RM;
+
+                        if (normE1RM > 0) {
+                            this.e1rmHistory[l] = [...(this.e1rmHistory[l] || []), { e1rm: normE1RM, date: U.iso(U.now()), timestamp: U.now() }].slice(-20);
+                            U.s('lift_e1rm_history', this.e1rmHistory);
+                        }
                     }
+
                     const progKey = DATA.progs[p]?.prog || p;
                     const fn = PROG[progKey] || PROG[p] || PROG.linear;
                     const res = fn(ctx);
+
+                    // ====================================================================
+                    // UNIVERSAL SMART TM ADJUSTMENT (Works for ALL programs)
+                    // ====================================================================
+                    try {
+                        const d = this.getWk() || {};
+                        const schemeKey = t === 't1' ? (d.s || 'vol') : (d.t2s || 't2');
+                        
+                        // Generate the 'Ghost Sets' to see what weight the app PLANNED for you
+                        const intendedSets = this.getSets(schemeKey, l, ctx.tm, t);
+                        
+                        let maxActual = 0;
+                        let expectedForMax = 0;
+                        
+                        // Find the heaviest weight you ACTUALLY lifted vs what was scheduled
+                        s.forEach((set, i) => {
+                            if (set.completed && !set.failed && set.weight > maxActual) {
+                                maxActual = set.weight;
+                                if (intendedSets[i]) expectedForMax = intendedSets[i].weight;
+                            }
+                        });
+
+                        const step = ctx.u === 'kg' ? 2.5 : 5;
+                        
+                        // If you manually increased the weight by at least one full plate step...
+                        if (maxActual > 0 && expectedForMax > 0 && maxActual >= expectedForMax + step) {
+                            const ratio = maxActual / expectedForMax;
+                            const impliedTM = ctx.tm * ratio;
+                            const gap = impliedTM - ctx.tm;
+                            
+                            // Bridge the gap, THEN add your earned progression on top of it
+                            res.add = U.rnd(gap + res.add, ctx.u, false);
+                            res.method = 'Smart_Adjust_Up';
+                        }
+                        // If you manually decreased the weight (auto-correct downwards)
+                        else if (maxActual > 0 && expectedForMax > 0 && maxActual <= expectedForMax - step) {
+                            const ratio = maxActual / expectedForMax;
+                            const impliedTM = ctx.tm * ratio;
+                            const gap = impliedTM - ctx.tm;
+                            
+                            res.add = U.rnd(gap + res.add, ctx.u, false);
+                            res.method = 'Smart_Adjust_Down';
+                        }
+                    } catch (e) { console.warn("Smart adjust failed, falling back to standard progression", e); }
+                    // ====================================================================
+
                     if (res.add !== 0) this.tms[l] = U.rnd((this.tms[l] || 0) + U.rnd(res.add, ctx.u, this.prefs.microplates), ctx.u, this.prefs.microplates);
                     return res;
                 },
@@ -684,35 +769,59 @@
                     return M.round(avgTM * 0.45);
                 },
                 saveFinish() {
-                    this._finishing = true; const { t1, t2 } = this.session, l = t1.name, p = this.prefs.program;
+                    this._finishing = true;
+                    const { t1, t2 } = this.session, l = t1.name, p = this.prefs.program;
+
+                    // BUG FIX: Compute best e1RM from ACTUAL set weights (which include any mid-session adjustments)
+                    // before running progression, so PRs reflect what was actually lifted.
+                    const t1BestE1RM = this._computeBestE1RMFromSets(t1.sets);
+                    const t1Mult = this.exMult(l);
+                    const normT1E1RM = t1Mult !== 1 ? M.round(t1BestE1RM / t1Mult) : t1BestE1RM;
+
+                    // Run progression (this also records e1RM history using actual weights)
                     const prg = this.computeProgression(l, t1.sets, p, 't1');
+
+                    const t2N = t2.selectedExercise || t2.name;
                     const t2Base = this.baseTM(t2.originalName) || t2.originalName;
                     if (this.tms[t2Base] !== undefined && t2Base !== l) {
                         this.computeProgression(t2Base, t2.sets, p, 't2');
                     }
+
+                    // BUG FIX: PR check uses the actual best e1RM from completed sets
+                    const isNewPR = normT1E1RM > 0 && normT1E1RM > (this.prs[l]?.weight || 0);
+                    const iso = U.iso(U.now());
+
+                    if (isNewPR) {
+                        this.prs[l] = { weight: normT1E1RM, date: iso };
+                        U.s('lift_prs', this.prs);
+                    }
+
                     if (prg.add > 0 && typeof confetti === 'function') confetti({ particleCount: 100, spread: 70, origin: { y: .6 } });
-                    const m = this.exMult(l), completedNF = t1.sets.filter(s => s.completed && !s.failed), bestE1RM = M.max(0, ...completedNF.map(s => U.rm(s.weight, s.performed || s.reps))), normE1RM = m !== 1 ? M.round(bestE1RM / m) : bestE1RM, isNewPR = normE1RM > 0 && normE1RM > (this.prs[l]?.weight || 0), iso = U.iso(U.now()), all = [...t1.sets, ...t2.sets];
-                    if (isNewPR) { this.prs[l] = { weight: normE1RM, date: iso }; U.s('lift_prs', this.prs); }
-                    const mainVol = U.vol(all); let accVol = 0;
+
+                    const all = [...t1.sets, ...t2.sets];
+                    const mainVol = U.vol(all);
+                    let accVol = 0;
                     (this.session.acc || []).forEach(a => { const cc = Object.keys(this.session.completedAcc).filter(k => k.startsWith(a.originalName || a.name)).length; accVol += cc * U.prs(a.reps) * this._estimateAccessoryWeight(a.selectedExercise || a.name); });
                     const vol = mainVol + accVol, rCount = all.filter(s => s.completed && s.rpe).length, rSum = all.reduce((a, s) => s.completed && s.rpe ? a + s.rpe : a, 0);
                     const avgVol = this.history.length ? U.sum(this.history, 'totalVolume') / this.history.length : vol, scr = M.min(100, M.round(((vol / (avgVol || 1)) * 40) + (((rCount ? rSum / rCount : 7) / 10) * 60))), dur = M.max(60, (U.now() - this.session.start) / 1000), wJ = M.round(vol * 9.8 * .5), pW = M.round(wJ / dur);
                     this.xp += M.round(scr * 5 + (wJ / 150)); U.s('lift_xp', this.xp);
-                    const t2N = t2.selectedExercise || t2.name, t2NF = t2.sets.filter(s => s.completed && !s.failed);
-                    let bT2 = 0;
-                    const t2Amrap = this.findTopAMRAP(t2.sets);
-                    if (t2Amrap) {
-                        bT2 = U.rm(t2Amrap.weight, t2Amrap.performed);
-                    } else {
-                        const bestT2 = this.findBestCompletedSet(t2.sets);
-                        if (bestT2) bT2 = U.rm(bestT2.weight, bestT2.performed || bestT2.reps);
-                    }
-                    let t2PR = false;
-                    if (bT2 > 0 && bT2 > (this.prs[t2N]?.weight || 0)) { this.prs[t2N] = { weight: bT2, date: iso }; U.s('lift_prs', this.prs); t2PR = true; }
-                    if (bT2 > 0) { this.e1rmHistory[t2N] = [...(this.e1rmHistory[t2N] || []), { e1rm: bT2, date: iso, timestamp: U.now() }].slice(-20); U.s('lift_e1rm_history', this.e1rmHistory); }
-                    let aN = []; this.session.acc.forEach(a => { const cc = Object.keys(this.session.completedAcc).filter(k => k.startsWith(a.originalName || a.name)).length; if (cc >= a.sets && a.reps) aN.push(`+ Consider upping weight on ${a.selectedExercise || a.originalName || a.name}`); });
 
-                    // IMPROVEMENT #4: Volume landmark warnings in session notes
+                    // BUG FIX: T2 PR/e1RM also uses actual weights from completed sets
+                    const t2BestE1RM = this._computeBestE1RMFromSets(t2.sets);
+                    let t2PR = false;
+                    if (t2BestE1RM > 0 && t2BestE1RM > (this.prs[t2N]?.weight || 0)) {
+                        this.prs[t2N] = { weight: t2BestE1RM, date: iso };
+                        U.s('lift_prs', this.prs);
+                        t2PR = true;
+                    }
+                    if (t2BestE1RM > 0) {
+                        this.e1rmHistory[t2N] = [...(this.e1rmHistory[t2N] || []), { e1rm: t2BestE1RM, date: iso, timestamp: U.now() }].slice(-20);
+                        U.s('lift_e1rm_history', this.e1rmHistory);
+                    }
+
+                    let aN = [];
+                    this.session.acc.forEach(a => { const cc = Object.keys(this.session.completedAcc).filter(k => k.startsWith(a.originalName || a.name)).length; if (cc >= a.sets && a.reps) aN.push(`+ Consider upping weight on ${a.selectedExercise || a.originalName || a.name}`); });
+
                     const volWarnings = this.getVolumeLandmarkWarnings();
                     if (volWarnings.length) {
                         aN.push('--- Volume Alerts ---');
@@ -720,16 +829,59 @@
                     }
 
                     if (aN.length) this.sessionNotes = (this.sessionNotes ? this.sessionNotes + '\n' : '') + aN.join('\n');
-                    const effVol = all.reduce((a, s) => { if (!s.completed) return a; return a + U.fatigue(s.weight, s.performed || s.reps, this.tms[this.baseTM(l)] || 0, s.failed, this.sessionRPE ?? 7); }, 0);
+
+                    // BUG FIX: Use actual set weights for fatigue/effective volume calculation
+                    const effVol = all.reduce((a, s) => {
+                        if (!s.completed) return a;
+                        const reps = s.performed || s.reps || 0;
+                        // Use the actual weight on the set (which includes any mid-session adjustments)
+                        // and the current TM for relative intensity calculation
+                        const baseLift = this.baseTM(l) || l;
+                        return a + U.fatigue(s.weight, reps, this.tms[baseLift] || 0, s.failed, this.sessionRPE ?? 7);
+                    }, 0);
+
+                    // BUG FIX: Record the actual top weight lifted (from completed sets), not just the AMRAP set
+                    const actualTopWeight = M.max(0, ...t1.sets.filter(s => s.completed && !s.failed).map(s => s.weight));
+                    const amrapSet = this.findTopAMRAP(t1.sets);
+
                     this.history.push({
-                        date: new D().toLocaleDateString(), isoDate: iso, timestamp: U.now(), title: this.session.title, increase: prg.add, pr: prg.add > 0 || isNewPR, progressionMethod: prg.method, duration: M.round(dur / 60), rating: this.sessionRating, rpe: this.sessionRPE ?? 7, notes: this.sessionNotes, totalVolume: vol, intensityScore: scr, workJoules: wJ, powerWatts: pW, t2PR,
-                        effectiveVolume: effVol, totalSets: all.length, completedSets: all.filter(s => s.completed).length, avgRestTime: this.restTimes.length ? M.round(U.avg(this.restTimes.map(r => r.target))) : null, avgActualRest: (() => { const wr = all.filter(s => s.timeSincePrev); return wr.length ? M.round(U.avg(wr.map(s => s.timeSincePrev))) : null; })(),
-                        details: { t1: l, weight: this.findTopAMRAP(t1.sets)?.weight, est1rm: normE1RM }, setDetails: { t1: t1.sets, t2Name: t2N, t2OriginalName: t2.originalName, t2: t2.sets, accessories: this.session.acc.map(a => ({ name: a.selectedExercise || a.name, originalName: a.originalName, total: a.sets, reps: a.reps, completed: Object.keys(this.session.completedAcc).filter(k => k.startsWith(a.originalName) || k.startsWith(a.name)).length })) },
+                        date: new D().toLocaleDateString(), isoDate: iso, timestamp: U.now(), title: this.session.title,
+                        increase: prg.add, pr: prg.add > 0 || isNewPR, progressionMethod: prg.method,
+                        duration: M.round(dur / 60), rating: this.sessionRating, rpe: this.sessionRPE ?? 7,
+                        notes: this.sessionNotes, totalVolume: vol, intensityScore: scr, workJoules: wJ, powerWatts: pW, t2PR,
+                        effectiveVolume: effVol, totalSets: all.length, completedSets: all.filter(s => s.completed).length,
+                        avgRestTime: this.restTimes.length ? M.round(U.avg(this.restTimes.map(r => r.target))) : null,
+                        avgActualRest: (() => { const wr = all.filter(s => s.timeSincePrev); return wr.length ? M.round(U.avg(wr.map(s => s.timeSincePrev))) : null; })(),
+                        details: {
+                            t1: l,
+                            // BUG FIX: Store the actual top weight lifted, not just the AMRAP weight
+                            weight: amrapSet ? amrapSet.weight : actualTopWeight,
+                            // BUG FIX: est1rm uses actual weights from sets
+                            est1rm: normT1E1RM
+                        },
+                        setDetails: {
+                            t1: t1.sets, t2Name: t2N, t2OriginalName: t2.originalName, t2: t2.sets,
+                            accessories: this.session.acc.map(a => ({
+                                name: a.selectedExercise || a.name, originalName: a.originalName, total: a.sets, reps: a.reps,
+                                completed: Object.keys(this.session.completedAcc).filter(k => k.startsWith(a.originalName) || k.startsWith(a.name)).length
+                            }))
+                        },
                         avgSetDuration: M.round(U.avg(all.filter(s => s.setDuration).map(s => s.setDuration))),
                         trendMultiplier: this._computeTrendMultiplier(l)
                     });
-                    if (this.session.dayIdx !== null && this.session.dayIdx !== undefined) { this.idx = (this.session.dayIdx + 1) % DATA.progs[p].days.length; if (this.idx === 0) this.week++; if (p === '531' && this.session.dayIdx === DATA.progs['531'].days.length - 1) this.cycleWeek531++; this.pIdx = this.idx; }
-                    this.computeStreak(); this.computeLongestStreak(); this.computeFrequency(); this.session = {}; this.savedSession = null; this._finishing = false; U.d('lift_active_session'); U.d('lift_active_session_backup'); this.activeModal = null; this.save(); this.chkAch(); this.view = 'dashboard'; this.calBuild(); this.$nextTick(() => { this.draw(); this.scrollToActive(); });
+
+                    if (this.session.dayIdx !== null && this.session.dayIdx !== undefined) {
+                        this.idx = (this.session.dayIdx + 1) % DATA.progs[p].days.length;
+                        if (this.idx === 0) this.week++;
+                        if (p === '531' && this.session.dayIdx === DATA.progs['531'].days.length - 1) this.cycleWeek531++;
+                        this.pIdx = this.idx;
+                    }
+                    this.computeStreak(); this.computeLongestStreak(); this.computeFrequency();
+                    this.session = {}; this.savedSession = null; this._finishing = false;
+                    U.d('lift_active_session'); U.d('lift_active_session_backup');
+                    this.activeModal = null; this.save(); this.chkAch();
+                    this.view = 'dashboard'; this.calBuild();
+                    this.$nextTick(() => { this.draw(); this.scrollToActive(); });
                 },
                 warmups() {
                     if (!this.session?.t1?.sets?.[0]) return [];
@@ -764,12 +916,10 @@
                     const f = {}, now = U.now(), mg = { Push: 0, Pull: 0, Legs: 0, Core: 0 }, pS = DATA.programCapacityScale[this.prefs.program] || 1;
                     const LOOKBACK_HOURS = 504;
                     const MIN_DECAY = 0.005;
-                    // IMPROVEMENT #3: Track per-muscle last-trained time for supercompensation
-                    const lastTrainedAge = {}; // muscle -> hours since last trained
+                    const lastTrainedAge = {};
                     const allW = [...this.history]; if (this.session?.start && this.session?.t1) allW.push({ timestamp: this.session.start, rpe: this.sessionRPE, details: { t1: this.session.t1?.name }, setDetails: { t1: this.session.t1?.sets, t2Name: this.session.t2?.selectedExercise || this.session.t2?.name, t2: this.session.t2?.sets, accessories: this.session.acc?.map(a => ({ name: a.selectedExercise || a.name, originalName: a.originalName, total: a.sets, reps: a.reps, completed: Object.keys(this.session.completedAcc || {}).filter(k => k.startsWith(a.originalName || a.name)).length })) } });
                     for (let i = allW.length - 1; i >= 0; i--) {
                         const w = allW[i], age = (now - w.timestamp) / 36e5; if (age >= LOOKBACK_HOURS) break;
-                        // IMPROVEMENT #5: Use stored RPE instead of flat 7
                         const wRPE = w.rpe || 7;
                         const procSets = (n, sets) => {
                             if (!n || !Array.isArray(sets)) return;
@@ -781,11 +931,11 @@
                                 const setVol = wt * reps;
                                 const gi = ms => setVol * M.min(1, M.max(0, ...ms.map(m => imp_map[m] || 0)));
                                 mg.Push += gi(DATA.groups.Push); mg.Pull += gi(DATA.groups.Pull); mg.Legs += gi(DATA.groups.Legs); mg.Core += gi(DATA.groups.Core);
+                                // BUG FIX: fatigue uses the actual s.weight from the set (which includes mid-session adjustments)
                                 const setFat = U.fatigue(wt, reps, tm, s.failed, wRPE);
                                 Object.entries(imp_map).forEach(([k, v]) => {
                                     const decay = M.pow(.5, age / (DATA.halfLife[k] || 36));
                                     if (decay >= MIN_DECAY) { f[k] = (f[k] || 0) + setFat * v * decay; }
-                                    // Track when each muscle was last meaningfully trained
                                     if (v >= 0.3 && (lastTrainedAge[k] === undefined || age < lastTrainedAge[k])) {
                                         lastTrainedAge[k] = age;
                                     }
@@ -811,26 +961,19 @@
                         procSets(w.details?.t1, w.setDetails?.t1); procSets(w.setDetails?.t2Name, w.setDetails?.t2); (w.setDetails?.accessories || []).forEach(procAcc);
                     }
 
-                    // IMPROVEMENT #1: Sigmoid-based recovery with supercompensation
                     const lb = 1 + M.min(.50, this.currentLevel * .02), rm = {};
                     Object.keys(DATA.halfLife).forEach(m => {
                         const cap = (DATA.baseRecoveryCapacity[m] || 90) * lb * pS;
                         const fatigue = f[m] || 0;
-                        // Sigmoid recovery curve: more realistic transition from fatigued to recovered
-                        // Uses logistic function: 100 / (1 + e^(k*(fatigue - midpoint)))
-                        // Midpoint at cap * 0.6 gives good sensitivity range
                         const midpoint = cap * 0.6;
-                        const steepness = 4.0 / cap; // Normalized steepness
+                        const steepness = 4.0 / cap;
                         const baseRecovery = M.round(100 / (1 + M.exp(steepness * (fatigue - midpoint))));
 
-                        // IMPROVEMENT #3: Supercompensation window
                         const sc = DATA.supercompensation[m];
                         const ageHrs = lastTrainedAge[m];
                         if (sc && ageHrs !== undefined && baseRecovery >= 85) {
-                            // Check if within supercompensation window
                             const distFromPeak = M.abs(ageHrs - sc.peakHours);
                             if (distFromPeak <= sc.windowHours) {
-                                // Gaussian supercompensation bonus, max +10%
                                 const bonus = 10 * M.exp(-M.pow(distFromPeak / (sc.windowHours * 0.6), 2));
                                 rm[m] = M.min(110, M.round(baseRecovery + bonus));
                             } else {
@@ -846,11 +989,10 @@
                         const vs = ms.map(m => {
                             let r = rm[m] ?? 100;
                             if (n !== 'CNS' && !DATA.isolationDominant.has(m)) r = M.round(r * cM);
-                            return M.max(0, M.min(110, r)); // Allow up to 110 for supercompensation
+                            return M.max(0, M.min(110, r));
                         });
                         const min = M.min(...vs);
                         const avg = M.round(U.avg(vs));
-                        // Supercompensation status
                         const hasSupercomp = vs.some(v => v > 100);
                         return {
                             name: n,
@@ -869,11 +1011,9 @@
                     });
                     this.cache.mgVol = mg;
 
-                    // IMPROVEMENT #4: Compute volume landmarks
                     this._computeVolumeLandmarks();
                 },
 
-                // IMPROVEMENT #4: Volume landmark computation
                 _computeVolumeLandmarks() {
                     const now = U.now();
                     const landmarks = {};
@@ -900,7 +1040,6 @@
                     this.cache.volumeLandmarks = landmarks;
                 },
 
-                // IMPROVEMENT #4: Get actionable volume warnings
                 getVolumeLandmarkWarnings() {
                     const warnings = [];
                     const lm = this.cache.volumeLandmarks || {};
@@ -914,7 +1053,6 @@
                     return warnings;
                 },
 
-                // IMPROVEMENT #4: Get volume status for a muscle (for UI display)
                 getVolumeStatus(muscle) {
                     return this.cache.volumeLandmarks?.[muscle] || null;
                 },
@@ -926,10 +1064,8 @@
                     if (this.session?.t1) chk(this.session.t1.name);
                     if (this.session?.t2) chk(this.session.t2.selectedExercise || this.session.t2.name);
 
-                    // IMPROVEMENT #4: Add volume landmark warnings to advice
                     const volWarnings = this.getVolumeLandmarkWarnings();
 
-                    // IMPROVEMENT #3: Detect supercompensation opportunities
                     const primedMuscles = [];
                     Object.entries(this.cache.recoveryMap || {}).forEach(([m, r]) => {
                         if (r > 100) primedMuscles.push(m);
