@@ -80,7 +80,6 @@
         .tempo-pulse { animation: tempo 4s infinite linear; }
         @keyframes tempo { 0% { transform: scale(1); opacity: 1; background: #ef4444; } 75% { transform: scale(0.8); opacity: 0.5; background: #eab308; } 85% { transform: scale(1.2); opacity: 1; background: #22c55e; } 100% { transform: scale(1); opacity: 1; background: #3b82f6; } }
     </style>
-
 <script>
         const PANTRY_ID = '8f01b867-0669-4964-9042-792b6c8ebcd6';
 
@@ -270,17 +269,15 @@
                 if (!c.top) return { add: 0, method: c.all ? 'nsuns_hold_no_amrap' : 'nsuns_hold_incomplete' };
                 
                 const target = c.top.reps, actual = c.top.performed, delta = actual - target;
-                const trendMod = c.trendMultiplier || 1.0;
                 let add = 0;
 
                 if (target >= 5) { 
-                    add = delta < -2 ? -step : delta >= 3 ? step * trendMod : delta >= 1 ? (step / 2) * trendMod : 0; 
+                    add = delta < -2 ? -step : delta >= 3 ? step : delta >= 1 ? (step / 2) : 0; 
                 } else { 
-                    // FIXED: Official nSuns 1+ Progression Logic
-                    if (actual <= 1) add = 0; // Hold TM for 0-1 reps
-                    else if (actual <= 3) add = step * trendMod;          // 2-3 reps = +5 lbs
-                    else if (actual <= 5) add = step * 2 * trendMod;      // 4-5 reps = +10 lbs
-                    else add = step * 3 * trendMod;                       // 6+ reps = +15 lbs
+                    if (actual <= 1) add = 0;
+                    else if (actual <= 3) add = step;          
+                    else if (actual <= 5) add = step * 2;      
+                    else add = step * 3;                       
                 }
                 
                 add = add > 0 ? M.max(step / 2, U.rnd(add, c.u, false)) : add < 0 ? M.min(-step / 2, -M.abs(U.rnd(add, c.u, false))) : 0;
@@ -294,7 +291,7 @@
                     return f >= 2 ? { add: -M.round(c.tm * .1), method: '531_deload' } : { add: 0, method: '531_hold' };
                 }
                 const baseAdd = ['Bench', 'OHP'].includes(c.lift) ? (c.u === 'kg' ? 2.5 : 5) : (c.u === 'kg' ? 5 : 10);
-                return { add: baseAdd * (c.trendMultiplier || 1.0), method: '531_cycle' };
+                return { add: baseAdd, method: '531_cycle' };
             },
             gzclp: c => {
                 const k = c.tier === 't1' ? 't1Stage' : 't2Stage', s = c.state[c.lift] = c.state[c.lift] || { t1Stage: 1, t2Stage: 1 }, st = s[k] || 1;
@@ -304,19 +301,18 @@
                     s[k] = st + 1; return { add: 0, method: `gz_${c.tier}_stage_advance` };
                 }
                 const baseStep = c.u === 'kg' ? 2.5 : 5;
-                return { add: baseStep * (c.trendMultiplier || 1.0), method: `gz_${c.tier}_linear` };
+                return { add: baseStep, method: `gz_${c.tier}_linear` };
             },
             linear: c => {
                 const step = c.u === 'kg' ? 2.5 : 5;
-                const trendMod = c.trendMultiplier || 1.0;
-                if (c.tier !== 't1') return c.all ? { add: step * trendMod, method: 't2_linear' } : { add: 0, method: 't2_hold' };
+                if (c.tier !== 't1') return c.all ? { add: step, method: 't2_linear' } : { add: 0, method: 't2_hold' };
                 if (c.top?.performed != null) {
                     const d = c.top.performed - c.top.reps;
-                    let add = d < 0 ? 0 : d <= 2 ? step * trendMod : step * 2 * trendMod;
+                    let add = d < 0 ? 0 : d <= 2 ? step : step * 2;
                     add = add > 0 ? M.max(step / 2, U.rnd(add, c.u, false)) : 0;
                     return { add, method: d < 0 ? 'hold_missed' : 'amrap_linear' };
                 }
-                return c.all ? { add: step * trendMod, method: 'linear' } : { add: 0, method: 'hold' };
+                return c.all ? { add: step, method: 'linear' } : { add: 0, method: 'hold' };
             },
             stronglifts: c => {
                 const s = c.state[c.lift] = c.state[c.lift] || { cf: 0, dc: 0, slScheme: c.lift === 'Deadlift' ? 'dl' : 'std' };
@@ -334,9 +330,8 @@
                     }
                     return { add: 0, method: 'sl_retry' };
                 }
-                s.cf = 0;
                 const baseStep = c.lift === 'Deadlift' ? (c.u === 'kg' ? 5 : 10) : (c.u === 'kg' ? 2.5 : 5);
-                return { add: baseStep * (c.trendMultiplier || 1.0), method: 'sl_linear' };
+                return { add: baseStep, method: 'sl_linear' };
             }
         };
         PROG.amrap_linear = PROG.linear; PROG.lin = PROG.linear; PROG.gz = PROG.gzclp; PROG.sl = PROG.stronglifts;
@@ -378,38 +373,6 @@
                     this.prefs.barWeight = this.prefs.barWeight || (this.prefs.weightUnit === 'kg' ? 20 : 45); this.applyRM();
                     this.history.forEach(h => { h.timestamp = h.timestamp || new D(h.date).getTime(); h.isoDate = h.isoDate || U.iso(h.timestamp) });
                     
-                    // =========================================================
-                    // SMART TM SYNC: Derive TM from actual weight lifted in history
-                    // =========================================================
-                    if (this.prefs.program === 'nsuns' && this.history.length > 0) {
-                        Object.keys(this.tms).forEach(lift => {
-                            // Find the most recent workout for this lift
-                            const lastWk = this.history.slice().reverse().find(h => h.details?.t1 === lift);
-                            if (!lastWk) return;
-                            
-                            // Look for a successful 1+ AMRAP set in that workout's history
-                            const top = (lastWk.setDetails?.t1 || []).find(x => x.amrap && x.completed && !x.failed && x.reps === 1 && x.performed != null);
-                            
-                            if (top) {
-                                const step = this.prefs.weightUnit === 'kg' ? 2.5 : 5;
-                                const reps = top.performed;
-                                
-                                // Standard nSuns progression rewards
-                                let earned = 0;
-                                if (reps >= 6) earned = step * 3;
-                                else if (reps >= 4) earned = step * 2;
-                                else if (reps >= 2) earned = step;
-                                
-                                // Reverse engineer the TM from the ACTUAL weight on the bar (1+ is 95% of TM)
-                                const impliedTM = top.weight / 0.95;
-                                
-                                // Overwrite the saved TM with the truth
-                                this.tms[lift] = U.rnd(impliedTM + earned, this.prefs.weightUnit, this.prefs.microplates);
-                            }
-                        });
-                    }
-                    // =========================================================
-
                     this.pIdx = this.idx; this.computeLongestStreak(); this.computeFrequency(); this.computeStreak(); this.updCache();
                     if (Object.keys(this.tms).length) this.chartLift = Object.keys(this.tms)[0];
                     if (this.savedSession?.t1) this.activeModal = 'resume'; else if (!d.tms) this.view = 'setup';
@@ -649,12 +612,6 @@
                         return e1 > e2 ? x : b;
                     }, null);
                 },
-                /**
-                 * Compute the best e1RM from a set array using ACTUAL weights lifted.
-                 * This is the key fix: we look at the real weight on each completed set,
-                 * not the TM or any pre-adjustment value. If someone batch-adjusted
-                 * mid-session, the set's .weight already reflects that adjustment.
-                 */
                 _computeBestE1RMFromSets(sets) {
                     if (!sets || !Array.isArray(sets)) return 0;
                     let best = 0;
@@ -693,8 +650,7 @@
                     return 1.0;
                 },
                 computeProgression(l, s, p, t = 't1') {
-                    const trendMultiplier = this._computeTrendMultiplier(l);
-                    const ctx = { tier: t, lift: l, sets: s, tm: this.tms[l] || 0, top: this.findTopAMRAP(s), all: s.every(x => x.completed && !x.failed), u: this.prefs.weightUnit, hist: this.history, state: this.state, wk: this.week, cycleWeek: this.cycleWeek531, findTop: st => this.findTopAMRAP(st), trendMultiplier };
+                    const ctx = { tier: t, lift: l, sets: s, tm: this.tms[l] || 0, top: this.findTopAMRAP(s), all: s.every(x => x.completed && !x.failed), u: this.prefs.weightUnit, hist: this.history, state: this.state, wk: this.week, cycleWeek: this.cycleWeek531, findTop: st => this.findTopAMRAP(st) };
 
                     const actualBestE1RM = this._computeBestE1RMFromSets(s);
 
@@ -713,51 +669,6 @@
                     const fn = PROG[progKey] || PROG[p] || PROG.linear;
                     const res = fn(ctx);
 
-                    // ====================================================================
-                    // UNIVERSAL SMART TM ADJUSTMENT (Works for ALL programs)
-                    // ====================================================================
-                    try {
-                        const d = this.getWk() || {};
-                        const schemeKey = t === 't1' ? (d.s || 'vol') : (d.t2s || 't2');
-                        
-                        // Generate the 'Ghost Sets' to see what weight the app PLANNED for you
-                        const intendedSets = this.getSets(schemeKey, l, ctx.tm, t);
-                        
-                        let maxActual = 0;
-                        let expectedForMax = 0;
-                        
-                        // Find the heaviest weight you ACTUALLY lifted vs what was scheduled
-                        s.forEach((set, i) => {
-                            if (set.completed && !set.failed && set.weight > maxActual) {
-                                maxActual = set.weight;
-                                if (intendedSets[i]) expectedForMax = intendedSets[i].weight;
-                            }
-                        });
-
-                        const step = ctx.u === 'kg' ? 2.5 : 5;
-                        
-                        // If you manually increased the weight by at least one full plate step...
-                        if (maxActual > 0 && expectedForMax > 0 && maxActual >= expectedForMax + step) {
-                            const ratio = maxActual / expectedForMax;
-                            const impliedTM = ctx.tm * ratio;
-                            const gap = impliedTM - ctx.tm;
-                            
-                            // Bridge the gap, THEN add your earned progression on top of it
-                            res.add = U.rnd(gap + res.add, ctx.u, false);
-                            res.method = 'Smart_Adjust_Up';
-                        }
-                        // If you manually decreased the weight (auto-correct downwards)
-                        else if (maxActual > 0 && expectedForMax > 0 && maxActual <= expectedForMax - step) {
-                            const ratio = maxActual / expectedForMax;
-                            const impliedTM = ctx.tm * ratio;
-                            const gap = impliedTM - ctx.tm;
-                            
-                            res.add = U.rnd(gap + res.add, ctx.u, false);
-                            res.method = 'Smart_Adjust_Down';
-                        }
-                    } catch (e) { console.warn("Smart adjust failed, falling back to standard progression", e); }
-                    // ====================================================================
-
                     if (res.add !== 0) this.tms[l] = U.rnd((this.tms[l] || 0) + U.rnd(res.add, ctx.u, this.prefs.microplates), ctx.u, this.prefs.microplates);
                     return res;
                 },
@@ -772,13 +683,10 @@
                     this._finishing = true;
                     const { t1, t2 } = this.session, l = t1.name, p = this.prefs.program;
 
-                    // BUG FIX: Compute best e1RM from ACTUAL set weights (which include any mid-session adjustments)
-                    // before running progression, so PRs reflect what was actually lifted.
                     const t1BestE1RM = this._computeBestE1RMFromSets(t1.sets);
                     const t1Mult = this.exMult(l);
                     const normT1E1RM = t1Mult !== 1 ? M.round(t1BestE1RM / t1Mult) : t1BestE1RM;
 
-                    // Run progression (this also records e1RM history using actual weights)
                     const prg = this.computeProgression(l, t1.sets, p, 't1');
 
                     const t2N = t2.selectedExercise || t2.name;
@@ -787,7 +695,6 @@
                         this.computeProgression(t2Base, t2.sets, p, 't2');
                     }
 
-                    // BUG FIX: PR check uses the actual best e1RM from completed sets
                     const isNewPR = normT1E1RM > 0 && normT1E1RM > (this.prs[l]?.weight || 0);
                     const iso = U.iso(U.now());
 
@@ -806,7 +713,6 @@
                     const avgVol = this.history.length ? U.sum(this.history, 'totalVolume') / this.history.length : vol, scr = M.min(100, M.round(((vol / (avgVol || 1)) * 40) + (((rCount ? rSum / rCount : 7) / 10) * 60))), dur = M.max(60, (U.now() - this.session.start) / 1000), wJ = M.round(vol * 9.8 * .5), pW = M.round(wJ / dur);
                     this.xp += M.round(scr * 5 + (wJ / 150)); U.s('lift_xp', this.xp);
 
-                    // BUG FIX: T2 PR/e1RM also uses actual weights from completed sets
                     const t2BestE1RM = this._computeBestE1RMFromSets(t2.sets);
                     let t2PR = false;
                     if (t2BestE1RM > 0 && t2BestE1RM > (this.prs[t2N]?.weight || 0)) {
@@ -830,17 +736,13 @@
 
                     if (aN.length) this.sessionNotes = (this.sessionNotes ? this.sessionNotes + '\n' : '') + aN.join('\n');
 
-                    // BUG FIX: Use actual set weights for fatigue/effective volume calculation
                     const effVol = all.reduce((a, s) => {
                         if (!s.completed) return a;
                         const reps = s.performed || s.reps || 0;
-                        // Use the actual weight on the set (which includes any mid-session adjustments)
-                        // and the current TM for relative intensity calculation
                         const baseLift = this.baseTM(l) || l;
                         return a + U.fatigue(s.weight, reps, this.tms[baseLift] || 0, s.failed, this.sessionRPE ?? 7);
                     }, 0);
 
-                    // BUG FIX: Record the actual top weight lifted (from completed sets), not just the AMRAP set
                     const actualTopWeight = M.max(0, ...t1.sets.filter(s => s.completed && !s.failed).map(s => s.weight));
                     const amrapSet = this.findTopAMRAP(t1.sets);
 
@@ -854,10 +756,9 @@
                         avgActualRest: (() => { const wr = all.filter(s => s.timeSincePrev); return wr.length ? M.round(U.avg(wr.map(s => s.timeSincePrev))) : null; })(),
                         details: {
                             t1: l,
-                            // BUG FIX: Store the actual top weight lifted, not just the AMRAP weight
                             weight: amrapSet ? amrapSet.weight : actualTopWeight,
-                            // BUG FIX: est1rm uses actual weights from sets
-                            est1rm: normT1E1RM
+                            est1rm: normT1E1RM,
+                            tm: this.tms[l] || 0 
                         },
                         setDetails: {
                             t1: t1.sets, t2Name: t2N, t2OriginalName: t2.originalName, t2: t2.sets,
@@ -906,7 +807,7 @@
                 getSwipeTransform(t, i) { return this.swipeData.active && this.swipeData.tier === t && this.swipeData.idx === i ? `transform:translateX(${M.max(-80, M.min(80, this.swipeData.dx))}px)` : ''; },
                 getSwipeBgOpacity(t, i, d) { if (!this.swipeData.active || this.swipeData.tier !== t || this.swipeData.idx !== i) return 'opacity:0'; const dx = this.swipeData.dx; return (d === 'right' && dx > 20) ? `opacity:${M.min(1, dx / 80)}` : (d === 'left' && dx < -20) ? `opacity:${M.min(1, M.abs(dx) / 80)}` : 'opacity:0'; },
                 draw() {
-                    upChrt('mainChart', 'line', { l: this.history.filter(h => h.details?.t1 === this.chartLift).map(x => x.date), d: this.history.filter(h => h.details?.t1 === this.chartLift).map(x => x.details?.est1rm || x.weight) }, '#6366f1');
+                    upChrt('mainChart', 'line', { l: this.history.filter(h => h.details?.t1 === this.chartLift).map(x => x.date), d: this.history.filter(h => h.details?.t1 === this.chartLift).map(x => x.details?.tm || x.details?.est1rm || x.weight) }, '#6366f1');
                     upChrt('bodyWeightChart', 'line', { l: this.bwLog.slice(-30).map(x => U.iso(x.date)), d: this.bwLog.slice(-30).map(x => x.weight) }, '#3b82f6');
                     const v = {}, now = new D(); this.history.slice(-20).forEach(h => { const ts = new D(h.timestamp), ys = new D(ts.getFullYear(), 0, 1), wn = M.ceil((M.floor((ts - ys) / 864e5) + ys.getDay() + 1) / 7), k = ts.getFullYear() === now.getFullYear() ? `W${wn}` : `${ts.getFullYear()}-W${wn}`; v[k] = (v[k] || 0) + (h.totalVolume || 0); });
                     upChrt('volumeChart', 'bar', { l: Object.keys(v), d: Object.values(v) }, '#10b981', false);
@@ -931,7 +832,6 @@
                                 const setVol = wt * reps;
                                 const gi = ms => setVol * M.min(1, M.max(0, ...ms.map(m => imp_map[m] || 0)));
                                 mg.Push += gi(DATA.groups.Push); mg.Pull += gi(DATA.groups.Pull); mg.Legs += gi(DATA.groups.Legs); mg.Core += gi(DATA.groups.Core);
-                                // BUG FIX: fatigue uses the actual s.weight from the set (which includes mid-session adjustments)
                                 const setFat = U.fatigue(wt, reps, tm, s.failed, wRPE);
                                 Object.entries(imp_map).forEach(([k, v]) => {
                                     const decay = M.pow(.5, age / (DATA.halfLife[k] || 36));
