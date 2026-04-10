@@ -80,7 +80,7 @@
         .tempo-pulse { animation: tempo 4s infinite linear; }
         @keyframes tempo { 0% { transform: scale(1); opacity: 1; background: #ef4444; } 75% { transform: scale(0.8); opacity: 0.5; background: #eab308; } 85% { transform: scale(1.2); opacity: 1; background: #22c55e; } 100% { transform: scale(1); opacity: 1; background: #3b82f6; } }
     </style>
-<script>
+    <script>
         const PANTRY_ID = '8f01b867-0669-4964-9042-792b6c8ebcd6';
         const DATA_VERSION = 4;
 
@@ -354,8 +354,8 @@
                 activeModal: null, session: {}, savedSession: null, timer: { active: false, start: null, dur: 0, rem: 0, pct: 0, label: 'Rest', zeroCrossed: false },
                 tempBodyWeight: null, showWarmups: false, plate: { open: false, w: 0, plates: [], originalW: 0 }, cal: { monthName: '', days: [], offset: 0 }, sessionTimerStr: '0:00', deloadInfo: {}, sessionRating: 0, sessionNotes: '', sessionRPE: 7,
                 currentAchievement: null, selectedLog: null, historyFilter: 'all', previousWorkout: null, isEditingLog: false, swapState: { t2: false, acc: null, q: '' }, zenMode: false, zenAmrap: null, setEdit: { tier: 't1', idx: 0, weight: 0, reps: 0, performed: null, failed: false, amrap: false, completed: false, rpe: null },
-                setup: {}, idx: 0, pIdx: 0, week: 1, cycleWeek531: 1, streak: 0, cache: { recovery: [], volume: [], recoveryMap: {}, mgVol: { Push: 0, Pull: 0, Legs: 0, Core: 0 }, volumeLandmarks: {}, fatigueDeloadWarning: null }, wakeLock: null, sessionVolume: 0, restTimes: [], templateName: '', showExNoteModal: false, exNoteTarget: '', exNoteText: '', calSummary: {}, freqData: {}, longestStreak: 0, batchAdjust: 0, undoState: { visible: false, timer: null, action: null, label: '', leaving: false }, autoSaveTimer: null, lastSetCompletedAt: null, swipeData: { startX: 0, startY: 0, dx: 0, active: false, tier: null, idx: null },
-                expandedRecovery: null, chartLift: 'Bench', metronomeActive: false,
+                setup: {}, idx: 0, pIdx: 0, week: 1, cycleWeek531: 1, streak: 0, cache: { recovery: [], volume: [], recoveryMap: {}, mgVol: { Push: 0, Pull: 0, Legs: 0, Core: 0 }, volumeLandmarks: {}, fatigueDeloadWarning: null }, wakeLock: null, sessionVolume: 0, restTimes: [], templateName: '', showExNoteModal: false, exNoteTarget: '', exNoteText: '', calSummary: {}, freqData: {}, longestStreak: 0, batchAdjust: 0, batchAdjustTier: null, undoState: { visible: false, timer: null, action: null, label: '', leaving: false }, autoSaveTimer: null, lastSetCompletedAt: null, swipeData: { startX: 0, startY: 0, dx: 0, active: false, tier: null, idx: null },
+                expandedRecovery: null, chartLift: 'Bench', metronomeActive: false, smartAddOptions: [],
                 _cacheDebounce: null, _finishing: false, amrapState: { set: null, tier: null, val: '' }, _volDirty: false,
 
                 destroy() {
@@ -526,7 +526,7 @@
                     else if (p === 'stronglifts') rs = DATA.schemes.stronglifts[this.state[l]?.slScheme || (l === 'Deadlift' ? 'dl' : 'std')] || DATA.schemes.stronglifts.std;
                     else if (p === '531' && t === 't1') { const cw = ((this.cycleWeek531 - 1) % 4) + 1; rs = DATA.schemes['531'][cw === 4 ? 'del' : `w${cw}`]; }
                     else rs = (DATA.schemes[p] || DATA.schemes.nsuns)[sk] || (DATA.schemes[p] || DATA.schemes.nsuns).vol;
-                    return rs.map(x => ({ weight: U.rnd(effTM * x[0], u, m), reps: x[1], amrap: x[2] === '+', completed: false, failed: false, performed: null, completedAt: null, rpe: null, timeSincePrev: null, setDuration: 0 }));
+                    return rs.map(x => ({ weight: U.rnd(effTM * x[0], u, m), originalWeight: U.rnd(effTM * x[0], u, m), reps: x[1], amrap: x[2] === '+', completed: false, failed: false, performed: null, completedAt: null, rpe: null, timeSincePrev: null, setDuration: 0 }));
                 },
                 chkDeload() {
                     const o = this.daysOff(), l = [[42, 25, '6+ weeks off'], [28, 20, '4 weeks off'], [14, 10, '2 weeks off']].find(x => o >= x[0]);
@@ -596,7 +596,7 @@
                     const t1BaseLift = this.baseTM(d.t1) || d.t1;
                     const t2BaseLift = this.baseTM(d.t2) || d.t2;
 
-                    this.sessionRating = 0; this.sessionNotes = ''; this.sessionRPE = 7; this.batchAdjust = 0; this.zenMode = false;
+                    this.sessionRating = 0; this.sessionNotes = ''; this.sessionRPE = 7; this.batchAdjust = 0; this.batchAdjustTier = null; this.zenMode = false;
 
                     this.session = {
                         title: d.title || d.t || 'Workout',
@@ -644,6 +644,68 @@
                     this.swapState.t2 = false; this.swapState.q = ''; this._volDirty = true; this.saveSess();
                 },
                 swapAcc(i, n) { if (this.session.acc?.[i]) { this.session.acc[i].selectedExercise = n; this.session.acc[i].name = n; this.swapState.acc = null; this.swapState.q = ''; this._volDirty = true; this.saveSess(); } },
+                openSmartAdd() {
+                    this.smartAddOptions = this.suggestAccessories();
+                    this.activeModal = 'smartAdd';
+                },
+                suggestAccessories() {
+                    const currentMuscles = new Set();
+                    const sessionFatigue = {};
+                    const addImpact = (n) => {
+                        if (!n) return;
+                        const imp = impact(n);
+                        Object.entries(imp).forEach(([m, v]) => {
+                            currentMuscles.add(m);
+                            sessionFatigue[m] = (sessionFatigue[m] || 0) + v;
+                        });
+                    };
+                    if (this.session?.t1) addImpact(this.session.t1.name);
+                    if (this.session?.t2) addImpact(this.session.t2.selectedExercise || this.session.t2.name);
+                    (this.session?.acc || []).forEach(a => addImpact(a.selectedExercise || a.name));
+                    
+                    const activeGroups = new Set();
+                    currentMuscles.forEach(m => {
+                        Object.entries(DATA.groups).forEach(([g, ms]) => {
+                            if (ms.includes(m)) activeGroups.add(g);
+                        });
+                    });
+                    
+                    const scores = [];
+                    Object.entries(EX_INDEX).forEach(([id, ex]) => {
+                        if (this.session?.acc?.some(a => (a.selectedExercise || a.name) === id)) return;
+                        let score = 0;
+                        const imp = impact(id);
+                        let synergy = 0;
+                        Object.keys(imp).forEach(m => {
+                            Object.entries(DATA.groups).forEach(([g, ms]) => {
+                                if (ms.includes(m) && activeGroups.has(g)) synergy += imp[m];
+                            });
+                        });
+                        score += synergy * 10;
+                        Object.entries(imp).forEach(([m, v]) => {
+                            if (sessionFatigue[m] && sessionFatigue[m] < 0.5) score += v * 15;
+                            const rec = this.cache?.recoveryMap?.[m] ?? 100;
+                            if (rec > 80) score += v * 5; 
+                            else if (rec < 50) score -= v * 20;
+                        });
+                        if (score > 0) scores.push({ id, name: ex.name || id, score, mainMuscle: Object.keys(imp).reduce((a, b) => imp[a] > imp[b] ? a : b, Object.keys(imp)[0]) });
+                    });
+                    return scores.sort((a, b) => b.score - a.score).slice(0, 8);
+                },
+                addSmartAccessory(id) {
+                    if (!this.session.acc) this.session.acc = [];
+                    this.session.acc.push({
+                        name: id,
+                        originalName: id,
+                        selectedExercise: id,
+                        sets: 3,
+                        reps: '10-15',
+                        supersetId: null
+                    });
+                    this.activeModal = null;
+                    this._volDirty = true;
+                    this.saveSess();
+                },
                 toggleSuperset(i) { if (this.session.acc?.[i]) { this.session.acc[i].supersetId = this.session.acc[i].supersetId ? null : 'A'; this.saveSess(); } },
                 getT2Alts() { const q = (this.swapState.q || '').trim().toLowerCase(), a = this.session?.t2 ? this.exAlts(this.session.t2.originalName || this.session.t2.name) : []; return !q ? a : a.filter(x => (x.name || x.id).toLowerCase().includes(q)); },
                 getAccAlts(i) { const q = (this.swapState.q || '').trim().toLowerCase(), a = this.session?.acc?.[i] ? this.exAlts(this.session.acc[i].originalName || this.session.acc[i].name) : []; return !q ? a : a.filter(x => (x.name || x.id).toLowerCase().includes(q)); },
@@ -654,7 +716,7 @@
                 doUndo() { if (this.undoState.action) { this.undoState.action(); if (this.undoState.timer) clearTimeout(this.undoState.timer); this.undoState = { visible: false, timer: null, action: null, label: '', leaving: false }; this._volDirty = true; this.saveSess(); } },
                 dismissUndo() { if (this.undoState.timer) clearTimeout(this.undoState.timer); this.undoState.leaving = true; setTimeout(() => this.undoState = { visible: false, timer: null, action: null, label: '', leaving: false }, 250); },
                 triggerRest(t, isF) { if (this.timer.active) this.recordActualRest(t); this.lastSetCompletedAt = U.now(); if (this.prefs.autoStartTimer) this.timerStart(this.prefs.smartRest ? this.getSmartRestDuration(t) : (+this.prefs[{ t1: 'restT1', t2: 'restT2', acc: 'restT3', t3: 'restT3' }[t]] + (isF ? 60 : 0)), isF ? 'Fail Rest' : (t === 't1' ? 'T1 Rest' : t === 't2' ? 'T2 Rest' : 'Acc Rest')); },
-                checkAutoRegulationPrompt(s, t) { if (t === 't1' && (s.rpe >= 9.5 || s.failed) && this.session.t1.sets.filter(x => !x.completed).length > 1) { this.batchAdjust = -10; this.applyBatchAdjust(); this._setUndo('Auto-reduced weight 10%', () => { this.batchAdjust = 10; this.applyBatchAdjust(); }); } },
+                checkAutoRegulationPrompt(s, t) { if ((t === 't1' || t === 't2') && (s.rpe >= 9.5 || s.failed) && this.session?.[t]?.sets?.filter(x => !x.completed).length > 1) { this.batchAdjust = -10; this.applyBatchAdjust(t); this._setUndo('Auto-reduced weight 10%', () => { this.batchAdjust = 10; this.applyBatchAdjust(t); }); } },
                 toggleSet(s, t, fail = false) {
                     if (fail) { const { failed: f, completed: c, completedAt: a } = s; s.failed = !s.failed; if (s.failed) { s.completed = true; s.completedAt = U.now(); this.triggerRest(t, true); this.checkAutoRegulationPrompt(s, t); this._setUndo('Set failed', () => Object.assign(s, { failed: f, completed: c, completedAt: a })); } else this._setUndo('Fail removed', () => Object.assign(s, { failed: true, completed: true, completedAt: a || U.now() })); }
                     else { if (s.amrap && (s.performed == null || s.performed === '') && !s.completed) { this.amrapState = { set: s, tier: t, val: s.reps }; this.activeModal = 'amrapInput'; this.$nextTick(() => this.$refs.amrapField?.focus()); return; } const { completed: c, failed: f, completedAt: a, timeSincePrev: ts, setDuration: sd } = s; s.completed = !s.completed; if (!s.completed) { s.failed = false; s.completedAt = null; s.timeSincePrev = null; s.setDuration = 0; this._setUndo('Set undone', () => Object.assign(s, { completed: c, failed: f, completedAt: a, timeSincePrev: ts, setDuration: sd })); } else { s.completedAt = U.now(); if (this.lastSetCompletedAt) s.timeSincePrev = M.round((U.now() - this.lastSetCompletedAt) / 1000); s.setDuration = M.round((U.now() - (this.lastSetCompletedAt || this.session.start)) / 1000); this.triggerRest(t, s.failed); this.checkAutoRegulationPrompt(s, t); this._setUndo('Set done', () => Object.assign(s, { completed: false, failed: false, completedAt: null, timeSincePrev: null, setDuration: 0 })); } }
@@ -663,7 +725,7 @@
                 setSetRPE(s, r) { s.rpe = r; this.saveSess(); },
                 editSet(t, idx) { const s = this.session?.[t]?.sets?.[idx]; if (!s) return; this.setEdit = { tier: t, idx, weight: U.safe(s.weight, 0), reps: U.safe(s.reps, 0), performed: s.performed ?? null, failed: !!s.failed, amrap: !!s.amrap, completed: !!s.completed, rpe: s.rpe || null }; this.activeModal = 'setEdit'; },
                 saveSetEdit() { const s = this.session?.[this.setEdit.tier]?.sets?.[this.setEdit.idx]; if (!s) return; s.weight = U.rnd(U.safe(this.setEdit.weight, s.weight), this.prefs.weightUnit, this.prefs.microplates); s.reps = M.max(0, M.round(U.safe(this.setEdit.reps, s.reps))); if (s.amrap) s.performed = this.setEdit.performed == null || this.setEdit.performed === '' ? null : M.max(0, M.round(U.safe(this.setEdit.performed, 0))); const or = s.rpe; s.rpe = this.setEdit.rpe; if (s.rpe >= 9.0 && (or == null || or < 9.0) && this.timer.active && !s.failed) { this.timerAdj(45); this._setUndo('High RPE: +45s Rest', () => this.timerAdj(-45)); } s.failed = !!this.setEdit.failed; if (s.failed) { s.completed = true; s.completedAt = s.completedAt || U.now(); } this.activeModal = null; this._volDirty = true; this.saveSess(); },
-                applyBatchAdjust() { ['t1', 't2'].forEach(t => { this.session?.[t]?.sets?.forEach(x => { if (!x.completed) x.weight = U.rnd(x.weight * (1 + this.batchAdjust / 100), this.prefs.weightUnit, this.prefs.microplates); }); }); this.batchAdjust = 0; this._volDirty = true; this.saveSess(); },
+                applyBatchAdjust(targetTier = null) { const tiers = targetTier ? [targetTier] : ['t1', 't2']; tiers.forEach(t => { this.session?.[t]?.sets?.forEach(x => { if (!x.completed) x.weight = U.rnd(x.weight * (1 + this.batchAdjust / 100), this.prefs.weightUnit, this.prefs.microplates); }); }); this.batchAdjust = 0; this._volDirty = true; this.saveSess(); },
                 finish() { const i = this.getInc(); if (i.total > 0 && !confirm(`Incomplete: ${i.total}. Finish?`)) return; this.sessionRating = 0; this.sessionNotes = this.session.notes || ''; this.sessionRPE = 7; this.timer.active = false; this.activeModal = 'rating'; },
                 getInc() { const m = [...(this.session?.t1?.sets || []), ...(this.session?.t2?.sets || [])].filter(s => !s.completed).length; let at = 0, ad = 0; (this.session?.acc || []).forEach(a => { for (let i = 1; i <= (a.sets || 0); i++) { at++; if (this.isAccDone(a.originalName || a.name, i)) ad++; } }); return { mainRemaining: m, accRemaining: M.max(0, at - ad), total: m + M.max(0, at - ad) }; },
                 findTopAMRAP(s) { if (!s) return null; const a = (s || []).filter(x => x.amrap && x.completed && !x.failed && x.performed != null); return a.length ? a.reduce((b, x) => (!b || x.weight > b.weight) ? x : b, null) : null; },
@@ -757,7 +819,16 @@
                     return false;
                 },
                 computeProgression(baseLift, sets, p, t = 't1') {
-                    const actualTM = this.tms[baseLift] || 0;
+                    let actualTM = this.tms[baseLift] || 0;
+                    let tmCorrection = 0;
+
+                    const top = this.findTopAMRAP(sets) || sets.slice().reverse().find(s => s.completed && !s.failed);
+                    if (top && top.originalWeight && top.weight !== top.originalWeight && top.weight > 0 && top.originalWeight > 0 && actualTM > 0) {
+                        const ratio = top.weight / top.originalWeight;
+                        const impliedTM = actualTM * ratio;
+                        tmCorrection = impliedTM - actualTM;
+                        actualTM = impliedTM;
+                    }
 
                     const ctx = {
                         tier: t,
@@ -778,15 +849,13 @@
                     const fn = PROG[progKey] || PROG[p] || PROG.linear;
                     const res = fn(ctx);
 
-                    if (res.add !== 0) {
-                        this.tms[baseLift] = U.rnd(
-                            (this.tms[baseLift] || 0) + res.add,
-                            ctx.u,
-                            this.prefs.microplates
-                        );
+                    let finalAdd = tmCorrection + res.add;
+
+                    if (finalAdd !== 0) {
+                        this.tms[baseLift] = U.rnd(actualTM + res.add, ctx.u, this.prefs.microplates);
                     }
 
-                    return res;
+                    return { add: finalAdd, method: tmCorrection !== 0 ? res.method + '_adj' : res.method };
                 },
                 _estimateAccessoryWeight(name) {
                     const isC = DATA.compoundAccessories.has(name);
@@ -1392,15 +1461,36 @@
         </template>
         <template x-if="activeModal==='batchAdjust'">
             <div class="glass-panel text-center" @click.outside="activeModal=null">
-                <h3 class="text-lg font-bold text-white mb-4">Adjust Sets</h3>
+                <h3 class="text-lg font-bold text-white mb-4" x-text="'Adjust ' + (batchAdjustTier==='t1'?'T1':'T2') + ' Sets'"></h3>
                 <div class="flex flex-wrap gap-2 justify-center mb-6"><template
                         x-for="pct in [-15, -10, -5, -2.5, 2.5, 5, 10, 15]"><button @click="batchAdjust=pct"
                             class="px-3 py-2 rounded-lg text-xs font-bold transition min-w-[3rem]"
                             :class="batchAdjust===pct?'bg-indigo-600 text-white':'bg-black/30 text-slate-400 border border-white/10'"
                             x-text="(pct>0?'+':'')+pct+'%'"></button></template></div>
                 <div class="grid grid-cols-2 gap-3"><button @click="batchAdjust=0;activeModal=null"
-                        class="btn-s">Cancel</button><button @click="applyBatchAdjust();activeModal=null"
+                        class="btn-s">Cancel</button><button @click="applyBatchAdjust(batchAdjustTier);activeModal=null"
                         class="btn-p">Apply</button></div>
+            </div>
+        </template>
+        <template x-if="activeModal==='smartAdd'">
+            <div class="glass-panel max-h-[80vh] flex flex-col" @click.outside="activeModal=null">
+                <div class="f-cb mb-4 shrink-0">
+                    <h3 class="text-lg font-bold text-white">🧠 Smart Add</h3>
+                    <button @click="activeModal=null" class="text-slate-500 hover:text-white">✕</button>
+                </div>
+                <p class="text-xs text-slate-400 mb-4 shrink-0">Suggested based on your current fatigue, muscle balance, and CNS readiness.</p>
+                <div class="overflow-y-auto no-scrollbar space-y-2 flex-1 pb-2">
+                    <template x-for="opt in smartAddOptions">
+                        <div class="f-cb p-3 bg-black/30 border border-white/5 rounded-xl cursor-pointer hover:bg-white/5 transition" @click="addSmartAccessory(opt.id)">
+                            <div>
+                                <div class="font-bold text-sm text-white" x-text="opt.name"></div>
+                                <div class="text-[10px] text-indigo-400 font-bold uppercase mt-1" x-text="opt.mainMuscle + ' Focus'"></div>
+                            </div>
+                            <div class="bg-white/10 w-8 h-8 rounded-full f-c text-white font-bold text-lg">+</div>
+                        </div>
+                    </template>
+                    <div x-show="!smartAddOptions.length" class="text-center text-slate-500 text-sm py-4">No suggestions available.</div>
+                </div>
             </div>
         </template>
         <template x-if="activeModal==='detail'">
@@ -1787,7 +1877,7 @@
                                     @click="openExNote(session.t1?.name)"
                                     class="text-slate-400 hover:text-white">📝</button></div>
                         </div>
-                    </div><button @click="activeModal='batchAdjust'"
+                    </div><button @click="batchAdjustTier='t1'; activeModal='batchAdjust'"
                         class="text-xs bg-white/5 px-2 py-1 rounded hover:bg-white/10">Adjust</button>
                 </div>
                 <div class="mb-4 bg-black/30 rounded-xl p-3 border border-white/5">
@@ -1854,12 +1944,12 @@
             <div class="glass-card" x-data="{swapping:false}">
                 <div class="f-cb mb-4">
                     <div class="flex items-center gap-3 w-full">
-                        <div class="w-8 h-8 rounded-full bg-blue-500/20 text-blue-400 f-c font-bold">T2</div>
+                        <div class="w-8 h-8 rounded-full bg-blue-500/20 text-blue-400 f-c font-bold shrink-0">T2</div>
                         <div class="flex-1 relative">
                             <div @click="swapState.t2=!swapState.t2;swapState.q=''" class="cursor-pointer f-g2">
                                 <h3 class="text-lg font-bold text-white leading-none"
                                     x-text="session.t2?.selectedExercise||session.t2?.name"></h3><svg
-                                    class="w-4 h-4 text-slate-500" viewBox="0 0 24 24" fill="none"
+                                    class="w-4 h-4 text-slate-500 shrink-0" viewBox="0 0 24 24" fill="none"
                                     stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         :d="icons.swap" />
@@ -1877,6 +1967,8 @@
                                     </template></div>
                             </div>
                         </div>
+                        <button @click="batchAdjustTier='t2'; activeModal='batchAdjust'"
+                            class="text-xs bg-white/5 px-2 py-1 rounded hover:bg-white/10 shrink-0 ml-2">Adjust</button>
                     </div>
                 </div>
                 <div class="space-y-2"><template x-for="(s,i) in session.t2?.sets">
@@ -1952,6 +2044,7 @@
                     </template>
                     <div x-show="!session.acc?.length" class="text-center text-slate-500 text-sm py-2">Empty</div>
                 </div>
+                <button @click="openSmartAdd()" class="w-full mt-3 py-3 text-xs font-bold text-indigo-400 bg-indigo-500/10 hover:bg-indigo-500/20 rounded border border-indigo-500/30 transition shadow-[0_0_10px_rgba(99,102,241,0.1)]">+ Smart Add Accessory</button>
             </div>
             <button @click="finish()" class="btn-p">Finish</button>
         </div>
