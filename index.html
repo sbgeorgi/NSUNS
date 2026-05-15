@@ -6,6 +6,21 @@
     <meta name="viewport"
         content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="theme-color" content="#000000">
+    <script>
+        (function () {
+            try {
+                var raw = localStorage.getItem('lift_preferences');
+                var pref = raw ? JSON.parse(raw).theme : 'dark';
+                var media = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+                var resolved = pref === 'system' ? (media ? 'dark' : 'light') : (pref === 'light' ? 'light' : 'dark');
+                document.documentElement.classList.add('theme-' + resolved);
+                document.documentElement.dataset.themePreference = ['dark', 'light', 'system'].includes(pref) ? pref : 'dark';
+            } catch {
+                document.documentElement.classList.add('theme-dark');
+                document.documentElement.dataset.themePreference = 'dark';
+            }
+        })();
+    </script>
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="icon" href="data:,">
@@ -79,6 +94,56 @@
         input[type=range]:focus { outline: none; }
         .tempo-pulse { animation: tempo 4s infinite linear; }
         @keyframes tempo { 0% { transform: scale(1); opacity: 1; background: #ef4444; } 75% { transform: scale(0.8); opacity: 0.5; background: #eab308; } 85% { transform: scale(1.2); opacity: 1; background: #22c55e; } 100% { transform: scale(1); opacity: 1; background: #3b82f6; } }
+        :root {
+            color-scheme: dark;
+            --app-bg: #000000;
+            --app-surface: #1A1A1E;
+            --app-surface-2: #111113;
+            --app-input: #000000;
+            --app-text: #ffffff;
+            --app-muted: #94a3b8;
+            --app-subtle: #64748b;
+            --app-border: rgba(255,255,255,0.10);
+            --app-soft: rgba(255,255,255,0.05);
+            --app-nav: rgba(0,0,0,0.90);
+            --app-modal: rgba(0,0,0,0.90);
+        }
+        .theme-light {
+            color-scheme: light;
+            --app-bg: #f6f7fb;
+            --app-surface: #ffffff;
+            --app-surface-2: #eef1f7;
+            --app-input: #ffffff;
+            --app-text: #0f172a;
+            --app-muted: #475569;
+            --app-subtle: #64748b;
+            --app-border: rgba(15,23,42,0.13);
+            --app-soft: rgba(15,23,42,0.06);
+            --app-nav: rgba(255,255,255,0.92);
+            --app-modal: rgba(248,250,252,0.92);
+        }
+        body { background: var(--app-bg); color: var(--app-text); }
+        .theme-light body, .theme-light .bg-black { background-color: var(--app-bg) !important; }
+        .theme-light .glass-card, .theme-light .glass-panel { background: var(--app-surface) !important; border-color: var(--app-border) !important; color: var(--app-text); box-shadow: 0 10px 30px rgba(15,23,42,0.08); }
+        .theme-light .glass-item, .theme-light .bg-white\/5, .theme-light .bg-black\/30, .theme-light .bg-black\/50 { background-color: var(--app-soft) !important; border-color: var(--app-border) !important; }
+        .theme-light .inp, .theme-light select, .theme-light input, .theme-light textarea { background-color: var(--app-input) !important; color: var(--app-text) !important; border-color: var(--app-border) !important; }
+        .theme-light option { background: #ffffff; color: #0f172a; }
+        .theme-light .btn-s { background-color: #e8edf5 !important; color: #0f172a !important; }
+        .theme-light .btn-icon { color: #64748b; }
+        .theme-light .btn-icon:hover { color: #0f172a; background-color: rgba(15,23,42,0.08); }
+        .theme-light .nav-glass { background: var(--app-nav) !important; border-top-color: var(--app-border) !important; }
+        .theme-light .modal-bg, .theme-light [class*="bg-black/90"], .theme-light [class*="bg-black\/90"] { background: var(--app-modal) !important; }
+        .theme-light .header-sticky { background: linear-gradient(to bottom, rgba(246,247,251,1), rgba(246,247,251,0)); }
+        .theme-light .ex-dropdown { background: #ffffff !important; border-color: var(--app-border) !important; }
+        .theme-light .ex-opt { border-color: var(--app-border) !important; }
+        .theme-light .ex-opt:hover { background: rgba(15,23,42,0.06) !important; }
+        .theme-light .text-white { color: #0f172a !important; }
+        .theme-light .text-slate-200, .theme-light .text-slate-300 { color: #334155 !important; }
+        .theme-light .text-slate-400, .theme-light .text-slate-500 { color: #64748b !important; }
+        .theme-light .text-slate-600 { color: #94a3b8 !important; }
+        .theme-light .border-white\/5, .theme-light .border-white\/10, .theme-light .border-white\/20 { border-color: var(--app-border) !important; }
+        .theme-light .undo-toast { background: #ffffff; color: #0f172a; border-color: var(--app-border); box-shadow: 0 8px 30px rgba(15,23,42,0.14); }
+        .theme-toggle button { min-height: 2.5rem; }
     </style>
     <script>
         const PANTRY_ID = '8f01b867-0669-4964-9042-792b6c8ebcd6';
@@ -168,6 +233,46 @@
             }
         };
 
+        const DEFAULT_PREFS = {
+            weightUnit: 'lbs',
+            program: 'nsuns',
+            restT1: 180,
+            restT2: 120,
+            restT3: 60,
+            timerSound: true,
+            vibration: true,
+            autoStartTimer: true,
+            showPreviousWorkout: true,
+            autoDeload: true,
+            barWeight: 45,
+            microplates: false,
+            keepAwake: false,
+            reduceMotion: false,
+            showETR: true,
+            heatmapCalendar: true,
+            smartRest: true,
+            swipeToComplete: true,
+            warmupSteps: [40, 55, 75],
+            theme: 'dark'
+        };
+        const THEME_VALUES = ['dark', 'light', 'system'];
+        const normalizeTheme = t => THEME_VALUES.includes(t) ? t : 'dark';
+        const resolveTheme = (theme = 'dark', prefersDark = false) => {
+            const pref = normalizeTheme(theme);
+            return pref === 'system' ? (prefersDark ? 'dark' : 'light') : pref;
+        };
+        const mergePrefs = prefs => ({ ...DEFAULT_PREFS, ...(prefs && typeof prefs === 'object' ? prefs : {}), theme: normalizeTheme(prefs?.theme) });
+        const applyThemePreference = (theme, mediaMatches = null) => {
+            const pref = normalizeTheme(theme);
+            const prefersDark = mediaMatches ?? !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+            const resolved = resolveTheme(pref, prefersDark);
+            document.documentElement.classList.toggle('theme-dark', resolved === 'dark');
+            document.documentElement.classList.toggle('theme-light', resolved === 'light');
+            document.documentElement.dataset.themePreference = pref;
+            document.querySelector('meta[name="theme-color"]')?.setAttribute('content', resolved === 'dark' ? '#000000' : '#f6f7fb');
+            return resolved;
+        };
+
         const U = {
             g: (k, d) => { try { const v = LS.getItem(k); return v !== null ? (J.parse(v) ?? d) : d; } catch { return d; } },
             s: (k, v) => { try { LS.setItem(k, J.stringify(v)); if (k !== 'lift_last_sync' && k !== 'lift_user' && window.requestSync) window.requestSync(); } catch(e) { console.warn('Storage error', e); } },
@@ -254,9 +359,18 @@
             if (Object.keys(_imp).length > MAX_IMP_CACHE) delete _imp[Object.keys(_imp)[0]];
             return _imp[lc];
         };
+        const plateInventory = unit => unit === 'kg' ? [25, 20, 10, 5, 2.5, 1.25] : (DATA.ui.plates[unit] || DATA.ui.plates.lbs);
+        const plateLoadForSide = (sideWeight, unit) => {
+            const plates = [];
+            if (!Number.isFinite(sideWeight) || sideWeight <= 0) return plates;
+            if (unit === 'kg' && M.abs(sideWeight - 40) < .01) return [20, 20];
+            let r = sideWeight;
+            plateInventory(unit).forEach(p => { while (r >= p - .01) { plates.push(p); r -= p; } });
+            return plates;
+        };
 
         let charts = {};
-        const upChrt = (id, t, d, c, f = true) => { const el = document.getElementById(id); if (!el) return; if (charts[id]) charts[id].destroy(); charts[id] = new Chart(el, { type: t, data: { labels: d.l, datasets: [{ data: d.d, borderColor: c, backgroundColor: c + '80', tension: .3, fill: f, pointRadius: t === 'line' ? 3 : 0, pointBackgroundColor: c }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: false }, scales: t === 'radar' ? { r: { ticks: { display: false }, grid: { color: 'rgba(255,255,255,0.1)' }, angleLines: { color: 'rgba(255,255,255,0.1)' }, pointLabels: { color: '#94a3b8', font: { size: 10 } } } } : { x: { display: false }, y: { grid: { color: '#ffffff0d' }, ticks: { color: '#666' } } } } }) };
+        const upChrt = (id, t, d, c, f = true) => { const el = document.getElementById(id); if (!el) return; const isLight = document.documentElement.classList.contains('theme-light'), grid = isLight ? 'rgba(15,23,42,0.10)' : 'rgba(255,255,255,0.10)', tick = isLight ? '#475569' : '#94a3b8'; if (charts[id]) charts[id].destroy(); charts[id] = new Chart(el, { type: t, data: { labels: d.l, datasets: [{ data: d.d, borderColor: c, backgroundColor: c + '80', tension: .3, fill: f, pointRadius: t === 'line' ? 3 : 0, pointBackgroundColor: c }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: false }, scales: t === 'radar' ? { r: { ticks: { display: false }, grid: { color: grid }, angleLines: { color: grid }, pointLabels: { color: tick, font: { size: 10 } } } } : { x: { display: false }, y: { grid: { color: grid }, ticks: { color: tick } } } } }) };
         const destroyCharts = () => { Object.values(charts).forEach(c => { if(c) c.destroy(); }); charts = {}; };
 
         const PROG = {
@@ -350,7 +464,7 @@
                 user: null, auth: { username: '', password: '', error: '', loading: false }, syncing: false, _syncTimer: null, _syncCount: 0,
                 tms: { Bench: 0, Squat: 0, Deadlift: 0, OHP: 0, Row: 0 }, state: { Bench: {}, Squat: {}, Deadlift: {}, OHP: {}, Row: {} },
                 prs: {}, history: [], bwLog: [], achievements: [], e1rmHistory: {}, templates: [], exerciseNotes: {}, tonnageGoal: 0, restHistory: [], xp: 0,
-                prefs: { weightUnit: 'lbs', program: 'nsuns', restT1: 180, restT2: 120, restT3: 60, timerSound: true, vibration: true, autoStartTimer: true, showPreviousWorkout: true, autoDeload: true, barWeight: 45, microplates: false, keepAwake: false, reduceMotion: false, showETR: true, heatmapCalendar: true, smartRest: true, swipeToComplete: true, warmupSteps: [40, 55, 75] },
+                prefs: { ...DEFAULT_PREFS },
                 activeModal: null, session: {}, savedSession: null, timer: { active: false, start: null, dur: 0, rem: 0, pct: 0, label: 'Rest', zeroCrossed: false },
                 tempBodyWeight: null, showWarmups: false, plate: { open: false, w: 0, plates: [], originalW: 0 }, cal: { monthName: '', days: [], offset: 0 }, sessionTimerStr: '0:00', deloadInfo: {}, sessionRating: 0, sessionNotes: '', sessionRPE: 7,
                 currentAchievement: null, selectedLog: null, historyFilter: 'all', previousWorkout: null, isEditingLog: false, swapState: { t2: false, acc: null, q: '' }, zenMode: false, zenAmrap: null, setEdit: { tier: 't1', idx: 0, weight: 0, reps: 0, performed: null, failed: false, amrap: false, completed: false, rpe: null },
@@ -369,6 +483,13 @@
                 init(isRehydrating = false) {
                     window.__app = this;
                     this.user = U.g('lift_user', null);
+                    this.prefs = mergePrefs(U.g('lift_preferences', {}));
+                    this.applyTheme();
+                    if (!this._themeMedia && window.matchMedia) {
+                        this._themeMedia = window.matchMedia('(prefers-color-scheme: dark)');
+                        const onThemeChange = () => { if (this.prefs.theme === 'system') this.applyTheme(); };
+                        this._themeMedia.addEventListener ? this._themeMedia.addEventListener('change', onThemeChange) : this._themeMedia.addListener?.(onThemeChange);
+                    }
 
                     if (!this.user && !isRehydrating) {
                         this.view = 'login';
@@ -376,9 +497,9 @@
                     }
 
                     const d = U.g('nsuns_ultimate', {}), s = U.g('lift_preferences', {});
-                    Object.assign(this, { tms: d.tms || this.tms, history: d.history || [], idx: d.idx || 0, week: d.week || 1, cycleWeek531: d.cycleWeek531 || 1, streak: d.streak || 0, state: d.state || this.state, prefs: { ...this.prefs, ...s }, bwLog: U.g('lift_bodyweight', []).filter(x => x.date), achievements: U.g('lift_achievements', []), prs: U.g('lift_prs', {}), e1rmHistory: U.g('lift_e1rm_history', {}), templates: U.g('lift_templates', []), exerciseNotes: U.g('lift_exercise_notes', {}), tonnageGoal: U.g('lift_tonnage_goal', 0), restHistory: U.g('lift_rest_history', []), xp: U.g('lift_xp', 0) });
+                    Object.assign(this, { tms: d.tms || this.tms, history: d.history || [], idx: d.idx || 0, week: d.week || 1, cycleWeek531: d.cycleWeek531 || 1, streak: d.streak || 0, state: d.state || this.state, prefs: mergePrefs({ ...this.prefs, ...s }), bwLog: U.g('lift_bodyweight', []).filter(x => x.date), achievements: U.g('lift_achievements', []), prs: U.g('lift_prs', {}), e1rmHistory: U.g('lift_e1rm_history', {}), templates: U.g('lift_templates', []), exerciseNotes: U.g('lift_exercise_notes', {}), tonnageGoal: U.g('lift_tonnage_goal', 0), restHistory: U.g('lift_rest_history', []), xp: U.g('lift_xp', 0) });
                     this.savedSession = U.g('lift_active_session') || U.g('lift_active_session_backup');
-                    this.prefs.barWeight = this.prefs.barWeight || (this.prefs.weightUnit === 'kg' ? 20 : 45); this.applyRM();
+                    this.prefs.barWeight = this.prefs.barWeight || (this.prefs.weightUnit === 'kg' ? 20 : 45); this.applyRM(); this.applyTheme();
                     this.history.forEach(h => { h.timestamp = h.timestamp || new D(h.date).getTime(); h.isoDate = h.isoDate || U.iso(h.timestamp) });
 
                     this.pIdx = this.idx; this.computeLongestStreak(); this.computeFrequency(); this.computeStreak(); this.updCache();
@@ -509,13 +630,15 @@
                 },
                 handleEscape() { if (this.zenMode) return this.toggleZen(); if (this.activeModal) this.activeModal = null; if (this.plate.open) this.plate.open = false; },
                 applyRM() { document.documentElement.classList.toggle('reduce-motion', !!this.prefs.reduceMotion); },
+                applyTheme() { return applyThemePreference(this.prefs.theme); },
+                setTheme(t) { this.prefs.theme = normalizeTheme(t); this.applyTheme(); this.savePrefs(); this.$nextTick?.(() => { this.draw?.(); this.drawPRCharts?.(); }); },
                 unlockAudio() { try { if (!window.ac) window.ac = new (window.AudioContext || window.webkitAudioContext); if (ac.state === 'suspended') ac.resume(); } catch { } },
                 nav(v) { destroyCharts(); this.view = v; if (v === 'calendar') this.calBuild(); if (v === 'dashboard') { this.$nextTick(() => { this.draw(); this.scrollToActive(); }); } if (v === 'records') this.$nextTick(() => this.drawPRCharts()); if (v !== 'workout') this.relWake(); },
                 lifts: () => Object.keys(DATA.muscles), getWk() { const r = DATA.progs[this.prefs.program].days[this.pIdx % DATA.progs[this.prefs.program].days.length]; return { ...r, title: r.title || r.t, focus: r.focus || `${r.t1} + ${r.t2}` }; }, prevSim() { return this.history.slice().reverse().find(h => h.details?.t1 === this.getWk().t1); }, repLast() { const l = this.prevSim(); if (l) this.start(DATA.progs[this.prefs.program].days.find(d => d.t1 === l.details.t1)); },
                 startCust() { this.start({ title: 'Custom Workout', t1: 'Bench', t2: 'Row', s: 'vol', t2s: 't2', acc: [] }); }, chgDay(d) { const l = DATA.progs[this.prefs.program].days.length; this.pIdx = (this.pIdx + d + l) % l; },
                 fmt: U.fmt, fmtSet: ts => new D(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), daysOff() { return M.floor((U.now() - (this.history[this.history.length - 1]?.timestamp || U.now())) / 864e5); },
                 exInfo: id => EX_INDEX[id] ? { ...EX_INDEX[id], group: EX_OPTS[EX_INDEX[id].groupKey] } : null, exAlts: id => EX_INDEX[id] ? EX_OPTS[EX_INDEX[id].groupKey].opt.map(o => ({ id: o[0], name: o[0], mult: o[1] || 1 })) : [{ id, name: id, mult: 1 }],
-                baseTM: id => EX_INDEX[id]?.base || (this.tms[id] !== undefined ? id : null), exMult: id => EX_INDEX[id]?.mult || 1, exName: id => EX_INDEX[id]?.name || id,
+                baseTM(id) { return EX_INDEX[id]?.base || (this.tms[id] !== undefined ? id : null); }, exMult(id) { return EX_INDEX[id]?.mult || 1; }, exName(id) { return EX_INDEX[id]?.name || id; },
                 getSmartRestDuration(t) { const k = { t1: 'restT1', t2: 'restT2', acc: 'restT3', t3: 'restT3' }[t]; if (!this.prefs.smartRest || this.restHistory.length < 3) return +this.prefs[k]; const cutoff = U.now() - 7 * 864e5; const h = this.restHistory.filter(r => r.tier === t && r.timestamp >= cutoff).slice(-10); return h.length < 3 ? +this.prefs[k] : M.max(30, M.min(M.round(U.avg(h.map(x => x.actual))), t === 't1' ? 300 : t === 't2' ? 240 : 120)); },
                 recordActualRest(t) { if (!this.timer.start) return; const a = M.floor((U.now() - this.timer.start) / 1000); if (a > 5 && a < 600) { this.restHistory.push({ tier: t, actual: a, target: this.timer.dur, timestamp: U.now() }); if (this.restHistory.length > 100) this.restHistory = this.restHistory.slice(-100); U.s('lift_rest_history', this.restHistory); } },
                 getAvgActualRest(t) { const h = this.restHistory.filter(r => r.tier === t).slice(-10); return h.length ? M.round(U.avg(h.map(x => x.actual))) : null; },
@@ -1003,9 +1126,9 @@
                     for (const s of raw) { if (!seen.has(s.w)) { seen.add(s.w); deduped.push(s); } }
                     return deduped;
                 },
-                calcPlates(w) { this.plate.open = true; this.plate.w = w; this.plate.plates = []; let r = (w - this.prefs.barWeight) / 2; if (r <= 0) return; DATA.ui.plates[this.prefs.weightUnit].forEach(p => { while (r >= p - .01) { this.plate.plates.push(p); r -= p; } }); },
+                calcPlates(w) { this.plate.open = true; this.plate.w = w; this.plate.plates = plateLoadForSide((w - this.prefs.barWeight) / 2, this.prefs.weightUnit); },
                 openSmartPlateCalc() { let s = (this.session?.t1?.sets || []).find(x => !x.completed) || (this.session?.t2?.sets || []).find(x => !x.completed) || (this.session?.t1?.sets || []).slice(-1)[0]; if (s) this.calcPlates(s.weight); else this.plate.open = true; },
-                closestWeight(w) { const b = this.prefs.barWeight; let r = (w - b) / 2, t = b; DATA.ui.plates[this.prefs.weightUnit].forEach(p => { while (r >= p) { t += p * 2; r -= p; } }); return t; },
+                closestWeight(w) { const b = this.prefs.barWeight; let r = (w - b) / 2, t = b; plateInventory(this.prefs.weightUnit).forEach(p => { while (r >= p) { t += p * 2; r -= p; } }); return t; },
                 computeSessionVolume() {
                     let v = U.vol([...(this.session?.t1?.sets || []), ...(this.session?.t2?.sets || [])]);
                     (this.session?.acc || []).forEach(a => { const cc = Object.keys(this.session?.completedAcc || {}).filter(k => k.startsWith((a.originalName || a.name) + '-')).length; v += cc * U.prs(a.reps) * this._estimateAccessoryWeight(a.selectedExercise || a.name); });
@@ -1086,6 +1209,10 @@
                     Object.keys(DATA.halfLife).forEach(m => {
                         const cap = (DATA.baseRecoveryCapacity[m] || 90) * lb * pS;
                         const fatigue = f[m] || 0;
+                        if (fatigue <= 0 && lastTrainedAge[m] === undefined) {
+                            rm[m] = 100;
+                            return;
+                        }
                         const midpoint = cap * 0.6;
                         const steepness = 4.0 / cap;
                         const baseRecovery = M.round(100 / (1 + M.exp(steepness * (fatigue - midpoint))));
@@ -1221,7 +1348,7 @@
                         this._cacheDebounce = setTimeout(() => this.updCache(), 200);
                     }
                 },
-                save() { U.s('nsuns_ultimate', { tms: this.tms, history: this.history, idx: this.idx, week: this.week, cycleWeek531: this.cycleWeek531, streak: this.streak, state: this.state }); if (this._cacheDebounce) clearTimeout(this._cacheDebounce); this._cacheDebounce = setTimeout(() => this.updCache(), 200); }, savePrefs() { U.s('lift_preferences', this.prefs); },
+                save() { U.s('nsuns_ultimate', { tms: this.tms, history: this.history, idx: this.idx, week: this.week, cycleWeek531: this.cycleWeek531, streak: this.streak, state: this.state }); if (this._cacheDebounce) clearTimeout(this._cacheDebounce); this._cacheDebounce = setTimeout(() => this.updCache(), 200); }, savePrefs() { this.prefs = mergePrefs(this.prefs); this.applyTheme(); U.s('lift_preferences', this.prefs); },
                 togUnit(u) {
                     if (u !== this.prefs.weightUnit && confirm(`Convert all weights to ${u}?`)) {
                         const f = this.prefs.weightUnit;
@@ -1287,6 +1414,173 @@
                 getDotsEstimate() { const d = this._getTotalWeights(); if (!d || d.w <= 0) return null; const x = d.w, denom = -0.000001093 * M.pow(x, 4) + 0.0007391293 * M.pow(x, 3) - 0.1918759221 * M.pow(x, 2) + 24.0900756 * x - 307.75076; return denom <= 0 ? null : M.round((d.tk * 500) / denom) }
             }
         }
+
+        const LIFT_STORAGE_KEYS = ['nsuns_ultimate', 'lift_preferences', 'lift_bodyweight', 'lift_achievements', 'lift_prs', 'lift_e1rm_history', 'lift_templates', 'lift_exercise_notes', 'lift_tonnage_goal', 'lift_rest_history', 'lift_xp', 'lift_active_session', 'lift_active_session_backup'];
+        const clone = v => J.parse(J.stringify(v));
+        const storageGet = (storage, key, fallback = null) => {
+            try {
+                const raw = storage.getItem(key);
+                return raw == null ? fallback : (J.parse(raw) ?? fallback);
+            } catch {
+                return fallback;
+            }
+        };
+        const storageSet = (storage, key, value) => {
+            try { storage.setItem(key, J.stringify(value)); return true; } catch { return false; }
+        };
+        const withNow = (now, fn) => {
+            if (!now) return fn();
+            const oldNow = U.now;
+            U.now = () => now;
+            try { return fn(); } finally { U.now = oldNow; }
+        };
+        const createTestApp = (state = {}) => {
+            const a = app();
+            a.$nextTick = cb => cb && cb();
+            a.prefs = mergePrefs({ ...a.prefs, ...(state.prefs || {}) });
+            a.tms = { ...a.tms, ...(state.tms || {}) };
+            a.state = clone(state.state || a.state);
+            a.history = clone(state.history || []);
+            a.prs = clone(state.prs || {});
+            a.e1rmHistory = clone(state.e1rmHistory || {});
+            a.bwLog = clone(state.bwLog || []);
+            a.restHistory = clone(state.restHistory || []);
+            a.xp = state.xp ?? a.xp;
+            a.session = clone(state.session || {});
+            a.sessionRPE = state.sessionRPE ?? a.sessionRPE;
+            a.cycleWeek531 = state.cycleWeek531 ?? a.cycleWeek531;
+            a.week = state.week ?? a.week;
+            a.deloadInfo = clone(state.deloadInfo || a.deloadInfo);
+            return a;
+        };
+        const setSnapshot = sets => (sets || []).map(s => `${s.weight}x${s.reps}${s.amrap ? '+' : ''}`);
+        const calculatePlateLoading = ({ weight, unit = 'lbs', barWeight = unit === 'kg' ? 20 : 45 } = {}) => {
+            const w = +weight;
+            if (!Number.isFinite(w)) return [];
+            return plateLoadForSide((w - barWeight) / 2, unit);
+        };
+        const calculateProgression = ({ lift = 'Bench', sets = [], program = 'nsuns', tier = 't1', tms = {}, prefs = {}, state = {}, history = [], cycleWeek531 = 1 } = {}) => {
+            const a = createTestApp({ tms: { Bench: 225, Squat: 315, Deadlift: 405, OHP: 135, Row: 185, ...tms }, prefs, state, history, cycleWeek531 });
+            const beforeTM = a.tms[lift] || 0;
+            const result = a.computeProgression(lift, clone(sets), program, tier);
+            return { ...result, beforeTM, afterTM: a.tms[lift], state: clone(a.state) };
+        };
+        const calculateRecoverySnapshot = ({ history = [], session = {}, tms = {}, prefs = {}, xp = 0, now = null, sessionRPE = 7 } = {}) => withNow(now, () => {
+            const a = createTestApp({ history, session, tms, prefs, xp, sessionRPE });
+            a.updCache();
+            return { recovery: clone(a.cache.recovery), recoveryMap: clone(a.cache.recoveryMap), mgVol: clone(a.cache.mgVol), readiness: a.getReadinessScore(), advice: a.getRecoveryAdvice(), volumeLandmarks: clone(a.cache.volumeLandmarks) };
+        });
+        const calculateVolumeLandmarks = ({ history = [], now = null } = {}) => withNow(now, () => {
+            const a = createTestApp({ history });
+            a._computeVolumeLandmarks();
+            return clone(a.cache.volumeLandmarks);
+        });
+        const evaluatePR = ({ lift = 'Bench', sets = [], prs = {}, e1rmHistory = {}, exerciseName = lift, now = null } = {}) => withNow(now, () => {
+            const a = createTestApp({ prs, e1rmHistory });
+            const oldSave = U.s;
+            U.s = () => {};
+            try {
+                const rawE1RM = a._computeBestE1RMFromSets(sets);
+                const normalizedE1RM = a._normalizeE1RMToBase(rawE1RM, exerciseName);
+                a._recordE1RM(lift, rawE1RM, exerciseName);
+                const isPR = a._updatePR(lift, normalizedE1RM);
+                if (exerciseName !== lift) a._updatePR(exerciseName, rawE1RM);
+                return { rawE1RM, normalizedE1RM, isPR, prs: clone(a.prs), e1rmHistory: clone(a.e1rmHistory) };
+            } finally {
+                U.s = oldSave;
+            }
+        });
+        const serializeState = (storage = LS) => ({
+            version: DATA_VERSION,
+            main: storageGet(storage, 'nsuns_ultimate', {}),
+            prefs: mergePrefs(storageGet(storage, 'lift_preferences', {})),
+            bw: storageGet(storage, 'lift_bodyweight', []),
+            ach: storageGet(storage, 'lift_achievements', []),
+            prs: storageGet(storage, 'lift_prs', {}),
+            e1rm: storageGet(storage, 'lift_e1rm_history', {}),
+            tmpl: storageGet(storage, 'lift_templates', []),
+            notes: storageGet(storage, 'lift_exercise_notes', {}),
+            ton: storageGet(storage, 'lift_tonnage_goal', 0),
+            rh: storageGet(storage, 'lift_rest_history', []),
+            xp: storageGet(storage, 'lift_xp', 0),
+            active: storageGet(storage, 'lift_active_session', null)
+        });
+        const hydrateState = (payload, storage = LS) => {
+            if (!payload || typeof payload !== 'object' || !payload.version) return false;
+            storageSet(storage, 'nsuns_ultimate', payload.main || {});
+            storageSet(storage, 'lift_preferences', mergePrefs(payload.prefs || {}));
+            storageSet(storage, 'lift_bodyweight', payload.bw || []);
+            storageSet(storage, 'lift_achievements', payload.ach || []);
+            storageSet(storage, 'lift_prs', payload.prs || {});
+            storageSet(storage, 'lift_e1rm_history', payload.e1rm || {});
+            storageSet(storage, 'lift_templates', payload.tmpl || []);
+            storageSet(storage, 'lift_exercise_notes', payload.notes || {});
+            storageSet(storage, 'lift_tonnage_goal', payload.ton || 0);
+            storageSet(storage, 'lift_rest_history', payload.rh || []);
+            storageSet(storage, 'lift_xp', payload.xp || 0);
+            if (payload.active) storageSet(storage, 'lift_active_session', payload.active);
+            return true;
+        };
+        const calculateDeloadSuggestion = ({ history = [], tms = {}, prefs = {}, session = {}, now = null, e1rmHistory = {}, readinessMap = null } = {}) => withNow(now, () => {
+            if (history.length && now) {
+                const daysOff = M.floor((now - (history[history.length - 1]?.timestamp || now)) / 864e5);
+                const timeOff = [[42, 25, '6+ weeks off'], [28, 20, '4 weeks off'], [14, 10, '2 weeks off']].find(x => daysOff >= x[0]);
+                if (timeOff) return { needed: true, percentage: timeOff[1], reason: timeOff[2], protocol: 'Reduce_TMs' };
+            }
+            const a = createTestApp({ history, tms, prefs, session, e1rmHistory });
+            if (readinessMap) a.cache.recoveryMap = readinessMap;
+            return a.checkFatigueDeload() || a.checkPerformanceDeload() || null;
+        });
+
+        window.__LIFT_TEST_API__ = {
+            DATA_VERSION,
+            DATA,
+            PROG,
+            U,
+            EX_OPTS,
+            EX_INDEX,
+            impact,
+            appFactory: app,
+            createTestApp,
+            roundWeight: U.rnd,
+            convertWeight: U.conv,
+            estimateOneRepMax: U.rm,
+            calculateVolume: U.vol,
+            calculateFatigue: U.fatigue,
+            generateSets: opts => {
+                const a = createTestApp({ tms: opts?.tms, prefs: opts?.prefs, state: opts?.state, cycleWeek531: opts?.cycleWeek531 });
+                return a.getSets(opts.scheme, opts.lift, opts.tm, opts.tier || 't1', opts.exerciseOverride || null);
+            },
+            calculateProgression,
+            calculatePlateLoading,
+            calculateRecoverySnapshot,
+            calculateVolumeLandmarks,
+            evaluatePR,
+            serializeState,
+            hydrateState,
+            mergePrefs,
+            resolveTheme,
+            normalizeTheme,
+            applyThemePreference,
+            calculateDeloadSuggestion,
+            helpers: {
+                roundWeight: U.rnd,
+                convertWeight: U.conv,
+                estimateOneRepMax: U.rm,
+                calculateVolume: U.vol,
+                calculateFatigue: U.fatigue,
+                generateSets: opts => window.__LIFT_TEST_API__.generateSets(opts),
+                calculateProgression,
+                calculatePlateLoading,
+                calculateRecoverySnapshot,
+                calculateVolumeLandmarks,
+                evaluatePR,
+                resolveTheme,
+                serializeState,
+                hydrateState,
+                setSnapshot
+            }
+        };
     </script>
 </head>
 
@@ -2248,6 +2542,21 @@
                             class="text-xs font-bold text-indigo-400"
                             x-text="PROGRAMS[prefs.program].progressionDesc"></span></div>
                 </div>
+            </div>
+            <div class="glass-card space-y-4">
+                <h3 class="lbl">Appearance</h3>
+                <div class="grid grid-cols-3 gap-2 theme-toggle" role="group" aria-label="Theme">
+                    <button type="button" @click="setTheme('dark')"
+                        class="rounded-xl border text-xs font-bold uppercase tracking-wide transition"
+                        :class="prefs.theme==='dark'?'bg-indigo-600 border-indigo-500 text-white':'bg-white/5 border-white/10 text-slate-400 hover:text-white'">Dark</button>
+                    <button type="button" @click="setTheme('light')"
+                        class="rounded-xl border text-xs font-bold uppercase tracking-wide transition"
+                        :class="prefs.theme==='light'?'bg-indigo-600 border-indigo-500 text-white':'bg-white/5 border-white/10 text-slate-400 hover:text-white'">Light</button>
+                    <button type="button" @click="setTheme('system')"
+                        class="rounded-xl border text-xs font-bold uppercase tracking-wide transition"
+                        :class="prefs.theme==='system'?'bg-indigo-600 border-indigo-500 text-white':'bg-white/5 border-white/10 text-slate-400 hover:text-white'">System</button>
+                </div>
+                <div class="text-xs text-slate-500 leading-relaxed">Dark stays the default. System follows the device color scheme.</div>
             </div>
             <div class="glass-card space-y-4">
                 <h3 class="lbl">TMs</h3><template x-for="l in lifts()">
