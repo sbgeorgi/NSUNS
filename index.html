@@ -140,6 +140,7 @@
                 radial-gradient(at 100% 100%, rgba(236, 72, 153, 0.1) 0px, transparent 50%),
                 radial-gradient(at 0% 100%, rgba(59, 130, 246, 0.15) 0px, transparent 50%);
         }
+<<<<<<< HEAD
         .theme-light body { color: #0f172a; }
         .theme-light .glass-panel { background: rgba(255,255,255,0.8); border-color: rgba(0,0,0,0.05); shadow: 0 10px 40px rgba(0,0,0,0.08); }
         .theme-light .glass-card { background: rgba(255,255,255,0.6); border-color: rgba(0,0,0,0.05); box-shadow: 0 4px 20px rgba(0,0,0,0.03); color: #0f172a; }
@@ -1604,6 +1605,47 @@
             }
         };
     </script>
+=======
+        .theme-light {
+            color-scheme: light;
+            --app-bg: #f6f7fb;
+            --app-surface: #ffffff;
+            --app-surface-2: #eef1f7;
+            --app-input: #ffffff;
+            --app-text: #0f172a;
+            --app-muted: #475569;
+            --app-subtle: #64748b;
+            --app-border: rgba(15,23,42,0.13);
+            --app-soft: rgba(15,23,42,0.06);
+            --app-nav: rgba(255,255,255,0.92);
+            --app-modal: rgba(248,250,252,0.92);
+        }
+        body { background: var(--app-bg); color: var(--app-text); }
+        .theme-light body, .theme-light .bg-black { background-color: var(--app-bg) !important; }
+        .theme-light .glass-card, .theme-light .glass-panel { background: var(--app-surface) !important; border-color: var(--app-border) !important; color: var(--app-text); box-shadow: 0 10px 30px rgba(15,23,42,0.08); }
+        .theme-light .glass-item, .theme-light .bg-white\/5, .theme-light .bg-black\/30, .theme-light .bg-black\/50 { background-color: var(--app-soft) !important; border-color: var(--app-border) !important; }
+        .theme-light .inp, .theme-light select, .theme-light input, .theme-light textarea { background-color: var(--app-input) !important; color: var(--app-text) !important; border-color: var(--app-border) !important; }
+        .theme-light option { background: #ffffff; color: #0f172a; }
+        .theme-light .btn-s { background-color: #e8edf5 !important; color: #0f172a !important; }
+        .theme-light .btn-icon { color: #64748b; }
+        .theme-light .btn-icon:hover { color: #0f172a; background-color: rgba(15,23,42,0.08); }
+        .theme-light .nav-glass { background: var(--app-nav) !important; border-top-color: var(--app-border) !important; }
+        .theme-light .modal-bg, .theme-light [class*="bg-black/90"], .theme-light [class*="bg-black\/90"] { background: var(--app-modal) !important; }
+        .theme-light .header-sticky { background: linear-gradient(to bottom, rgba(246,247,251,1), rgba(246,247,251,0)); }
+        .theme-light .ex-dropdown { background: #ffffff !important; border-color: var(--app-border) !important; }
+        .theme-light .ex-opt { border-color: var(--app-border) !important; }
+        .theme-light .ex-opt:hover { background: rgba(15,23,42,0.06) !important; }
+        .theme-light .text-white { color: #0f172a !important; }
+        .theme-light .text-slate-200, .theme-light .text-slate-300 { color: #334155 !important; }
+        .theme-light .text-slate-400, .theme-light .text-slate-500 { color: #64748b !important; }
+        .theme-light .text-slate-600 { color: #94a3b8 !important; }
+        .theme-light .border-white\/5, .theme-light .border-white\/10, .theme-light .border-white\/20 { border-color: var(--app-border) !important; }
+        .theme-light .undo-toast { background: #ffffff; color: #0f172a; border-color: var(--app-border); box-shadow: 0 8px 30px rgba(15,23,42,0.14); }
+        .theme-toggle button { min-height: 2.5rem; }
+    </style>
+    <script src="app.js"></script>
+
+>>>>>>> c45561f3d5b82850fcd8b9f2578b11ac00b223c4
 </head>
 
 <body x-data="app()" x-init="init()" @keydown.window.escape="handleEscape" class="antialiased bg-black text-slate-200"
@@ -1644,7 +1686,7 @@
                 </div>
                 <div>
                     <label class="lbl">Password</label>
-                    <input type="password" x-model="auth.password" class="inp" placeholder="••••••••"
+                    <input type="password" x-model="auth.password" class="inp" placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
                         @keydown.enter="handleLogin()">
                 </div>
             </div>
@@ -1688,11 +1730,34 @@
                         class="btn-s">Skip</button></div>
             </div>
         </template>
+        <template x-if="activeModal==='restSuggestion'">
+            <div class="glass-panel border-blue-500/30">
+                <div class="f-cb mb-4">
+                    <div>
+                        <h3 class="text-xl font-bold text-white">Rest Check</h3>
+                        <p class="text-xs text-slate-500" x-text="dynamicRestSuggestion?.summary"></p>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-2xl font-black text-blue-400 mono" x-text="dynamicRestSuggestion?.suggestedHours || 0"></div>
+                        <div class="text-[10px] text-slate-500 font-bold uppercase">hours</div>
+                    </div>
+                </div>
+                <div class="space-y-2 mb-6">
+                    <template x-for="r in (dynamicRestSuggestion?.reasons || [])">
+                        <div class="text-xs text-slate-300 bg-white/5 border border-white/5 rounded-lg p-3" x-text="r"></div>
+                    </template>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <button @click="declineDynamicRestSuggestion()" class="btn-s">Train Anyway</button>
+                    <button @click="acceptDynamicRestSuggestion()" class="btn bg-blue-600 text-white">Rest Today</button>
+                </div>
+            </div>
+        </template>
         <template x-if="activeModal==='setEdit'">
             <div class="glass-panel" @click.outside="activeModal=null">
                 <div class="f-cb mb-6">
                     <h3 class="text-xl font-bold text-white">Edit Set</h3><button @click="activeModal=null"
-                        class="text-slate-500 hover:text-white">✕</button>
+                        class="text-slate-500 hover:text-white">âœ•</button>
                 </div>
                 <div class="space-y-4 mb-6">
                     <div class="f-cb gap-4">
@@ -1713,7 +1778,7 @@
                     <div class="f-g2 bg-red-900/10 p-3 rounded-xl border border-red-500/20 cursor-pointer"
                         @click="setEdit.failed=!setEdit.failed">
                         <div class="w-6 h-6 rounded border f-c"
-                            :class="setEdit.failed?'bg-red-500 border-red-500 text-white':'border-white/20'">✓</div>
+                            :class="setEdit.failed?'bg-red-500 border-red-500 text-white':'border-white/20'">âœ“</div>
                         <span class="font-bold text-red-400">Failed</span>
                     </div>
                 </div><button @click="saveSetEdit()" class="btn-p">Update</button>
@@ -1721,13 +1786,13 @@
         </template>
         <template x-if="activeModal==='rating'">
             <div class="glass-panel text-center">
-                <div class="text-4xl mb-3">💪</div>
+                <div class="text-4xl mb-3">ðŸ’ª</div>
                 <h3 class="text-xl font-bold text-white mb-6">Complete!</h3>
                 <div class="mb-4"><label class="lbl">Rating</label>
                     <div class="f-c gap-2"><template x-for="i in 5"><button @click="sessionRating=i"
                                 class="text-3xl transition"
                                 :class="i<=sessionRating?'opacity-100 scale-110':'opacity-30'"
-                                x-text="i<=sessionRating?'⭐':'☆'"></button></template></div>
+                                x-text="i<=sessionRating?'â­':'â˜†'"></button></template></div>
                 </div>
                 <div class="mb-4">
                     <div class="f-cb mb-2"><label class="lbl">RPE</label><span class="text-xs font-bold text-indigo-400"
@@ -1770,8 +1835,8 @@
         <template x-if="activeModal==='exNote'">
             <div class="glass-panel" @click.outside="activeModal=null">
                 <div class="f-cb mb-4">
-                    <h3 class="text-lg font-bold text-white">📝 <span x-text="exNoteTarget"></span></h3><button
-                        @click="activeModal=null">✕</button>
+                    <h3 class="text-lg font-bold text-white">ðŸ“ <span x-text="exNoteTarget"></span></h3><button
+                        @click="activeModal=null">âœ•</button>
                 </div><textarea x-model="exNoteText" class="inp resize-none h-32 mb-4"></textarea>
                 <div class="grid grid-cols-2 gap-3"><button @click="activeModal=null"
                         class="btn-s">Cancel</button><button @click="saveExNote()" class="btn-p">Save</button></div>
@@ -1793,8 +1858,8 @@
         <template x-if="activeModal==='smartAdd'">
             <div class="glass-panel max-h-[80vh] flex flex-col" @click.outside="activeModal=null">
                 <div class="f-cb mb-4 shrink-0">
-                    <h3 class="text-lg font-bold text-white">🧠 Smart Add</h3>
-                    <button @click="activeModal=null" class="text-slate-500 hover:text-white">✕</button>
+                    <h3 class="text-lg font-bold text-white">ðŸ§  Smart Add</h3>
+                    <button @click="activeModal=null" class="text-slate-500 hover:text-white">âœ•</button>
                 </div>
                 <p class="text-xs text-slate-400 mb-4 shrink-0">Suggested based on your current fatigue, muscle balance, and CNS readiness.</p>
                 <div class="overflow-y-auto no-scrollbar space-y-2 flex-1 pb-2">
@@ -1839,7 +1904,7 @@
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                             :d="icons.x" />
                                     </svg></button></div>
-                        </template><button @click="activeModal=null" class="btn-icon" x-show="!isEditingLog">✕</button>
+                        </template><button @click="activeModal=null" class="btn-icon" x-show="!isEditingLog">X</button>
                     </div>
                 </div>
                 <div class="p-4 overflow-y-auto no-scrollbar space-y-6 flex-1">
@@ -1883,12 +1948,12 @@
                                 <div class="relative set-timeline pl-6">
                                     <div class="absolute left-0 top-1 w-4 h-4 rounded-full f-c text-[10px]"
                                         :class="s.failed?'bg-red-500/20 text-red-400':'bg-green-500/20 text-green-400'"
-                                        x-text="s.failed?'✕':'✓'"></div>
+                                        x-text="s.failed?'X':'OK'"></div>
                                     <div class="glass-item f-cb">
                                         <div><span class="mono-num" x-text="s.weight"></span><span
                                                 class="text-slate-500 text-xs ml-1"
                                                 x-text="prefs.weightUnit"></span><span
-                                                class="text-slate-400 text-sm ml-2">×</span><span class="font-bold ml-1"
+                                                class="text-slate-400 text-sm ml-2">x</span><span class="font-bold ml-1"
                                                 :class="s.amrap?'text-yellow-400':'text-white'"
                                                 x-text="s.performed||s.reps"></span><span x-show="s.rpe"
                                                 class="text-[10px] text-indigo-400 ml-2" x-text="'@'+s.rpe"></span>
@@ -1963,7 +2028,7 @@
                         <span x-text="syncing ? 'Syncing...' : 'Synced'"></span>
                     </div>
                     <div class="bg-white/5 rounded-full px-3 py-1 flex items-center gap-2 border border-white/10"
-                        @click="activeModal='achievement'"><span class="text-lg">🔥</span><span
+                        @click="activeModal='achievement'"><span class="text-lg">ðŸ”¥</span><span
                             class="text-sm font-bold mono" x-text="streak"></span></div>
                 </div>
             </div>
@@ -2080,14 +2145,14 @@
                 </button>
                 <div class="glass-card relative" x-data="{open:false}">
                     <div @click="open=!open" class="cursor-pointer hover:bg-white/5 transition h-full text-left">
-                        <div class="w-8 h-8 rounded-full bg-purple-500/20 f-c mb-2 text-purple-400 font-bold">★</div>
+                        <div class="w-8 h-8 rounded-full bg-purple-500/20 f-c mb-2 text-purple-400 font-bold">â˜…</div>
                         <div class="font-bold text-sm text-white">Templates</div>
                     </div>
                     <div x-show="open" @click.outside="open=false" class="ex-dropdown bottom-full top-auto mb-2"
                         x-transition><template x-for="(t,i) in templates">
                             <div class="ex-opt f-cb"><span @click="startFromTemplate(t);open=false"
                                     x-text="t.name"></span><button @click.stop="deleteTemplate(i)"
-                                    class="text-red-400 hover:text-white">×</button></div>
+                                    class="text-red-400 hover:text-white">Ã—</button></div>
                         </template>
                         <div class="p-3 text-xs text-center text-slate-500" x-show="!templates.length">Empty</div>
                     </div>
@@ -2111,9 +2176,9 @@
                     </svg></button><button @click="toggleZen()" class="w-8 h-8 rounded-full f-c transition"
                     :class="zenMode?'bg-indigo-600 text-white':'bg-white/5 text-slate-400'">Zen</button><button
                     @click="openSmartPlateCalc()"
-                    class="w-8 h-8 rounded-full bg-white/5 text-slate-400 f-c hover:bg-white/10 hover:text-white">⚖️</button><button
+                    class="w-8 h-8 rounded-full bg-white/5 text-slate-400 f-c hover:bg-white/10 hover:text-white">âš–ï¸</button><button
                     @click="cancel()"
-                    class="bg-red-500/10 text-red-400 w-8 h-8 rounded-full f-c font-bold transition hover:bg-red-500/20">✕</button><button
+                    class="bg-red-500/10 text-red-400 w-8 h-8 rounded-full f-c font-bold transition hover:bg-red-500/20">âœ•</button><button
                     @click="finish()"
                     class="bg-green-600 hover:bg-green-500 text-white px-3 py-1.5 rounded-full text-xs font-bold transition">Finish</button>
             </div>
@@ -2175,7 +2240,7 @@
                                 <div class="text-5xl font-bold mono text-white" x-text="getZen().w"></div>
                                 <div class="text-xs text-slate-500 uppercase mt-1" x-text="prefs.weightUnit"></div>
                             </div>
-                            <div class="text-3xl text-slate-700">×</div>
+                            <div class="text-3xl text-slate-700">Ã—</div>
                             <div>
                                 <div class="text-5xl font-bold mono"
                                     :class="getZen().amrap?'text-yellow-500':'text-white'"
@@ -2211,7 +2276,7 @@
                             <div class="text-xs text-slate-500 mt-1 f-g2"><span
                                     x-text="'TM: '+tms[session.t1?.name]"></span><button
                                     @click="openExNote(session.t1?.name)"
-                                    class="text-slate-400 hover:text-white">📝</button></div>
+                                    class="text-slate-400 hover:text-white">ðŸ“</button></div>
                         </div>
                     </div><button @click="batchAdjustTier='t1'; activeModal='batchAdjust'"
                         class="text-xs bg-white/5 px-2 py-1 rounded hover:bg-white/10">Adjust</button>
@@ -2232,7 +2297,7 @@
                                 @click="calcPlates(w.w)">
                                 <div class="text-xs text-slate-500 font-bold" x-text="'Set ' + (i+1)"></div>
                                 <div class="f-g2"><span class="text-sm font-bold text-white mono"
-                                        x-text="w.w"></span><span class="text-xs text-slate-500 mx-1">×</span><span
+                                        x-text="w.w"></span><span class="text-xs text-slate-500 mx-1">Ã—</span><span
                                         class="text-sm font-bold text-white mono" x-text="w.r"></span></div>
                             </div>
                         </template></div>
@@ -2267,7 +2332,7 @@
                                 <div class="f-c" @click.stop="toggleSet(s, 't1')">
                                     <div class="w-6 h-6 rounded border f-c transition-all"
                                         :class="s.completed?(s.failed?'bg-red-500 border-red-500 text-white':'bg-green-500 border-green-500 text-white'):'border-white/20 hover:border-white/40'">
-                                        <span x-show="s.completed" x-text="s.failed?'✕':'✓'"
+                                        <span x-show="s.completed" x-text="s.failed?'âœ•':'âœ“'"
                                             class="text-xs font-bold"></span>
                                     </div>
                                 </div>
@@ -2338,7 +2403,7 @@
             <div class="glass-card">
                 <div class="f-cb mb-4">
                     <h3 class="lbl mb-0">Accessories</h3>
-                    <div class="text-[10px] text-slate-500">Tap 🔗 to link supersets</div>
+                    <div class="text-[10px] text-slate-500">Tap ðŸ”— to link supersets</div>
                 </div>
                 <div class="space-y-4"><template x-for="(a,i) in session.acc">
                         <div class="relative" :class="a.supersetId ? 'border-l-2 border-indigo-500 pl-3 -ml-3' : ''">
@@ -2354,7 +2419,7 @@
                                                     :d="icons.swap" />
                                             </svg></div><button @click="toggleSuperset(i)"
                                             class="ml-2 text-[10px] rounded p-1 transition"
-                                            :class="a.supersetId ? 'bg-indigo-500 text-white' : 'bg-white/5 text-slate-500'">🔗</button>
+                                            :class="a.supersetId ? 'bg-indigo-500 text-white' : 'bg-white/5 text-slate-500'">ðŸ”—</button>
                                     </div>
                                     <div x-show="swapState.acc===i" @click.outside="swapState.acc=null"
                                         class="ex-dropdown" x-transition><input type="text" x-model="swapState.q"
@@ -2367,9 +2432,9 @@
                                     </div>
                                 </div>
                                 <div class="text-xs text-slate-400 f-g2"><span
-                                        x-text="a.sets+' × '+a.reps"></span><button
+                                        x-text="a.sets+' Ã— '+a.reps"></span><button
                                         @click="openExNote(a.selectedExercise||a.name)"
-                                        class="text-slate-500 hover:text-white">📝</button></div>
+                                        class="text-slate-500 hover:text-white">ðŸ“</button></div>
                             </div>
                             <div class="flex flex-wrap gap-2"><template x-for="n in a.sets"><button
                                         @click="togAcc(a.originalName||a.name, n)"
@@ -2388,7 +2453,7 @@
             <div class="w-full max-w-sm">
                 <div class="f-cb mb-8">
                     <h2 class="text-2xl font-bold text-white">Plate Calc</h2><button @click="plate.open=false"
-                        class="bg-white/10 p-2 rounded-full text-white">✕</button>
+                        class="bg-white/10 p-2 rounded-full text-white">âœ•</button>
                 </div>
                 <div class="text-center mb-10 relative">
                     <div class="text-7xl font-black mono text-white" x-text="plate.w"></div>
@@ -2396,9 +2461,9 @@
                         x-text="prefs.weightUnit"></div>
                     <div class="absolute top-1/2 -translate-y-1/2 right-0 f-col gap-2"><button
                             @click="calcPlates(closestWeight(plate.w + 5))"
-                            class="w-8 h-8 rounded bg-white/10 text-white f-c">▲</button><button
+                            class="w-8 h-8 rounded bg-white/10 text-white f-c">â–²</button><button
                             @click="calcPlates(closestWeight(plate.w - 5))"
-                            class="w-8 h-8 rounded bg-white/10 text-white f-c">▼</button></div>
+                            class="w-8 h-8 rounded bg-white/10 text-white f-c">â–¼</button></div>
                 </div>
                 <div class="flex items-center justify-center gap-1 h-32 mb-8 relative">
                     <div class="h-4 w-full absolute bg-gray-600 rounded"></div><template x-for="p in plate.plates">
@@ -2425,9 +2490,9 @@
     <div x-show="view==='calendar'" class="p-6 pb-24 max-w-md mx-auto" x-transition x-cloak>
         <div class="f-cb mb-6">
             <h1 class="text-2xl font-black italic text-white">HISTORY</h1>
-            <div class="f-g2"><button @click="cal.offset--;calBuild()" class="btn-icon">◀</button>
+            <div class="f-g2"><button @click="cal.offset--;calBuild()" class="btn-icon">&lt;</button>
                 <div class="font-bold text-sm w-32 text-center" x-text="cal.monthName"></div><button
-                    @click="cal.offset++;calBuild()" class="btn-icon">▶</button>
+                    @click="cal.offset++;calBuild()" class="btn-icon">&gt;</button>
             </div>
         </div>
         <div class="cal-grid mb-2"><template x-for="d in ['S','M','T','W','T','F','S']">
@@ -2476,11 +2541,16 @@
                         <div class="f-cb mb-1">
                             <h4 class="font-bold text-white text-sm truncate" x-text="h.title"></h4>
                             <div class="f-g2"><span x-show="h.pr||h.t2PR"
+<<<<<<< HEAD
                                     class="text-[9px] bg-yellow-500/20 text-yellow-500 px-1.5 py-0.5 rounded shadow-[0_0_10px_rgba(234,179,8,0.4)] font-bold tracking-widest animate-pulse">PR</span><span
                                     class="text-xs text-slate-500" x-text="(h.rating||0)+'★'"></span></div>
+=======
+                                    class="text-[9px] bg-yellow-500/20 text-yellow-500 px-1 rounded font-bold">PR</span><span
+                                    class="text-xs text-slate-500" x-show="h.rating" x-text="(h.rating||0)+'/5'"></span></div>
+>>>>>>> c45561f3d5b82850fcd8b9f2578b11ac00b223c4
                         </div>
                         <div class="text-xs text-slate-500 truncate"
-                            x-text="h.details?.t1+' • '+fmtVolS(h.totalVolume)+' • '+(h.duration||0)+'m'"></div>
+                            x-text="[h.details?.t1||'Workout', fmtVolS(h.totalVolume), (h.duration||0)+'m'].join(' - ')"></div>
                     </div>
                 </div>
             </template></div>
