@@ -4,8 +4,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport"
-        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <meta name="theme-color" content="#08080C">
+        content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#07070B" media="(prefers-color-scheme: dark)">
+    <meta name="theme-color" content="#F6F7FB" media="(prefers-color-scheme: light)">
     <script>
         (function () {
             try {
@@ -35,19 +36,34 @@
                         mono: ['"JetBrains Mono"', 'ui-monospace', 'monospace']
                     },
                     colors: {
+                        // Token-backed colors — let us write text-accent / bg-surface / border-default etc.
+                        accent: { DEFAULT: 'var(--accent)', hi: 'var(--accent-hi)', soft: 'var(--accent-soft)', border: 'var(--accent-border)' },
+                        surface: { DEFAULT: 'var(--surface-bg)', soft: 'var(--surface-soft-bg)', hi: 'var(--surface-hi-bg)' },
                         ink: {
                             50: '#F8F9FC', 100: '#B8BCC9', 200: '#9CA3AF',
                             300: '#6B7280', 400: '#4B5563', 500: '#1F1F2C', 600: '#181822', 700: '#12121A', 800: '#0E0E16', 900: '#08080C'
                         },
                         flame: { 400: '#818CF8', 500: '#6366F1', 600: '#5046E5' },
-                        violet: { 400: '#C084FC', 500: '#A855F7', 600: '#9333EA' }
+                        violet: { 400: '#C084FC', 500: '#A855F7', 600: '#9333EA' },
+                        success: { DEFAULT: 'var(--success)', soft: 'var(--success-soft)', deep: 'var(--success-deep)' },
+                        warning: { DEFAULT: 'var(--warning)', soft: 'var(--warning-soft)', deep: 'var(--warning-deep)' },
+                        danger: { DEFAULT: 'var(--danger)', soft: 'var(--danger-soft)', deep: 'var(--danger-deep)' },
+                        info: { DEFAULT: 'var(--info)', soft: 'var(--info-soft)', deep: 'var(--info-deep)' }
                     },
                     boxShadow: {
                         glow: '0 0 30px rgba(99,102,241,0.35)',
                         card: '0 1px 0 rgba(255,255,255,0.04) inset, 0 12px 32px rgba(0,0,0,0.35)',
-                        pop: '0 8px 24px rgba(0,0,0,0.4)'
+                        pop: '0 8px 24px rgba(0,0,0,0.4)',
+                        xs: 'var(--shadow-xs)', sm: 'var(--shadow-sm)', md: 'var(--shadow-md)',
+                        lg: 'var(--shadow-lg)', xl: 'var(--shadow-xl)', '2xl': 'var(--shadow-2xl)'
                     },
-                    borderRadius: { '2xl': '1.25rem', '3xl': '1.75rem' }
+                    borderRadius: {
+                        '2xl': '1.5rem', '3xl': '1.75rem',
+                        sm: 'var(--radius-sm)', md: 'var(--radius-md)', lg: 'var(--radius-lg)',
+                        xl: 'var(--radius-xl)'                    },
+                    transitionTimingFunction: {
+                        smooth: 'var(--ease-smooth)', spring: 'var(--ease-spring)', out: 'var(--ease-out)'
+                    }
                 }
             }
         };
@@ -63,258 +79,552 @@
         rel="stylesheet">
     <style type="text/tailwindcss">
         @layer components {
+            /* ============================================================
+               LAYOUT PRIMITIVES
+               ============================================================ */
             .f-c { @apply flex items-center justify-center; }
             .f-cb { @apply flex items-center justify-between; }
             .f-g2 { @apply flex items-center gap-2; }
             .f-col { @apply flex flex-col; }
+            .pb-safe { padding-bottom: calc(env(safe-area-inset-bottom) + 0.5rem); }
 
-            /* Surface system */
-            .surface { background: var(--surface-bg); border: 1px solid var(--border-subtle); border-radius: 1.5rem; box-shadow: var(--shadow-card); position: relative; overflow: hidden; }
+            /* ============================================================
+               SURFACE SYSTEM — 3 tiers
+               ============================================================ */
+            .surface { background: var(--surface-bg); border: 1px solid var(--border-subtle); border-radius: var(--radius-2xl); box-shadow: var(--shadow-md); position: relative; overflow: hidden; }
             .surface::before { content: ''; position: absolute; inset: 0; background: var(--surface-sheen); pointer-events: none; }
-            .surface-soft { background: var(--surface-soft-bg); border: 1px solid var(--border-subtle); border-radius: 1rem; }
-            .surface-hi { background: var(--surface-hi-bg); border: 1px solid var(--border-default); border-radius: 0.75rem; }
+            .surface-soft { background: var(--surface-soft-bg); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); }
+            .surface-hi { background: var(--surface-hi-bg); border: 1px solid var(--border-default); border-radius: var(--radius-md); transition: background 0.2s var(--ease-smooth), border-color 0.2s var(--ease-smooth); }
 
-            /* Buttons */
+            /* ============================================================
+               CARDS — primary containers
+               ============================================================ */
+            .glass-card {
+                @apply rounded-2xl p-4;
+                background: var(--surface-bg);
+                border: 1px solid var(--border-subtle);
+                box-shadow: var(--shadow-md);
+                position: relative;
+                transition: transform 0.28s var(--ease-smooth), box-shadow 0.28s var(--ease-smooth), border-color 0.28s var(--ease-smooth);
+            }
+            .glass-card::before { content: ''; position: absolute; inset: 0; background: var(--surface-sheen); pointer-events: none; border-radius: inherit; }
+            .glass-card > * { position: relative; }
+            .glass-item {
+                @apply rounded-xl p-3;
+                background: var(--surface-hi-bg);
+                border: 1px solid var(--border-subtle);
+                transition: background 0.2s var(--ease-smooth), border-color 0.2s var(--ease-smooth);
+            }
+            .glass-panel {
+                @apply w-full max-w-sm rounded-3xl p-6 relative;
+                background: var(--surface-bg);
+                border: 1px solid var(--border-default);
+                box-shadow: var(--shadow-xl);
+                animation: modalIn 0.34s var(--ease-spring) both;
+            }
+            .glass-panel::before { content: ''; position: absolute; inset: 0; background: var(--surface-sheen); pointer-events: none; border-radius: inherit; }
+            .glass-panel > * { position: relative; }
+
+            /* Hover lift for interactive cards */
+            .card-hover { transition: transform 0.28s var(--ease-smooth), box-shadow 0.28s var(--ease-smooth), border-color 0.28s var(--ease-smooth); }
+            .card-hover:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); border-color: var(--border-default); }
+
+            /* ============================================================
+               BUTTONS — full variant set (replaces ad-hoc :style gradients)
+               ============================================================ */
             .btn { @apply w-full font-bold py-3.5 rounded-2xl transition-all duration-200 text-sm flex items-center justify-center gap-2 select-none; }
             .btn:active { @apply scale-[0.97]; }
-            .btn-p { @apply btn text-white; background-image: linear-gradient(135deg, var(--accent-grad-1), var(--accent-grad-2)); box-shadow: 0 8px 20px var(--accent-glow), 0 1px 0 rgba(255,255,255,0.18) inset; }
-            .btn-p:hover { filter: brightness(1.08); box-shadow: 0 12px 28px var(--accent-glow), 0 1px 0 rgba(255,255,255,0.22) inset; }
+            .btn:focus-visible { outline: 2px solid var(--accent-hi); outline-offset: 2px; }
+
+            .btn-p { @apply btn text-white; background-image: linear-gradient(135deg, var(--accent-grad-1), var(--accent-grad-2)); box-shadow: 0 8px 22px var(--accent-glow), 0 1px 0 rgba(255,255,255,0.20) inset; }
+            .btn-p:hover { filter: brightness(1.08); box-shadow: 0 12px 30px var(--accent-glow), 0 1px 0 rgba(255,255,255,0.26) inset; }
+
             .btn-s { @apply btn; background: var(--btn-sec-bg); color: var(--text-primary); border: 1px solid var(--border-default); }
-            .btn-s:hover { background: var(--btn-sec-hi); }
+            .btn-s:hover { background: var(--btn-sec-hi); border-color: var(--border-strong); }
+
+            /* Semantic solid buttons — replaces inline :style gradients */
+            .btn-success { @apply btn text-white; background-image: linear-gradient(135deg, var(--success), var(--success-deep)); box-shadow: 0 8px 22px var(--success-glow), 0 1px 0 rgba(255,255,255,0.20) inset; }
+            .btn-success:hover { filter: brightness(1.08); box-shadow: 0 12px 30px var(--success-glow), 0 1px 0 rgba(255,255,255,0.26) inset; }
+            .btn-warning { @apply btn text-white; background-image: linear-gradient(135deg, var(--warning), var(--warning-deep)); box-shadow: 0 8px 22px var(--warning-glow), 0 1px 0 rgba(255,255,255,0.20) inset; }
+            .btn-warning:hover { filter: brightness(1.08); box-shadow: 0 12px 30px var(--warning-glow), 0 1px 0 rgba(255,255,255,0.26) inset; }
+            .btn-danger { @apply btn text-white; background-image: linear-gradient(135deg, var(--danger), var(--danger-deep)); box-shadow: 0 8px 22px var(--danger-glow), 0 1px 0 rgba(255,255,255,0.20) inset; }
+            .btn-danger:hover { filter: brightness(1.08); box-shadow: 0 12px 30px var(--danger-glow), 0 1px 0 rgba(255,255,255,0.26) inset; }
+            .btn-info { @apply btn text-white; background-image: linear-gradient(135deg, var(--info), var(--info-deep)); box-shadow: 0 8px 22px var(--info-glow), 0 1px 0 rgba(255,255,255,0.20) inset; }
+            .btn-info:hover { filter: brightness(1.08); box-shadow: 0 12px 30px var(--info-glow), 0 1px 0 rgba(255,255,255,0.26) inset; }
+
+            /* Soft semantic buttons — replaces inline :style soft backgrounds */
+            .btn-success-soft { @apply btn; background: var(--success-soft); color: var(--success); border: 1px solid var(--success); }
+            .btn-success-soft:hover { background: color-mix(in srgb, var(--success) 22%, transparent); }
+            .btn-warning-soft { @apply btn; background: var(--warning-soft); color: var(--warning); border: 1px solid var(--warning); }
+            .btn-warning-soft:hover { background: color-mix(in srgb, var(--warning) 22%, transparent); }
+            .btn-danger-soft { @apply btn; background: var(--danger-soft); color: var(--danger); border: 1px solid var(--danger); }
+            .btn-danger-soft:hover { background: color-mix(in srgb, var(--danger) 22%, transparent); }
+
+            /* Icon button */
             .btn-icon { @apply p-2.5 rounded-xl transition; color: var(--text-tertiary); }
             .btn-icon:hover { background: var(--hover-soft); color: var(--text-primary); }
+            .btn-icon:focus-visible { outline: 2px solid var(--accent-hi); outline-offset: 2px; }
 
-            /* Labels & inputs */
+            /* ============================================================
+               SEGMENTED CONTROL — replaces 50+ inline :style ternaries
+               Usage: <button class="seg-btn" :class="{'seg-btn-on': cond, 'seg-btn-off': !cond}">
+               ============================================================ */
+            .seg-btn {
+                @apply rounded-xl border font-bold transition-all duration-200 select-none;
+                background: var(--surface-hi-bg);
+                color: var(--text-tertiary);
+                border-color: var(--border-default);
+            }
+            .seg-btn:hover { background: var(--hover-soft); color: var(--text-secondary); }
+            .seg-btn-on {
+                background-image: linear-gradient(135deg, var(--accent-grad-1), var(--accent-grad-2));
+                color: #fff !important;
+                border-color: var(--accent) !important;
+                box-shadow: 0 4px 14px var(--accent-glow-soft), 0 1px 0 rgba(255,255,255,0.18) inset;
+            }
+            .seg-btn-on:hover { filter: brightness(1.08); }
+            .seg-btn-off {
+                background: var(--surface-hi-bg);
+                color: var(--text-tertiary);
+                border-color: var(--border-default);
+            }
+            .seg-btn-off:hover { background: var(--hover-soft); color: var(--text-secondary); }
+
+            /* ============================================================
+               LABELS & INPUTS
+               ============================================================ */
             .lbl { @apply text-[11px] font-bold uppercase tracking-[0.18em] mb-2 block; color: var(--text-tertiary); }
-            .inp { @apply w-full rounded-2xl p-3.5 text-sm font-medium outline-none transition; background: var(--input-bg); color: var(--text-primary); border: 1px solid var(--border-default); }
+            .inp {
+                @apply w-full rounded-2xl p-3.5 text-sm font-medium outline-none transition;
+                background: var(--input-bg);
+                color: var(--text-primary);
+                border: 1px solid var(--border-default);
+            }
+            .inp::placeholder { color: var(--text-faint); }
+            .inp:hover { border-color: var(--border-strong); }
             .inp:focus { border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-glow-soft); }
             .inp-lg { @apply inp text-2xl font-bold text-center mono py-4; }
-            .mono { font-family: 'JetBrains Mono', monospace; font-feature-settings: 'tnum' on; }
+            .mono { font-family: 'JetBrains Mono', ui-monospace, monospace; font-feature-settings: 'tnum' on; }
             .mono-num { @apply mono font-bold; color: var(--text-primary); }
             .icon-sm { @apply w-5 h-5; }
 
-            /* Layout primitives */
-            .header-sticky { @apply sticky top-0 z-20 px-5 py-4; padding-top: calc(env(safe-area-inset-top) + 1rem); background: var(--header-bg); backdrop-filter: blur(20px) saturate(180%); -webkit-backdrop-filter: blur(20px) saturate(180%); border-bottom: 1px solid var(--border-subtle); }
-            .ex-dropdown { @apply absolute left-0 right-0 top-full mt-2 rounded-2xl overflow-hidden z-40; background: var(--dropdown-bg); border: 1px solid var(--border-default); box-shadow: var(--shadow-card); }
-            .ex-opt { @apply px-4 py-3 cursor-pointer transition text-sm; border-bottom: 1px solid var(--border-subtle); }
-            .ex-opt:last-child { border-bottom: 0; }
-            .ex-opt:hover { background: var(--hover-soft); }
-            .nav-btn { @apply flex-1 f-col items-center justify-center gap-1 transition active:scale-90 py-1.5 px-2 rounded-2xl; }
-            .pb-safe { padding-bottom: calc(env(safe-area-inset-bottom) + 0.5rem); }
+            /* Stat label — replaces text-[9px] uppercase instances */
+            .stat-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.14em; color: var(--text-faint); line-height: 1.2; }
+
+            /* ============================================================
+               CHIPS & BADGES
+               ============================================================ */
+            .chip { @apply inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider transition; }
+            .chip-acc { background: var(--accent-soft); color: var(--accent-hi); border: 1px solid var(--accent-border); }
+            .chip-soft { background: var(--hover-soft); color: var(--text-secondary); border: 1px solid var(--border-subtle); }
+            .chip-success { background: var(--success-soft); color: var(--success); border: 1px solid var(--success); }
+            .chip-warning { background: var(--warning-soft); color: var(--warning); border: 1px solid var(--warning); }
+            .chip-danger { background: var(--danger-soft); color: var(--danger); border: 1px solid var(--danger); }
+
+            /* ============================================================
+               LAYOUT CHROME
+               ============================================================ */
+            .header-sticky {
+                @apply sticky top-0 z-20 px-5 py-4;
+                padding-top: calc(env(safe-area-inset-top) + 1rem);
+                background: var(--header-bg);
+                backdrop-filter: blur(22px) saturate(180%);
+                -webkit-backdrop-filter: blur(22px) saturate(180%);
+                border-bottom: 1px solid var(--border-subtle);
+            }
+            .nav-glass {
+                background: var(--nav-bg);
+                backdrop-filter: blur(28px) saturate(180%);
+                -webkit-backdrop-filter: blur(28px) saturate(180%);
+                border-top: 1px solid var(--border-subtle);
+            }
+            .floating-nav {
+                background: var(--nav-bg);
+                backdrop-filter: blur(28px) saturate(180%);
+                -webkit-backdrop-filter: blur(28px) saturate(180%);
+                border: 1px solid var(--border-default);
+                box-shadow: var(--shadow-lg);
+            }
+            .modal-bg {
+                @apply fixed inset-0 z-[100] f-c p-5;
+                background: var(--modal-bg);
+                backdrop-filter: blur(14px) saturate(180%);
+                -webkit-backdrop-filter: blur(14px) saturate(180%);
+            }
+
+            /* Nav button (bottom tab) */
+            .nav-btn { @apply flex-1 f-col items-center justify-center gap-1 transition py-1.5 px-2 rounded-2xl; color: var(--text-faint); }
+            .nav-btn:active { @apply scale-90; }
+            .nav-btn:focus-visible { outline: 2px solid var(--accent-hi); outline-offset: 2px; }
+
+            /* Snap scroll (dashboard schedule) */
             .snap-scroll { @apply flex overflow-x-auto snap-x snap-mandatory gap-3 -mx-5 px-5 pb-2 no-scrollbar; scroll-padding-left: 1.25rem; }
             .snap-card { @apply flex-shrink-0 snap-center; width: 85%; max-width: 320px; }
 
-            /* Stat & chip */
-            .chip { @apply inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider; }
-            .chip-acc { background: var(--accent-soft); color: var(--accent-hi); border: 1px solid var(--accent-border); }
-            .chip-soft { background: var(--hover-soft); color: var(--text-secondary); border: 1px solid var(--border-subtle); }
+            /* Dropdown (exercise swap) */
+            .ex-dropdown {
+                @apply absolute left-0 right-0 top-full mt-2 rounded-2xl overflow-hidden z-40;
+                background: var(--dropdown-bg);
+                border: 1px solid var(--border-default);
+                box-shadow: var(--shadow-lg);
+            }
+            .ex-opt { @apply px-4 py-3 cursor-pointer transition text-sm; border-bottom: 1px solid var(--border-subtle); }
+            .ex-opt:last-child { border-bottom: 0; }
+            .ex-opt:hover { background: var(--hover-soft); }
 
-            /* Set timeline */
+            /* ============================================================
+               SET TIMELINE
+               ============================================================ */
             .set-timeline::before { content: ''; position: absolute; left: 7px; top: 24px; bottom: 0; width: 2px; background: var(--border-default); }
             .set-timeline:last-child::before { display: none; }
 
-            /* Calendar heatmap */
+            /* ============================================================
+               CALENDAR HEATMAP — class names locked (cal-hot1/2/3 emitted by JS)
+               ============================================================ */
             .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
-            .cal-day { aspect-ratio: 1; @apply f-c text-xs font-bold rounded-xl transition-all; color: var(--text-faint); background: var(--cal-empty); border: 1px solid transparent; }
-            .cal-today { color: var(--text-primary) !important; background: var(--cal-today-bg) !important; border-color: var(--border-strong); }
+            .cal-day {
+                aspect-ratio: 1;
+                @apply f-c text-xs font-bold rounded-xl transition-all duration-200;
+                color: var(--text-faint);
+                background: var(--cal-empty);
+                border: 1px solid transparent;
+            }
+            .cal-day:hover { background: var(--hover-soft); }
+            .cal-today { color: var(--text-primary) !important; background: var(--cal-today-bg) !important; border-color: var(--border-strong) !important; }
             .cal-active { background: var(--accent-soft) !important; color: var(--accent-hi) !important; border: 1px solid var(--accent-border) !important; position: relative; }
             .cal-hot1 { background: var(--cal-1-bg) !important; color: var(--cal-1-fg) !important; border: 1px solid var(--cal-1-bd) !important; }
             .cal-hot2 { background: var(--cal-2-bg) !important; color: var(--cal-2-fg) !important; border: 1px solid var(--cal-2-bd) !important; transform: scale(1.04); }
             .cal-hot3 { background: var(--accent-grad-1) !important; color: #fff !important; border: 1px solid var(--accent-grad-2) !important; font-weight: 900; transform: scale(1.08); box-shadow: 0 6px 18px var(--accent-glow); }
 
-            /* Animations */
+            /* Heat legend swatches */
+            .heat-legend { width: 14px; height: 14px; border-radius: 4px; display: inline-block; }
+
+            /* ============================================================
+               ANIMATIONS
+               ============================================================ */
             .pulse-glow { animation: pg 2.4s ease-in-out infinite; }
             @keyframes pg { 0%, 100% { box-shadow: 0 0 18px var(--accent-glow-soft); } 50% { box-shadow: 0 0 30px var(--accent-glow); } }
+
             .shimmer { background: linear-gradient(90deg, transparent, var(--shimmer-overlay), transparent); background-size: 200% 100%; animation: sh 2.2s infinite; }
             @keyframes sh { 0% { background-position: -200% 0 } 100% { background-position: 200% 0 } }
-            .fade-up { animation: fadeUp 0.4s cubic-bezier(0.16,1,0.3,1) both; }
-            @keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 
-            /* Nav & modal */
-            .nav-glass { background: var(--nav-bg); backdrop-filter: blur(24px) saturate(180%); -webkit-backdrop-filter: blur(24px) saturate(180%); border-top: 1px solid var(--border-subtle); }
-            .modal-bg { @apply fixed inset-0 z-[100] f-c p-5; background: var(--modal-bg); backdrop-filter: blur(12px) saturate(180%); -webkit-backdrop-filter: blur(12px) saturate(180%); }
-            .glass-panel { @apply w-full max-w-sm rounded-3xl p-6 relative; background: var(--surface-bg); border: 1px solid var(--border-default); box-shadow: var(--shadow-modal); animation: modalIn 0.32s cubic-bezier(0.16,1,0.3,1) both; }
-            @keyframes modalIn { from { opacity: 0; transform: translateY(20px) scale(0.96); } to { opacity: 1; transform: translateY(0) scale(1); } }
-            .glass-card { @apply rounded-2xl p-4; background: var(--surface-bg); border: 1px solid var(--border-subtle); box-shadow: var(--shadow-card); position: relative; }
-            .glass-item { @apply rounded-xl p-3; background: var(--surface-hi-bg); border: 1px solid var(--border-subtle); }
+            .fade-up { animation: fadeUp 0.5s var(--ease-spring) both; }
+            @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-            /* Undo toast */
-            .undo-toast { position: fixed; top: calc(env(safe-area-inset-top) + 16px); left: 50%; transform: translateX(-50%); z-index: 200; background: var(--surface-bg); border: 1px solid var(--border-default); border-radius: 1.25rem; padding: 0.85rem 1.25rem; display: flex; align-items: center; gap: 0.75rem; box-shadow: var(--shadow-modal); max-width: calc(100vw - 2rem); }
-            .undo-toast-enter { animation: undo-in 0.28s cubic-bezier(0.16,1,0.3,1); }
-            .undo-toast-leave { animation: undo-out 0.22s ease-in forwards; }
-            @keyframes undo-in { from { opacity:0; transform: translateX(-50%) translateY(-20px); } to { opacity:1; transform: translateX(-50%) translateY(0); } }
-            @keyframes undo-out { from { opacity:1; transform: translateX(-50%) translateY(0); } to { opacity:0; transform: translateX(-50%) translateY(-20px); } }
+            /* Stagger utility classes — replaces 15 inline style="animation-delay: Nms" */
+            .stagger-1 { animation-delay: 60ms; }
+            .stagger-2 { animation-delay: 120ms; }
+            .stagger-3 { animation-delay: 180ms; }
+            .stagger-4 { animation-delay: 240ms; }
+            .stagger-5 { animation-delay: 300ms; }
+            .stagger-6 { animation-delay: 360ms; }
 
-            /* Swipe */
-            .swipe-row { touch-action: pan-y; position: relative; overflow: hidden; }
-            .swipe-row .swipe-bg-left { position: absolute; right: 0; top: 0; bottom: 0; width: 100%; display: flex; align-items: center; justify-content: flex-end; padding-right: 1.25rem; background: rgba(239,68,68,0.18); border-radius: 1rem; z-index: 0; opacity: 0; transition: opacity 0.18s; pointer-events: none; }
-            .swipe-row .swipe-bg-right { position: absolute; left: 0; top: 0; bottom: 0; width: 100%; display: flex; align-items: center; padding-left: 1.25rem; background: rgba(16,185,129,0.18); border-radius: 1rem; z-index: 0; opacity: 0; transition: opacity 0.18s; pointer-events: none; }
-            .swipe-row .swipe-content { position: relative; z-index: 1; background: inherit; transition: transform 0.18s ease-out; }
-
-            /* Range sliders */
-            input[type=range] { -webkit-appearance: none; appearance: none; background: transparent; height: 22px; }
-            input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 22px; width: 22px; border-radius: 50%; background: var(--accent); cursor: pointer; box-shadow: 0 0 0 4px var(--accent-glow-soft), 0 4px 10px rgba(0,0,0,0.3); border: 2px solid #fff; transition: transform 0.15s; }
-            input[type=range]::-webkit-slider-thumb:active { transform: scale(1.15); }
-            input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 6px; cursor: pointer; background: var(--border-default); border-radius: 999px; }
-            input[type=range]:focus { outline: none; }
-            input[type=range]::-moz-range-thumb { height: 22px; width: 22px; border-radius: 50%; background: var(--accent); cursor: pointer; border: 2px solid #fff; box-shadow: 0 0 0 4px var(--accent-glow-soft); }
-            input[type=range]::-moz-range-track { height: 6px; background: var(--border-default); border-radius: 999px; }
+            @keyframes modalIn { from { opacity: 0; transform: translateY(24px) scale(0.96); } to { opacity: 1; transform: translateY(0) scale(1); } }
 
             /* Tempo pulse for metronome */
             .tempo-pulse { animation: tempo 4s infinite linear; }
             @keyframes tempo { 0% { transform: scale(1); opacity: 1; background: #ef4444; } 75% { transform: scale(0.8); opacity: 0.5; background: #eab308; } 85% { transform: scale(1.2); opacity: 1; background: #22c55e; } 100% { transform: scale(1); opacity: 1; background: #3b82f6; } }
 
-            /* Native select polish */
-            select { -webkit-appearance: none; appearance: none; background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239CA3AF' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 0.75rem center; padding-right: 2.25rem; }
-            select option { background: var(--surface-bg); color: var(--text-primary); }
+            /* Undo toast */
+            .undo-toast {
+                position: fixed;
+                top: calc(env(safe-area-inset-top) + 16px);
+                left: 50%;
+                transform: translateX(-50%);
+                z-index: 200;
+                background: var(--surface-bg);
+                border: 1px solid var(--border-default);
+                border-radius: var(--radius-xl);
+                padding: 0.85rem 1.25rem;
+                display: flex;
+                align-items: center;
+                gap: 0.75rem;
+                box-shadow: var(--shadow-xl);
+                max-width: calc(100vw - 2rem);
+            }
+            .undo-toast-enter { animation: undo-in 0.32s var(--ease-spring); }
+            .undo-toast-leave { animation: undo-out 0.24s ease-in forwards; }
+            @keyframes undo-in { from { opacity:0; transform: translateX(-50%) translateY(-20px); } to { opacity:1; transform: translateX(-50%) translateY(0); } }
+            @keyframes undo-out { from { opacity:1; transform: translateX(-50%) translateY(0); } to { opacity:0; transform: translateX(-50%) translateY(-20px); } }
 
-            /* Reduce-motion respect */
-            .reduce-motion .pulse-glow, .reduce-motion .shimmer, .reduce-motion .fade-up, .reduce-motion .tempo-pulse { animation: none !important; }
-            .reduce-motion * { transition-duration: 0.01ms !important; }
+            /* ============================================================
+               SWIPE ROW (set complete/fail gesture)
+               ============================================================ */
+            .swipe-row { touch-action: pan-y; position: relative; overflow: hidden; }
+            .swipe-row .swipe-bg-left { position: absolute; right: 0; top: 0; bottom: 0; width: 100%; display: flex; align-items: center; justify-content: flex-end; padding-right: 1.25rem; background: var(--danger-soft); border-radius: var(--radius-lg); z-index: 0; opacity: 0; transition: opacity 0.18s; pointer-events: none; }
+            .swipe-row .swipe-bg-right { position: absolute; left: 0; top: 0; bottom: 0; width: 100%; display: flex; align-items: center; padding-left: 1.25rem; background: var(--success-soft); border-radius: var(--radius-lg); z-index: 0; opacity: 0; transition: opacity 0.18s; pointer-events: none; }
+            .swipe-row .swipe-content { position: relative; z-index: 1; background: inherit; transition: transform 0.18s ease-out; }
 
-            /* Toggle switch */
-            .toggle { width: 44px; height: 26px; border-radius: 999px; position: relative; transition: background 0.25s; cursor: pointer; flex-shrink: 0; }
-            .toggle-knob { position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 999px; background: #fff; box-shadow: 0 2px 6px rgba(0,0,0,0.25); transition: transform 0.25s cubic-bezier(0.4,0,0.2,1); }
+            /* ============================================================
+               RANGE SLIDERS — accessible, themeable
+               ============================================================ */
+            input[type=range] { -webkit-appearance: none; appearance: none; background: transparent; height: 24px; cursor: pointer; }
+            input[type=range]:focus-visible { outline: 2px solid var(--accent-hi); outline-offset: 4px; border-radius: 999px; }
+            input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 22px; width: 22px; border-radius: 50%; background: var(--accent); cursor: pointer; box-shadow: 0 0 0 4px var(--accent-glow-soft), 0 4px 10px rgba(0,0,0,0.3); border: 2px solid var(--toggle-knob-bg); transition: transform 0.15s; }
+            input[type=range]::-webkit-slider-thumb:active { transform: scale(1.18); }
+            input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 6px; cursor: pointer; background: var(--border-default); border-radius: 999px; }
+            input[type=range]::-moz-range-thumb { height: 22px; width: 22px; border-radius: 50%; background: var(--accent); cursor: pointer; border: 2px solid var(--toggle-knob-bg); box-shadow: 0 0 0 4px var(--accent-glow-soft); }
+            input[type=range]::-moz-range-track { height: 6px; background: var(--border-default); border-radius: 999px; }
+
+            /* ============================================================
+               NATIVE SELECT POLISH
+               ============================================================ */
+            select {
+                -webkit-appearance: none;
+                appearance: none;
+                background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239CA3AF' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+                background-repeat: no-repeat;
+                background-position: right 0.75rem center;
+                padding-right: 2.25rem;
+            }
+            select option { background: var(--dropdown-bg); color: var(--text-primary); }
+
+            /* ============================================================
+               TOGGLE SWITCH — visual
+               ============================================================ */
+            .toggle { width: 44px; height: 26px; border-radius: 999px; position: relative; transition: background 0.25s var(--ease-smooth), border-color 0.25s var(--ease-smooth); cursor: pointer; flex-shrink: 0; background: var(--surface-hi-bg); border: 1px solid var(--border-default); }
+            .toggle-knob { position: absolute; top: 2px; left: 2px; width: 20px; height: 20px; border-radius: 999px; background: var(--toggle-knob-bg); box-shadow: 0 2px 6px rgba(0,0,0,0.25); transition: transform 0.28s var(--ease-spring); }
+            .toggle.is-on, .toggle[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); }
+            .toggle.is-on .toggle-knob, .toggle[aria-pressed="true"] .toggle-knob { transform: translateX(18px); }
 
             /* Theme toggle group */
             .theme-toggle button { min-height: 2.75rem; }
 
-            /* Floating bottom nav */
-            .floating-nav { background: var(--nav-bg); backdrop-filter: blur(24px) saturate(180%); -webkit-backdrop-filter: blur(24px) saturate(180%); border: 1px solid var(--border-default); box-shadow: var(--shadow-card); }
-
-            /* Heatmap calendar swatches */
-            .heat-legend { width: 14px; height: 14px; border-radius: 4px; display: inline-block; }
-
-            /* Achievement card */
-            .ach-tile { aspect-ratio: 1; border-radius: 1rem; @apply f-c text-2xl border relative cursor-help transition-all duration-300; }
+            /* ============================================================
+               ACHIEVEMENT TILES
+               ============================================================ */
+            .ach-tile { aspect-ratio: 1; border-radius: var(--radius-lg); @apply f-c text-2xl border relative cursor-help transition-all duration-300; }
             .ach-tile.locked { background: var(--surface-hi-bg); border-color: var(--border-subtle); filter: grayscale(1); opacity: 0.5; }
             .ach-tile.unlocked { background: var(--accent-soft); border-color: var(--accent-border); box-shadow: 0 0 14px var(--accent-glow-soft); }
+            .ach-tile.unlocked:hover { transform: translateY(-2px); box-shadow: 0 0 22px var(--accent-glow); }
+
+            /* ============================================================
+               REDUCED MOTION (class set by JS based on user pref)
+               ============================================================ */
+            .reduce-motion .pulse-glow, .reduce-motion .shimmer, .reduce-motion .fade-up, .reduce-motion .tempo-pulse, .reduce-motion .stagger-1, .reduce-motion .stagger-2, .reduce-motion .stagger-3, .reduce-motion .stagger-4, .reduce-motion .stagger-5, .reduce-motion .stagger-6 { animation: none !important; }
+            .reduce-motion * { transition-duration: 0.01ms !important; }
         }
 
-        /* Base body & fonts */
-        body { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; background: var(--app-bg); color: var(--text-primary); -webkit-tap-highlight-color: transparent; -webkit-font-smoothing: antialiased; }
+        /* ============================================================
+           BASE BODY & FONTS
+           ============================================================ */
+        body {
+            font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+            background: var(--app-bg);
+            background-image: var(--app-bg-gradient);
+            background-attachment: fixed;
+            color: var(--text-primary);
+            min-height: 100vh;
+            min-height: 100dvh;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-font-smoothing: antialiased;
+            text-rendering: optimizeLegibility;
+        }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         [x-cloak] { display: none !important; }
 
-        /* ============================================
-           DESIGN TOKENS — Dark (default)
-           ============================================ */
+        /* ============================================================
+           DESIGN TOKENS — DARK (default)
+           Brand: deep near-black with indigo -> violet accent
+           ============================================================ */
         :root {
             color-scheme: dark;
-            --app-bg: #08080C;
-            --app-bg-gradient: radial-gradient(1200px 600px at 50% -10%, rgba(99,102,241,0.10), transparent 60%), radial-gradient(800px 500px at 100% 100%, rgba(168,85,247,0.06), transparent 50%);
-            --surface-bg: linear-gradient(180deg, #16161F 0%, #12121A 100%);
-            --surface-soft-bg: rgba(255,255,255,0.025);
-            --surface-hi-bg: rgba(255,255,255,0.04);
-            --surface-sheen: linear-gradient(180deg, rgba(255,255,255,0.04) 0%, transparent 50%);
-            --input-bg: #0E0E16;
-            --btn-sec-bg: rgba(255,255,255,0.05);
-            --btn-sec-hi: rgba(255,255,255,0.09);
-            --hover-soft: rgba(255,255,255,0.06);
-            --dropdown-bg: #12121A;
 
+            /* App background — premium near-black with ambient glow */
+            --app-bg: #07070B;
+            --app-bg-gradient: radial-gradient(1400px 700px at 50% -10%, rgba(99,102,241,0.12), transparent 55%), radial-gradient(900px 600px at 100% 100%, rgba(168,85,247,0.07), transparent 50%), radial-gradient(800px 500px at 0% 80%, rgba(99,102,241,0.04), transparent 50%);
+
+            /* Surfaces — refined layered depth */
+            --surface-bg: linear-gradient(180deg, #17171F 0%, #11111A 100%);
+            --surface-soft-bg: rgba(255,255,255,0.025);
+            --surface-hi-bg: rgba(255,255,255,0.045);
+            --surface-sheen: linear-gradient(180deg, rgba(255,255,255,0.05) 0%, transparent 45%);
+
+            --input-bg: #0D0D15;
+            --btn-sec-bg: rgba(255,255,255,0.06);
+            --btn-sec-hi: rgba(255,255,255,0.10);
+            --hover-soft: rgba(255,255,255,0.07);
+            --dropdown-bg: #13131C;
+            --toggle-knob-bg: #FFFFFF;
+
+            /* Text — refined hierarchy */
             --text-primary: #F8F9FC;
-            --text-secondary: #B8BCC9;
-            --text-tertiary: #9CA3AF;
+            --text-secondary: #BFC4D2;
+            --text-tertiary: #9CA3B4;
             --text-faint: #6B7280;
 
-            --border-subtle: rgba(255,255,255,0.06);
-            --border-default: rgba(255,255,255,0.10);
-            --border-strong: rgba(255,255,255,0.20);
+            /* Borders — three tiers */
+            --border-subtle: rgba(255,255,255,0.07);
+            --border-default: rgba(255,255,255,0.11);
+            --border-strong: rgba(255,255,255,0.22);
 
+            /* Accent — indigo -> violet (brand) */
             --accent: #6366F1;
             --accent-hi: #818CF8;
             --accent-grad-1: #6366F1;
             --accent-grad-2: #A855F7;
-            --accent-glow: rgba(99,102,241,0.30);
+            --accent-glow: rgba(99,102,241,0.32);
             --accent-glow-soft: rgba(99,102,241,0.16);
             --accent-soft: rgba(99,102,241,0.14);
-            --accent-border: rgba(99,102,241,0.30);
+            --accent-border: rgba(99,102,241,0.32);
 
+            /* Semantic colors — full set with deeper + glow variants */
             --success: #10B981;
+            --success-deep: #059669;
             --success-soft: rgba(16,185,129,0.14);
-            --warning: #F59E0B;
-            --warning-soft: rgba(245,158,11,0.14);
-            --danger: #EF4444;
-            --danger-soft: rgba(239,68,68,0.14);
+            --success-glow: rgba(16,185,129,0.30);
 
-            --header-bg: rgba(8,8,12,0.78);
-            --nav-bg: rgba(8,8,12,0.82);
+            --warning: #F59E0B;
+            --warning-deep: #D97706;
+            --warning-soft: rgba(245,158,11,0.14);
+            --warning-glow: rgba(245,158,11,0.30);
+
+            --danger: #EF4444;
+            --danger-deep: #DC2626;
+            --danger-soft: rgba(239,68,68,0.14);
+            --danger-glow: rgba(239,68,68,0.30);
+
+            --info: #3B82F6;
+            --info-deep: #2563EB;
+            --info-soft: rgba(59,130,246,0.14);
+            --info-glow: rgba(59,130,246,0.30);
+
+            /* Chrome */
+            --header-bg: rgba(7,7,11,0.78);
+            --nav-bg: rgba(7,7,11,0.85);
             --modal-bg: rgba(0,0,0,0.78);
 
-            --cal-empty: rgba(255,255,255,0.02);
+            /* Calendar heatmap */
+            --cal-empty: rgba(255,255,255,0.025);
             --cal-today-bg: rgba(255,255,255,0.08);
-            --cal-1-bg: rgba(99,102,241,0.18);
+            --cal-1-bg: rgba(99,102,241,0.20);
             --cal-1-fg: #A5B4FC;
-            --cal-1-bd: rgba(99,102,241,0.28);
-            --cal-2-bg: rgba(99,102,241,0.45);
+            --cal-1-bd: rgba(99,102,241,0.32);
+            --cal-2-bg: rgba(99,102,241,0.48);
             --cal-2-fg: #fff;
-            --cal-2-bd: rgba(99,102,241,0.55);
+            --cal-2-bd: rgba(99,102,241,0.58);
 
             --shimmer-overlay: rgba(255,255,255,0.10);
 
-            --shadow-card: 0 1px 0 rgba(255,255,255,0.04) inset, 0 12px 32px rgba(0,0,0,0.35);
-            --shadow-modal: 0 30px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.06);
+            /* Shadows — 6-tier elevation system */
+            --shadow-xs: 0 1px 2px rgba(0,0,0,0.30);
+            --shadow-sm: 0 2px 8px rgba(0,0,0,0.30);
+            --shadow-md: 0 1px 0 rgba(255,255,255,0.05) inset, 0 14px 36px rgba(0,0,0,0.40);
+            --shadow-lg: 0 1px 0 rgba(255,255,255,0.06) inset, 0 22px 56px rgba(0,0,0,0.50);
+            --shadow-xl: 0 32px 88px rgba(0,0,0,0.65), 0 0 0 1px rgba(255,255,255,0.07);
+            --shadow-2xl: 0 44px 120px rgba(0,0,0,0.75), 0 0 0 1px rgba(255,255,255,0.08);
+
+            /* Aliases for backward compatibility */
+            --shadow-card: var(--shadow-md);
+            --shadow-modal: var(--shadow-xl);
+            --shadow-pop: var(--shadow-lg);
+
+            /* Radius scale */
+            --radius-sm: 0.5rem;
+            --radius-md: 0.75rem;
+            --radius-lg: 1rem;
+            --radius-xl: 1.25rem;
+            --radius-2xl: 1.5rem;
+            --radius-3xl: 1.75rem;
+
+            /* Easing */
+            --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+            --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
+            --ease-out: cubic-bezier(0.0, 0, 0.2, 1);
         }
 
-        /* ============================================
-           DESIGN TOKENS — Light
-           ============================================ */
+        /* ============================================================
+           DESIGN TOKENS — LIGHT
+           Refined for premium daytime feel; completes missing overrides
+           ============================================================ */
         .theme-light {
             color-scheme: light;
-            --app-bg: #F7F8FC;
-            --app-bg-gradient: radial-gradient(1200px 600px at 50% -10%, rgba(99,102,241,0.10), transparent 60%), radial-gradient(800px 500px at 100% 100%, rgba(168,85,247,0.06), transparent 50%);
+
+            --app-bg: #F6F7FB;
+            --app-bg-gradient: radial-gradient(1400px 700px at 50% -10%, rgba(99,102,241,0.12), transparent 55%), radial-gradient(900px 600px at 100% 100%, rgba(168,85,247,0.08), transparent 50%), radial-gradient(800px 500px at 0% 80%, rgba(99,102,241,0.05), transparent 50%);
+
             --surface-bg: #FFFFFF;
-            --surface-soft-bg: rgba(15,23,42,0.04);
-            --surface-hi-bg: rgba(15,23,42,0.04);
-            --surface-sheen: linear-gradient(180deg, rgba(255,255,255,0.6) 0%, transparent 50%);
+            --surface-soft-bg: rgba(15,23,42,0.035);
+            --surface-hi-bg: rgba(15,23,42,0.045);
+            --surface-sheen: linear-gradient(180deg, rgba(255,255,255,0.7) 0%, transparent 45%);
+
             --input-bg: #FFFFFF;
-            --btn-sec-bg: rgba(15,23,42,0.04);
-            --btn-sec-hi: rgba(15,23,42,0.08);
-            --hover-soft: rgba(15,23,42,0.05);
+            --btn-sec-bg: rgba(15,23,42,0.045);
+            --btn-sec-hi: rgba(15,23,42,0.09);
+            --hover-soft: rgba(15,23,42,0.055);
             --dropdown-bg: #FFFFFF;
+            --toggle-knob-bg: #FFFFFF;
 
             --text-primary: #0B1020;
             --text-secondary: #475569;
             --text-tertiary: #64748B;
             --text-faint: #94A3B8;
 
-            --border-subtle: rgba(15,23,42,0.07);
-            --border-default: rgba(15,23,42,0.12);
-            --border-strong: rgba(15,23,42,0.22);
+            --border-subtle: rgba(15,23,42,0.08);
+            --border-default: rgba(15,23,42,0.13);
+            --border-strong: rgba(15,23,42,0.24);
 
             --accent: #6366F1;
             --accent-hi: #4F46E5;
             --accent-grad-1: #6366F1;
             --accent-grad-2: #A855F7;
-            --accent-glow: rgba(99,102,241,0.22);
-            --accent-glow-soft: rgba(99,102,241,0.10);
-            --accent-soft: rgba(99,102,241,0.10);
-            --accent-border: rgba(99,102,241,0.28);
+            --accent-glow: rgba(79,70,229,0.25);
+            --accent-glow-soft: rgba(79,70,229,0.12);
+            --accent-soft: rgba(79,70,229,0.10);
+            --accent-border: rgba(79,70,229,0.30);
 
-            --header-bg: rgba(247,248,252,0.82);
-            --nav-bg: rgba(255,255,255,0.86);
+            /* COMPLETE light-theme semantic overrides (was incomplete) */
+            --success: #059669;
+            --success-deep: #047857;
+            --success-soft: rgba(5,150,105,0.10);
+            --success-glow: rgba(5,150,105,0.22);
+
+            --warning: #D97706;
+            --warning-deep: #B45309;
+            --warning-soft: rgba(217,119,6,0.10);
+            --warning-glow: rgba(217,119,6,0.22);
+
+            --danger: #DC2626;
+            --danger-deep: #B91C1C;
+            --danger-soft: rgba(220,38,38,0.10);
+            --danger-glow: rgba(220,38,38,0.22);
+
+            --info: #2563EB;
+            --info-deep: #1D4ED8;
+            --info-soft: rgba(37,99,235,0.10);
+            --info-glow: rgba(37,99,235,0.22);
+
+            --header-bg: rgba(246,247,251,0.84);
+            --nav-bg: rgba(255,255,255,0.88);
             --modal-bg: rgba(248,250,252,0.78);
 
-            --cal-empty: rgba(15,23,42,0.03);
+            --cal-empty: rgba(15,23,42,0.035);
             --cal-today-bg: rgba(15,23,42,0.08);
-            --cal-1-bg: rgba(99,102,241,0.18);
+            --cal-1-bg: rgba(79,70,229,0.16);
             --cal-1-fg: #4F46E5;
-            --cal-1-bd: rgba(99,102,241,0.28);
-            --cal-2-bg: rgba(99,102,241,0.42);
+            --cal-1-bd: rgba(79,70,229,0.28);
+            --cal-2-bg: rgba(79,70,229,0.42);
             --cal-2-fg: #fff;
-            --cal-2-bd: rgba(99,102,241,0.55);
+            --cal-2-bd: rgba(79,70,229,0.55);
 
-            --shimmer-overlay: rgba(15,23,42,0.06);
+            --shimmer-overlay: rgba(15,23,42,0.07);
 
-            --shadow-card: 0 1px 0 rgba(255,255,255,0.6) inset, 0 10px 24px rgba(15,23,42,0.06);
-            --shadow-modal: 0 30px 80px rgba(15,23,42,0.18), 0 0 0 1px rgba(15,23,42,0.06);
+            --shadow-xs: 0 1px 2px rgba(15,23,42,0.06);
+            --shadow-sm: 0 2px 8px rgba(15,23,42,0.07);
+            --shadow-md: 0 1px 0 rgba(255,255,255,0.7) inset, 0 12px 28px rgba(15,23,42,0.08);
+            --shadow-lg: 0 1px 0 rgba(255,255,255,0.8) inset, 0 22px 48px rgba(15,23,42,0.12);
+            --shadow-xl: 0 32px 80px rgba(15,23,42,0.20), 0 0 0 1px rgba(15,23,42,0.07);
+            --shadow-2xl: 0 44px 110px rgba(15,23,42,0.26), 0 0 0 1px rgba(15,23,42,0.08);
+
+            --shadow-card: var(--shadow-md);
+            --shadow-modal: var(--shadow-xl);
+            --shadow-pop: var(--shadow-lg);
         }
 
-        body { background: var(--app-bg); background-image: var(--app-bg-gradient); background-attachment: fixed; color: var(--text-primary); min-height: 100vh; min-height: 100dvh; }
-
-        /* Theme propagation helpers */
+        /* ============================================================
+           THEME PROPAGATION HELPERS — for legacy Tailwind utility classes
+           ============================================================ */
         .theme-light .bg-black, .theme-light [class*="bg-black\/"] { background-color: var(--app-bg) !important; }
         .theme-light .text-white { color: var(--text-primary) !important; }
         .theme-light .text-slate-200, .theme-light .text-slate-300 { color: var(--text-secondary) !important; }
@@ -326,18 +636,29 @@
         .theme-light .hover\:bg-white\/10:hover { background-color: var(--hover-soft) !important; }
         .theme-light option { background: #FFFFFF; color: var(--text-primary); }
 
-        /* Focus-visible polish */
-        button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline: 2px solid var(--accent-hi); outline-offset: 2px; }
-
-        /* Tap target minimum */
+        /* ============================================================
+           ACCESSIBILITY — focus-visible, tap targets, motion
+           ============================================================ */
+        button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline: 2px solid var(--accent-hi); outline-offset: 2px; border-radius: 4px; }
         button, .nav-btn, .ex-opt { min-height: 44px; }
         .nav-btn { min-height: 56px; }
 
-        /* Desktop enhancement: center the app shell */
+        /* Honor system reduced-motion (in addition to .reduce-motion class) */
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
+        }
+
+        /* ============================================================
+           DESKTOP ENHANCEMENT — premium app-shell feel
+           ============================================================ */
         @media (min-width: 768px) {
-            body { display: flex; justify-content: center; }
-            body > * { width: 100%; max-width: 480px; margin-left: auto; margin-right: auto; }
-            .modal-bg > * { max-width: 28rem; }
+            body { display: flex; justify-content: center; align-items: flex-start; }
+            body > * { width: 100%; max-width: 520px; margin-left: auto; margin-right: auto; }
+            .modal-bg > * { max-width: 30rem; }
+        }
+        @media (min-width: 1024px) {
+            body { padding: 24px 0; }
+            body > * { max-width: 540px; }
         }
     </style>
     <script src="app.js"></script>
@@ -373,7 +694,7 @@
                 LIFT ULTIMATE</h1>
             <p class="text-sm" :style="`color: var(--text-tertiary)`">Login or create an account to sync your progress.</p>
         </div>
-        <div class="glass-panel fade-up" style="animation-delay: 60ms">
+        <div class="glass-panel fade-up stagger-1">
             <div x-show="auth.error" class="p-3 rounded-2xl mb-4 text-center text-sm font-bold"
                 :style="`background: var(--danger-soft); border: 1px solid var(--danger); color: var(--danger)`" x-text="auth.error"></div>
             <div class="space-y-4 mb-6">
@@ -398,7 +719,7 @@
     </div>
 
     <!-- GLOBAL MODAL HOST -->
-    <div x-show="activeModal" class="modal-bg" x-transition x-cloak>
+    <div x-show="activeModal" class="modal-bg" role="dialog" aria-modal="true" aria-label="Dialog" x-transition x-cloak>
         <template x-if="activeModal==='resume'">
             <div class="glass-panel text-center">
                 <div class="inline-flex w-14 h-14 rounded-2xl items-center justify-center mb-4"
@@ -409,7 +730,7 @@
                 <p class="text-xs mb-6" :style="`color: var(--text-tertiary)`" x-text="savedSession?.title"></p>
                 <div class="space-y-3">
                     <button @click="resume()" class="btn-p">Resume</button>
-                    <button @click="finish()" class="btn" :style="`background: var(--success-soft); color: var(--success); border: 1px solid var(--success)`">Finish Now</button>
+                    <button @click="finish()" class="btn-success-soft">Finish Now</button>
                     <button @click="session={};savedSession=null;U.d('lift_active_session');U.d('lift_active_session_backup');activeModal=null"
                         class="btn" :style="`background: var(--danger-soft); color: var(--danger); border: 1px solid var(--danger)`">Discard</button>
                 </div>
@@ -439,7 +760,7 @@
                 <h3 class="text-xl font-bold">Deload Recommended</h3>
                 <p class="text-sm mt-2" :style="`color: var(--text-secondary)`" x-text="deloadInfo.reason"></p>
                 <div class="space-y-3 mt-6">
-                    <button @click="doDeload()" class="btn text-white" :style="`background-image: linear-gradient(135deg, #F59E0B, #EF4444); box-shadow: 0 8px 20px var(--warning-soft)`">Apply</button>
+                    <button @click="doDeload()" class="btn-warning">Apply</button>
                     <button @click="activeModal='weight'" class="btn-s">Skip</button>
                 </div>
             </div>
@@ -463,7 +784,7 @@
                 </div>
                 <div class="grid grid-cols-2 gap-3">
                     <button @click="declineDynamicRestSuggestion()" class="btn-s">Train Anyway</button>
-                    <button @click="acceptDynamicRestSuggestion()" class="btn text-white" :style="`background-image: linear-gradient(135deg, #3B82F6, #6366F1); box-shadow: 0 8px 20px rgba(59,130,246,0.3)`">Rest Today</button>
+                    <button @click="acceptDynamicRestSuggestion()" class="btn-info">Rest Today</button>
                 </div>
             </div>
         </template>
@@ -484,8 +805,9 @@
                         <div class="flex gap-1">
                             <template x-for="r in [6,7,8,9,10]">
                                 <button @click="setEdit.rpe = setEdit.rpe===r ? null : r"
-                                    class="flex-1 py-2.5 rounded-xl text-xs font-bold transition"
-                                    :style="setEdit.rpe===r ? `background-image: linear-gradient(135deg, var(--accent-grad-1), var(--accent-grad-2)); color: #fff; box-shadow: 0 4px 12px var(--accent-glow-soft)` : `background: var(--surface-hi-bg); color: var(--text-tertiary); border: 1px solid var(--border-default)`"
+                                    class="seg-btn flex-1 py-2.5 text-xs"
+                                    :class="{'seg-btn-on': setEdit.rpe===r, 'seg-btn-off': setEdit.rpe!==r}"
+                                    :aria-pressed="setEdit.rpe===r"
                                     x-text="r"></button>
                             </template>
                         </div>
@@ -530,7 +852,7 @@
                 </div>
                 <div class="flex gap-3">
                     <button @click="beginSession()" class="flex-1 btn-s">Skip</button>
-                    <button @click="logBW();beginSession()" class="flex-1 btn text-white" :style="`background-image: linear-gradient(135deg, #3B82F6, #6366F1); box-shadow: 0 8px 20px rgba(59,130,246,0.3)`">Log</button>
+                    <button @click="logBW();beginSession()" class="flex-1 btn-info">Log</button>
                 </div>
             </div>
         </template>
@@ -564,8 +886,9 @@
                 <h3 class="text-lg font-bold mb-4" x-text="'Adjust ' + (batchAdjustTier==='t1'?'T1':'T2') + ' Sets'"></h3>
                 <div class="flex flex-wrap gap-2 justify-center mb-6">
                     <template x-for="pct in [-15, -10, -5, -2.5, 2.5, 5, 10, 15]">
-                        <button @click="batchAdjust=pct" class="px-3.5 py-2.5 rounded-xl text-xs font-bold transition min-w-[3.5rem]"
-                            :style="batchAdjust===pct ? `background-image: linear-gradient(135deg, var(--accent-grad-1), var(--accent-grad-2)); color: #fff; box-shadow: 0 4px 12px var(--accent-glow-soft)` : `background: var(--surface-hi-bg); color: var(--text-secondary); border: 1px solid var(--border-default)`"
+                        <button @click="batchAdjust=pct" class="seg-btn px-3.5 py-2.5 text-xs min-w-[3.5rem]"
+                            :class="{'seg-btn-on': batchAdjust===pct, 'seg-btn-off': batchAdjust!==pct}"
+                            :aria-pressed="batchAdjust===pct"
                             x-text="(pct>0?'+':'')+pct+'%'"></button>
                     </template>
                 </div>
@@ -686,7 +1009,7 @@
                 :style="`background-image: linear-gradient(135deg, var(--accent-grad-1), var(--accent-grad-2)); -webkit-background-clip: text; background-clip: text; color: transparent`">LIFT ULTIMATE</h1>
             <p class="text-sm" :style="`color: var(--text-tertiary)`">Enter your 1 Rep Maxes to begin.</p>
         </div>
-        <div class="space-y-4 mb-8 fade-up" style="animation-delay: 60ms">
+        <div class="space-y-4 mb-8 fade-up stagger-1">
             <template x-for="l in ['Bench','Squat','Deadlift','OHP']">
                 <div>
                     <label class="lbl" x-text="l"></label>
@@ -694,11 +1017,15 @@
                 </div>
             </template>
         </div>
-        <div class="f-cb gap-3 mb-8 fade-up" style="animation-delay: 120ms">
-            <div class="flex-1 text-center p-3.5 rounded-2xl cursor-pointer transition font-bold" :style="prefs.weightUnit==='lbs' ? `background-image: linear-gradient(135deg, var(--accent-grad-1), var(--accent-grad-2)); color: #fff; box-shadow: 0 8px 20px var(--accent-glow-soft)` : `background: var(--surface-hi-bg); border: 1px solid var(--border-default); color: var(--text-secondary)`" @click="prefs.weightUnit='lbs';prefs.barWeight=45">LBS</div>
-            <div class="flex-1 text-center p-3.5 rounded-2xl cursor-pointer transition font-bold" :style="prefs.weightUnit==='kg' ? `background-image: linear-gradient(135deg, var(--accent-grad-1), var(--accent-grad-2)); color: #fff; box-shadow: 0 8px 20px var(--accent-glow-soft)` : `background: var(--surface-hi-bg); border: 1px solid var(--border-default); color: var(--text-secondary)`" @click="prefs.weightUnit='kg';prefs.barWeight=20">KG</div>
+        <div class="f-cb gap-3 mb-8 fade-up stagger-2">
+            <div class="seg-btn flex-1 text-center p-3.5 rounded-2xl cursor-pointer"
+                    :class="{'seg-btn-on': prefs.weightUnit==='lbs', 'seg-btn-off': prefs.weightUnit!=='lbs'}"
+                    role="button" tabindex="0" @click="prefs.weightUnit='lbs';prefs.barWeight=45" @keydown.enter="prefs.weightUnit='lbs';prefs.barWeight=45">LBS</div>
+            <div class="seg-btn flex-1 text-center p-3.5 rounded-2xl cursor-pointer"
+                    :class="{'seg-btn-on': prefs.weightUnit==='kg', 'seg-btn-off': prefs.weightUnit!=='kg'}"
+                    role="button" tabindex="0" @click="prefs.weightUnit='kg';prefs.barWeight=20" @keydown.enter="prefs.weightUnit='kg';prefs.barWeight=20">KG</div>
         </div>
-        <button @click="finSetup()" class="btn-p text-lg fade-up" style="animation-delay: 180ms">Generate</button>
+        <button @click="finSetup()" class="btn-p text-lg fade-up stagger-3">Generate</button>
     </div>
 
     <!-- DASHBOARD VIEW -->
@@ -760,12 +1087,12 @@
                 </div>
             </div>
             <!-- Muscle balance chart -->
-            <div class="glass-card fade-up" style="animation-delay: 60ms">
+            <div class="glass-card fade-up stagger-1">
                 <div class="f-cb mb-2"><h3 class="lbl mb-0">Muscle Balance (30 Days)</h3></div>
                 <div class="h-48 w-full relative"><canvas id="balanceChart"></canvas></div>
             </div>
             <!-- Progression chart -->
-            <div class="glass-card fade-up" style="animation-delay: 100ms">
+            <div class="glass-card fade-up stagger-2">
                 <div class="f-cb mb-4">
                     <select x-model="chartLift" @change="$nextTick(()=>draw())" class="bg-transparent text-sm font-bold outline-none cursor-pointer">
                         <template x-for="l in lifts()"><option :value="l" x-text="l"></option></template>
@@ -775,7 +1102,7 @@
                 <div class="h-32 w-full relative"><canvas id="mainChart"></canvas></div>
             </div>
             <!-- Schedule -->
-            <div class="space-y-4 fade-up" style="animation-delay: 140ms">
+            <div class="space-y-4 fade-up stagger-3">
                 <div class="f-cb px-2">
                     <h3 class="lbl mb-0">Schedule</h3>
                     <div class="w-32 h-1.5 rounded-full overflow-hidden" :style="`background: var(--surface-hi-bg)`">
@@ -805,7 +1132,7 @@
                 </div>
             </div>
             <!-- Quick actions -->
-            <div class="grid grid-cols-2 gap-3 fade-up" style="animation-delay: 180ms">
+            <div class="grid grid-cols-2 gap-3 fade-up stagger-3">
                 <button @click="startCust()" class="glass-card text-left transition hover:scale-[1.02]">
                     <div class="w-10 h-10 rounded-2xl f-c mb-2 font-bold" :style="`background: rgba(59,130,246,0.14); color: #60A5FA`">+</div>
                     <div class="font-bold text-sm">Custom Workout</div>
@@ -833,14 +1160,23 @@
                 <h2 class="text-base font-bold truncate" x-text="session.title"></h2>
                 <div class="f-g2 text-xs mono" :style="`color: var(--text-tertiary)`"><span x-text="sessionTimerStr"></span><span x-show="prefs.showETR" x-text="'| ~'+estimateTimeRemaining()+'m'"></span></div>
             </div>
-            <div class="f-g2 shrink-0">
-                <button @click="metronomeActive = !metronomeActive" class="w-9 h-9 rounded-xl f-c transition" :class="metronomeActive ? 'tempo-pulse' : ''" :style="metronomeActive ? `background: var(--app-bg); border: 2px solid var(--success)` : `background: var(--surface-hi-bg); color: var(--text-tertiary)`" aria-label="Toggle metronome">
+            <div class="flex items-center gap-1.5 shrink-0">
+                <button @click="metronomeActive = !metronomeActive" class="w-9 h-9 rounded-xl f-c transition"
+                    :class="{'tempo-pulse': metronomeActive, 'seg-btn-off': !metronomeActive}"
+                    :style="metronomeActive ? `background: var(--app-bg); border: 2px solid var(--success); color: var(--success)` : ''"
+                    :aria-pressed="metronomeActive" aria-label="Toggle metronome">
                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="icons.clock"/></svg>
                 </button>
-                <button @click="toggleZen()" class="px-3 h-9 rounded-xl font-bold text-xs transition" :style="zenMode ? `background-image: linear-gradient(135deg, var(--accent-grad-1), var(--accent-grad-2)); color: #fff` : `background: var(--surface-hi-bg); color: var(--text-tertiary)`">Zen</button>
-                <button @click="openSmartPlateCalc()" class="w-9 h-9 rounded-xl f-c transition" :style="`background: var(--surface-hi-bg); color: var(--text-tertiary)`" aria-label="Plate calculator">⚖️</button>
-                <button @click="cancel()" class="w-9 h-9 rounded-xl f-c font-bold transition" :style="`background: var(--danger-soft); color: var(--danger)`" aria-label="Cancel">✕</button>
-                <button @click="finish()" class="text-white px-4 h-9 rounded-xl text-xs font-bold transition hover:brightness-110" :style="`background-image: linear-gradient(135deg, #10B981, #059669); box-shadow: 0 4px 12px rgba(16,185,129,0.3)`">Finish</button>
+                <button @click="toggleZen()" class="seg-btn px-3 h-9 text-xs"
+                    :class="{'seg-btn-on': zenMode, 'seg-btn-off': !zenMode}"
+                    :aria-pressed="zenMode">Zen</button>
+                <button @click="openSmartPlateCalc()" class="seg-btn seg-btn-off w-9 h-9 rounded-xl f-c" aria-label="Plate calculator">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6h18M3 6v12a2 2 0 002 2h14a2 2 0 002-2V6M3 6l3-3h12l3 3M9 10v4M15 10v4"/></svg>
+                </button>
+                <button @click="cancel()" class="btn-danger-soft w-9 h-9 rounded-xl f-c font-bold transition" style="width:auto" aria-label="Cancel workout">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" :d="icons.x"/></svg>
+                </button>
+                <button @click="finish()" class="btn-success px-4 h-9 rounded-xl text-xs transition" style="width:auto">Finish</button>
             </div>
         </div>
 
@@ -1056,14 +1392,14 @@
             <div class="w-full max-w-sm">
                 <div class="f-cb mb-8">
                     <h2 class="text-2xl font-bold">Plate Calc</h2>
-                    <button @click="plate.open=false" class="p-2.5 rounded-full" :style="`background: var(--hover-soft); color: var(--text-primary)`">✕</button>
+                    <button @click="plate.open=false" class="btn-icon rounded-full" aria-label="Close plate calculator"><svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" :d="icons.x"/></svg></button>
                 </div>
                 <div class="text-center mb-10 relative">
                     <div class="text-7xl font-black mono" x-text="plate.w"></div>
                     <div class="text-sm uppercase font-bold tracking-widest mt-2" :style="`color: var(--text-faint)`" x-text="prefs.weightUnit"></div>
                     <div class="absolute top-1/2 -translate-y-1/2 right-0 f-col gap-2">
-                        <button @click="calcPlates(closestWeight(plate.w + 5))" class="w-9 h-9 rounded-xl f-c" :style="`background: var(--surface-hi-bg); color: var(--text-primary)`">▲</button>
-                        <button @click="calcPlates(closestWeight(plate.w - 5))" class="w-9 h-9 rounded-xl f-c" :style="`background: var(--surface-hi-bg); color: var(--text-primary)`">▼</button>
+                        <button @click="calcPlates(closestWeight(plate.w + 5))" class="seg-btn seg-btn-off w-9 h-9 rounded-xl f-c" aria-label="Increase weight"><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 15l7-7 7 7"/></svg></button>
+                        <button @click="calcPlates(closestWeight(plate.w - 5))" class="seg-btn seg-btn-off w-9 h-9 rounded-xl f-c" aria-label="Decrease weight"><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg></button>
                     </div>
                 </div>
                 <div class="flex items-center justify-center gap-1 h-32 mb-8 relative">
@@ -1082,12 +1418,12 @@
 
     <!-- CALENDAR VIEW -->
     <div x-show="view==='calendar'" class="p-5 pb-32 max-w-md mx-auto min-h-screen" x-transition x-cloak>
-        <div class="header-sticky f-cb mb-6 -mx-5 -mt-4 px-5 py-4" style="padding-top: calc(env(safe-area-inset-top) + 1rem)">
+        <div class="header-sticky f-cb mb-6 -mx-5 -mt-4 px-5 py-4">
             <h1 class="text-2xl font-black italic">HISTORY</h1>
             <div class="f-g2">
-                <button @click="cal.offset--;calBuild()" class="btn-icon"><svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="icons.prev"/></svg></button>
+                <button @click="cal.offset--;calBuild()" class="btn-icon" aria-label="Previous month"><svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="icons.prev"/></svg></button>
                 <div class="font-bold text-sm w-32 text-center" x-text="cal.monthName"></div>
-                <button @click="cal.offset++;calBuild()" class="btn-icon"><svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="icons.next"/></svg></button>
+                <button @click="cal.offset++;calBuild()" class="btn-icon" aria-label="Next month"><svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="icons.next"/></svg></button>
             </div>
         </div>
         <div class="cal-grid mb-2">
@@ -1101,11 +1437,11 @@
             </template>
         </div>
         <div class="glass-card mb-6 fade-up">
-            <div class="grid grid-cols-4 gap-2 text-center">
-                <div><div class="text-xl font-bold mono" x-text="calSummary.count"></div><div class="text-[9px] uppercase mt-1" :style="`color: var(--text-faint)`">Count</div></div>
-                <div :style="`border-left: 1px solid var(--border-subtle)`"><div class="text-xl font-bold mono" x-text="fmtVolS(calSummary.totalVol)"></div><div class="text-[9px] uppercase mt-1" :style="`color: var(--text-faint)`">Vol</div></div>
-                <div :style="`border-left: 1px solid var(--border-subtle)`"><div class="text-xl font-bold mono" x-text="calSummary.avgDur"></div><div class="text-[9px] uppercase mt-1" :style="`color: var(--text-faint)`">Min</div></div>
-                <div :style="`border-left: 1px solid var(--border-subtle)`"><div class="text-xl font-bold mono" :style="`color: var(--warning)`" x-text="calSummary.prs"></div><div class="text-[9px] uppercase mt-1" :style="`color: var(--text-faint)`">PRs</div></div>
+            <div class="grid grid-cols-4 gap-0 text-center">
+                <div class="px-2"><div class="text-xl font-bold mono" x-text="calSummary.count"></div><div class="stat-label mt-1">Count</div></div>
+                <div class="px-2 border-l border-[color:var(--border-subtle)]"><div class="text-xl font-bold mono" x-text="fmtVolS(calSummary.totalVol)"></div><div class="stat-label mt-1">Vol</div></div>
+                <div class="px-2 border-l border-[color:var(--border-subtle)]"><div class="text-xl font-bold mono" x-text="calSummary.avgDur"></div><div class="stat-label mt-1">Min</div></div>
+                <div class="px-2 border-l border-[color:var(--border-subtle)]"><div class="text-xl font-bold mono" :style="`color: var(--warning)`" x-text="calSummary.prs"></div><div class="stat-label mt-1">PRs</div></div>
             </div>
         </div>
         <div class="mb-4 f-cb">
@@ -1204,7 +1540,7 @@
                 </div>
             </div>
             <!-- Program -->
-            <div class="glass-card space-y-4 fade-up" style="animation-delay: 60ms">
+            <div class="glass-card space-y-4 fade-up stagger-1">
                 <h3 class="lbl">Program</h3>
                 <select x-model="prefs.program" class="inp text-sm mb-4" @change="pIdx=0;savePrefs();save()">
                     <template x-for="(p,k) in PROGRAMS"><option :value="k" x-text="p.name"></option></template>
@@ -1219,20 +1555,23 @@
                 </div>
             </div>
             <!-- Appearance -->
-            <div class="glass-card space-y-4 fade-up" style="animation-delay: 100ms">
+            <div class="glass-card space-y-4 fade-up stagger-2">
                 <h3 class="lbl">Appearance</h3>
                 <div class="grid grid-cols-3 gap-2 theme-toggle" role="group" aria-label="Theme">
-                    <button type="button" @click="setTheme('dark')" class="rounded-xl border text-xs font-bold uppercase tracking-wide transition py-3"
-                        :style="prefs.theme==='dark' ? `background-image: linear-gradient(135deg, var(--accent-grad-1), var(--accent-grad-2)); color: #fff; border-color: var(--accent); box-shadow: 0 4px 12px var(--accent-glow-soft)` : `background: var(--surface-hi-bg); border-color: var(--border-default); color: var(--text-tertiary)`">Dark</button>
-                    <button type="button" @click="setTheme('light')" class="rounded-xl border text-xs font-bold uppercase tracking-wide transition py-3"
-                        :style="prefs.theme==='light' ? `background-image: linear-gradient(135deg, var(--accent-grad-1), var(--accent-grad-2)); color: #fff; border-color: var(--accent); box-shadow: 0 4px 12px var(--accent-glow-soft)` : `background: var(--surface-hi-bg); border-color: var(--border-default); color: var(--text-tertiary)`">Light</button>
-                    <button type="button" @click="setTheme('system')" class="rounded-xl border text-xs font-bold uppercase tracking-wide transition py-3"
-                        :style="prefs.theme==='system' ? `background-image: linear-gradient(135deg, var(--accent-grad-1), var(--accent-grad-2)); color: #fff; border-color: var(--accent); box-shadow: 0 4px 12px var(--accent-glow-soft)` : `background: var(--surface-hi-bg); border-color: var(--border-default); color: var(--text-tertiary)`">System</button>
+                    <button type="button" @click="setTheme('dark')" class="seg-btn py-3 text-xs uppercase tracking-wide"
+                        :class="{'seg-btn-on': prefs.theme==='dark', 'seg-btn-off': prefs.theme!=='dark'}"
+                        :aria-pressed="prefs.theme==='dark'">Dark</button>
+                    <button type="button" @click="setTheme('light')" class="seg-btn py-3 text-xs uppercase tracking-wide"
+                        :class="{'seg-btn-on': prefs.theme==='light', 'seg-btn-off': prefs.theme!=='light'}"
+                        :aria-pressed="prefs.theme==='light'">Light</button>
+                    <button type="button" @click="setTheme('system')" class="seg-btn py-3 text-xs uppercase tracking-wide"
+                        :class="{'seg-btn-on': prefs.theme==='system', 'seg-btn-off': prefs.theme!=='system'}"
+                        :aria-pressed="prefs.theme==='system'">System</button>
                 </div>
                 <div class="text-xs leading-relaxed" :style="`color: var(--text-faint)`">Dark stays the default. System follows the device color scheme.</div>
             </div>
             <!-- TMs -->
-            <div class="glass-card space-y-4 fade-up" style="animation-delay: 140ms">
+            <div class="glass-card space-y-4 fade-up stagger-3">
                 <h3 class="lbl">TMs</h3>
                 <template x-for="l in lifts()">
                     <div class="f-cb">
@@ -1248,19 +1587,24 @@
                 </div>
             </div>
             <!-- Options -->
-            <div class="glass-card fade-up" style="animation-delay: 180ms">
+            <div class="glass-card fade-up stagger-3">
                 <h3 class="lbl mb-3">Options</h3>
-                <template x-for="o in UI.opts">
-                    <div class="f-cb py-3.5" :style="`border-bottom: 1px solid var(--border-subtle); cursor: pointer`" @click="prefs[o.k]=!prefs[o.k];savePrefs();if(o.k==='reduceMotion')applyRM()" :style.last="`border-bottom: 0`">
+                <template x-for="(o, oi) in UI.opts">
+                    <div class="f-cb py-3.5 cursor-pointer"
+                        :class="{'border-b border-[color:var(--border-subtle)]': oi < UI.opts.length - 1}"
+                        @click="prefs[o.k]=!prefs[o.k];savePrefs();if(o.k==='reduceMotion')applyRM()"
+                        :aria-pressed="prefs[o.k]"
+                        tabindex="0"
+                        @keydown.enter="prefs[o.k]=!prefs[o.k];savePrefs();if(o.k==='reduceMotion')applyRM()">
                         <span class="text-sm" :style="`color: var(--text-secondary)`" x-text="o.l"></span>
-                        <div class="toggle" :style="prefs[o.k] ? `background: var(--accent)` : `background: var(--surface-hi-bg)`">
-                            <div class="toggle-knob" :style="prefs[o.k] ? `transform: translateX(18px)` : `transform: translateX(0)`"></div>
+                        <div class="toggle" :class="{'is-on': prefs[o.k]}">
+                            <div class="toggle-knob"></div>
                         </div>
                     </div>
                 </template>
             </div>
             <!-- Timers -->
-            <div class="glass-card space-y-4 fade-up" style="animation-delay: 220ms">
+            <div class="glass-card space-y-4 fade-up stagger-4">
                 <h3 class="lbl">Timers (sec)</h3>
                 <template x-for="t in UI.timers">
                     <div class="space-y-2 mb-3">
@@ -1270,7 +1614,7 @@
                 </template>
             </div>
             <!-- Data -->
-            <div class="glass-card space-y-4 fade-up" style="animation-delay: 260ms">
+            <div class="glass-card space-y-4 fade-up stagger-5">
                 <h3 class="lbl">Data</h3>
                 <div class="grid grid-cols-2 gap-3">
                     <button @click="exportJSON()" class="btn text-xs" :style="`background: var(--surface-hi-bg); color: var(--text-primary)`">Export JSON</button>
@@ -1290,11 +1634,11 @@
         x-show="view!=='workout' && view!=='setup' && view!=='login'" x-transition x-cloak>
         <div class="flex justify-around items-center px-3 pt-2 max-w-md mx-auto">
             <template x-for="n in UI.nav">
-                <button @click="nav(n.id)" class="nav-btn relative" :style="view===n.id ? `color: var(--accent-hi)` : `color: var(--text-faint)`">
+                <button @click="nav(n.id)" class="nav-btn relative" :style="view===n.id ? `color: var(--accent-hi)` : `color: var(--text-faint)`" :aria-current="view===n.id ? 'page' : 'false'">
                     <svg class="w-6 h-6 mb-0.5 transition-transform duration-300" :class="view===n.id?'scale-110 -translate-y-1':''" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="n.i"/>
                     </svg>
-                    <span class="text-[9px] font-bold uppercase tracking-wider" x-text="n.l"></span>
+                    <span class="text-[10px] font-bold uppercase tracking-wider" x-text="n.l"></span>
                     <div class="absolute -top-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full transition-opacity duration-300" :style="view===n.id ? `opacity: 1; background: var(--accent-hi); box-shadow: 0 0 8px var(--accent-glow)` : `opacity: 0`"></div>
                 </button>
             </template>

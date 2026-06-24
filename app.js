@@ -1,4 +1,4 @@
-﻿
+
         const PANTRY_ID = '8f01b867-0669-4964-9042-792b6c8ebcd6';
         const DATA_VERSION = 4;
 
