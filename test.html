@@ -84,6 +84,18 @@
             }
         }
 
+        async function testAsync(group, name, fn) {
+            activeGroup = group;
+            try {
+                await fn();
+                if (!results.some(r => r.group === group && r.message === name)) record(true, name, 'completed', 'completed');
+            } catch (err) {
+                if (!results.some(r => r.group === group && r.message === name && !r.ok)) {
+                    results.push({ group, ok: false, message: name, actual: err.message, expected: 'no error', details: err.stack || '' });
+                }
+            }
+        }
+
         function completeSet({ reps = 5, performed = reps, weight = 100, amrap = false, failed = false, completed = true } = {}) {
             return { weight, originalWeight: weight, reps, performed, amrap, completed, failed };
         }
@@ -277,6 +289,7 @@
                 assertEqual(prog({ program: '531', cycleWeek531: 4, lift: 'Squat', sets: completeSets(3) }).add, 10, '5/3/1 week 4 lower complete +10 lb');
                 assertEqual(prog({ program: '531', cycleWeek531: 4, lift: 'Bench', prefs: { weightUnit: 'kg' }, sets: completeSets(3) }).add, 2.5, '5/3/1 week 4 upper kg +2.5');
                 assertEqual(prog({ program: '531', cycleWeek531: 4, lift: 'Squat', prefs: { weightUnit: 'kg' }, sets: completeSets(3) }).add, 5, '5/3/1 week 4 lower kg +5');
+                assertEqual(prog({ program: '531', cycleWeek531: 4, lift: 'Bench', sets: [completeSet(), completeSet({ completed: false })] }).add, 0, '5/3/1 incomplete deload week holds');
                 assertEqual(prog({ program: '531', cycleWeek531: 4, lift: 'Bench', sets: [completeSet({ reps: 5, performed: 4, amrap: true })], history: [] }).add, 0, '5/3/1 failed fewer than two recent failures holds');
                 const failHist = [1, 2].map(() => ({ details: { t1: 'Bench' }, setDetails: { t1: [completeSet({ reps: 5, performed: 4, amrap: true })] } }));
                 assertEqual(prog({ program: '531', cycleWeek531: 4, lift: 'Bench', sets: [completeSet({ reps: 5, performed: 4, amrap: true })], history: failHist }).add, -22.5, '5/3/1 failed with two recent failures deloads 10%');
@@ -306,6 +319,16 @@
 
         function runRecovery() {
             const heavyDeadlift = (sets, ageHours = 0) => [{ timestamp: NOW - ageHours * 36e5, rpe: 9, details: { t1: 'Deadlift' }, setDetails: { t1: Array.from({ length: sets }, () => ({ weight: 405, reps: 5, completed: true, failed: false })), t2: [], accessories: [] } }];
+            const completedProgramDay = (program, day, timestamp = NOW, rpe = 7) => {
+                const complete = sets => sets.map(s => ({ ...s, completed: true, failed: false, performed: s.reps, rpe }));
+                const a = api.createTestApp({ tms: FIXTURE_TMS, prefs: { ...DEFAULT_PREFS, program } });
+                const t1 = complete(a.getSets(day.s, day.t1, FIXTURE_TMS[day.t1] || 225, 't1'));
+                const t2 = complete(a.getSets(day.t2s, day.t2, FIXTURE_TMS[day.t2] || 225, 't2', day.t2));
+                return {
+                    timestamp, rpe, details: { t1: day.t1, preTM: FIXTURE_TMS[day.t1] || 225, tm: FIXTURE_TMS[day.t1] || 225 },
+                    setDetails: { t1, t2Name: day.t2, t2BaseLift: day.t2, t2, accessories: (day.acc || []).map(x => ({ ...x, completed: x.sets })) }
+                };
+            };
             test('Recovery', 'empty history is fully ready and advice-free', () => {
                 const r = api.calculateRecoverySnapshot({ history: [], tms: FIXTURE_TMS, now: NOW });
                 assertEqual(r.readiness, 100, 'empty readiness is 100');
@@ -317,7 +340,7 @@
                 assertTrue(r.recoveryMap.lowBack < r.recoveryMap.chest, 'lowBack recovers less than untouched chest');
                 assertTrue(r.recoveryMap.cns < 100, 'CNS decreases');
                 assertTrue(r.recovery.find(g => g.name === 'Legs').recovery < 100, 'Legs group reflects deadlift fatigue');
-                assertTrue(r.recovery.find(g => g.name === 'Core').status === 'Fatigued', 'Core status can become Fatigued');
+                assertTrue(r.recovery.find(g => g.name === 'Core').recovery < 80, 'Core is not ready after extreme fresh deadlift volume');
             });
             test('Recovery', 'fatigue decays over time', () => {
                 const r0 = api.calculateRecoverySnapshot({ history: heavyDeadlift(10, 0), tms: FIXTURE_TMS, prefs: DEFAULT_PREFS, now: NOW });
@@ -326,10 +349,13 @@
                 assertTrue(r0.recoveryMap.lowBack < r48.recoveryMap.lowBack, '48h recovery improves');
                 assertTrue(r48.recoveryMap.lowBack < r120.recoveryMap.lowBack, '120h recovery improves again');
             });
-            test('Recovery', 'CNS and target muscle warnings trigger', () => {
-                const cns = api.calculateRecoverySnapshot({ history: heavyDeadlift(15), tms: FIXTURE_TMS, prefs: DEFAULT_PREFS, now: NOW });
-                assertTrue(cns.advice.cnsWarning, 'CNS warning appears under threshold');
-                assertIncludes(cns.advice.suggestion, 'CNS', 'CNS warning text mentions CNS');
+            test('Recovery', 'systemic and target muscle warnings trigger without defaulting to skip', () => {
+                const a = api.createTestApp();
+                a.cache.recoveryMap = { cns: 40 };
+                const cns = a.getRecoveryAdvice();
+                assertTrue(cns.cnsWarning, 'systemic warning appears under threshold');
+                assertIncludes(cns.suggestion, 'train', 'moderate systemic warning still permits training');
+                assertFalse(cns.severe, 'moderate systemic warning is not severe');
                 const session = { start: NOW, t1: { name: 'Deadlift', baseLift: 'Deadlift', sets: [] }, t2: { name: 'Bench', sets: [] }, acc: [], completedAcc: {} };
                 const target = api.calculateRecoverySnapshot({ history: heavyDeadlift(10), session, tms: FIXTURE_TMS, prefs: DEFAULT_PREFS, now: NOW });
                 assertIncludes(target.advice.muscles.join(','), 'lowBack', 'target muscle warning includes lowBack');
@@ -339,13 +365,16 @@
                 const pushDay = api.DATA.progs.nsuns.days[0];
                 const clean = api.calculateRestSuggestion({ history: [], prefs: DEFAULT_PREFS, tms: FIXTURE_TMS, day: pushDay, now: NOW });
                 assertFalse(clean.shouldRest, 'fresh user has no dynamic rest delay');
-                const streak = Array.from({ length: 6 }, (_, i) => ({ timestamp: NOW - (5 - i) * 864e5, details: { t1: 'Bench' }, setDetails: { t1: [completeSet({ weight: 185, reps: 5 })], t2: [], accessories: [] } }));
+                const streak = Array.from({ length: 7 }, (_, i) => ({ timestamp: NOW - (6 - i) * 864e5, details: { t1: 'Bench' }, setDetails: { t1: [completeSet({ weight: 185, reps: 5 })], t2: [], accessories: [] } }));
                 const streakSuggestion = api.calculateRestSuggestion({ history: streak, prefs: DEFAULT_PREFS, tms: FIXTURE_TMS, day: pushDay, now: NOW });
-                assertTrue(streakSuggestion.shouldRest, 'six consecutive days triggers rest');
+                assertTrue(streakSuggestion.shouldRest, 'seven consecutive days triggers rest');
                 assertEqual(streakSuggestion.progressionAdjustment.type, 'hold_session_index', 'rest suggestion preserves program index');
                 const recentBench = [{ timestamp: NOW - 12 * 36e5, rpe: 9, details: { t1: 'Bench', tm: 225 }, setDetails: { t1: Array.from({ length: 5 }, () => completeSet({ weight: 205, reps: 5 })), t2: [], accessories: [] } }];
-                const overlap = api.calculateRestSuggestion({ history: recentBench, prefs: DEFAULT_PREFS, tms: FIXTURE_TMS, day: pushDay, recoveryMap: { chest: 45, tri: 60, frontDelt: 55, cns: 90 }, now: NOW });
-                assertTrue(overlap.shouldRest, 'recent high-intensity overlap triggers rest');
+                const moderateOverlap = api.calculateRestSuggestion({ history: recentBench, prefs: DEFAULT_PREFS, tms: FIXTURE_TMS, day: pushDay, recoveryMap: { chest: 45, tri: 60, frontDelt: 55, cns: 90 }, now: NOW });
+                assertFalse(moderateOverlap.shouldRest, 'moderate overlap does not force a skipped workout');
+                assertEqual(moderateOverlap.action, 'modify', 'moderate overlap recommends autoregulation');
+                const overlap = api.calculateRestSuggestion({ history: recentBench, prefs: DEFAULT_PREFS, tms: FIXTURE_TMS, day: pushDay, recoveryMap: { chest: 30, tri: 45, frontDelt: 45, cns: 70 }, now: NOW });
+                assertTrue(overlap.shouldRest, 'severe local under-recovery triggers rest');
                 assertIncludes(overlap.overlappingMuscles.map(x => x.muscle).join(','), 'chest', 'overlap names target muscle');
                 const a = api.createTestApp({ history: recentBench, prefs: DEFAULT_PREFS, tms: FIXTURE_TMS });
                 a.dynamicRestSuggestion = overlap;
@@ -372,8 +401,36 @@
                 const deadliftDay = api.DATA.progs.nsuns.days[3];
                 const recentDeadlift = [{ timestamp: NOW - 60 * 36e5, rpe: 9, details: { t1: 'Deadlift', tm: 405 }, setDetails: { t1: Array.from({ length: 5 }, () => completeSet({ weight: 365, reps: 3 })), t2: [], accessories: [] } }];
                 const r = api.calculateRestSuggestion({ history: recentDeadlift, prefs: DEFAULT_PREFS, tms: FIXTURE_TMS, day: deadliftDay, now: NOW });
-                assertTrue(r.shouldRest, 'heavy low-back overlap at 60h still triggers rest');
+                assertFalse(r.shouldRest, 'overlap at 60h is advisory without corroborating low recovery');
+                assertEqual(r.action, 'modify', '60h low-back overlap recommends autoregulation');
                 assertTrue(r.overlappingMuscles.some(x => x.muscle === 'lowBack' && x.recoveryHours >= 60), 'lowBack uses extended recovery window');
+            });
+            test('Recovery', 'every production program day drives utilization and recovery', () => {
+                Object.entries(api.DATA.progs).forEach(([program, def]) => def.days.forEach((day, index) => {
+                    const history = [completedProgramDay(program, day)];
+                    const r = api.calculateRecoverySnapshot({ history, tms: FIXTURE_TMS, prefs: { ...DEFAULT_PREFS, program }, now: NOW });
+                    const names = [day.t1, day.t2, ...(day.acc || []).map(a => a.name)];
+                    const expectedGroups = Object.entries(api.DATA.groups)
+                        .filter(([group]) => group !== 'CNS')
+                        .filter(([, muscles]) => names.some(name => muscles.some(m => (api.impact(name)[m] || 0) >= .3)))
+                        .map(([group]) => group);
+                    expectedGroups.forEach(group => assertTrue(r.mgVol[group] > 0, `${program} day ${index + 1} records ${group} utilization`));
+                    assertTrue(expectedGroups.some(group => r.recovery.find(x => x.name === group).recovery < 100), `${program} day ${index + 1} changes a targeted recovery group`);
+                }));
+            });
+            test('Recovery', 'heavy Bench regression records Push utilization', () => {
+                const day = api.DATA.progs.nsuns.days[4];
+                const r = api.calculateRecoverySnapshot({ history: [completedProgramDay('nsuns', day)], tms: FIXTURE_TMS, prefs: DEFAULT_PREFS, now: NOW });
+                assertTrue(r.mgVol.Push > 0, 'Bench Heavy creates non-zero Push utilization');
+                assertTrue(r.recovery.find(g => g.name === 'Push').recovery < 100, 'Bench Heavy reduces Push recovery');
+                assertTrue(r.recoveryMap.chest < 100, 'Bench Heavy loads chest');
+            });
+            test('Recovery', '30-day utilization is independent from short-term fatigue', () => {
+                const day = api.DATA.progs.nsuns.days[4];
+                const oldBench = completedProgramDay('nsuns', day, NOW - 25 * 864e5);
+                const r = api.calculateRecoverySnapshot({ history: [oldBench], tms: FIXTURE_TMS, prefs: DEFAULT_PREFS, now: NOW });
+                assertTrue(r.mgVol.Push > 0, '25-day-old Bench remains in 30-day utilization');
+                assertEqual(r.recoveryMap.chest, 100, '25-day-old Bench no longer creates recovery fatigue');
             });
             test('Recovery', 'generic accessories have muscle impact', () => {
                 const imp = api.impact('Legs');
@@ -407,7 +464,7 @@
                 assertEqual(primed.recovery.find(g => g.name === 'Push').status, 'Primed', 'group status can be Primed');
                 assertEqual(api.calculateRecoverySnapshot({ history: [], tms: FIXTURE_TMS, now: NOW }).recovery.find(g => g.name === 'Push').status, 'Ready', 'group status can be Ready');
                 assertEqual(api.calculateRecoverySnapshot({ history: heavyDeadlift(5), tms: FIXTURE_TMS, prefs: DEFAULT_PREFS, now: NOW }).recovery.find(g => g.name === 'Pull').status, 'Recovering', 'group status can be Recovering');
-                assertEqual(api.calculateRecoverySnapshot({ history: heavyDeadlift(15), tms: FIXTURE_TMS, prefs: DEFAULT_PREFS, now: NOW }).recovery.find(g => g.name === 'CNS').status, 'Fatigued', 'group status can be Fatigued');
+                assertEqual(api.calculateRecoverySnapshot({ history: heavyDeadlift(45), tms: FIXTURE_TMS, prefs: DEFAULT_PREFS, now: NOW }).recovery.find(g => g.name === 'CNS').status, 'Fatigued', 'group status can be Fatigued');
             });
         }
 
@@ -550,6 +607,36 @@
             });
         }
 
+        async function runLoginFlow() {
+            await testAsync('Persistence', 'production login creates an isolated account without real Pantry calls', async () => {
+                const a = api.createTestApp();
+                a.auth = { username: '__LIFT_TEST__recovery_audit', password: 'isolated-test-password', error: '', loading: false };
+                let pantryReads = 0;
+                let cloudCreates = 0;
+                let savedUser = null;
+                a.pantryReq = async (method, basket) => {
+                    pantryReads++;
+                    assertEqual(method, 'GET', 'login checks for an existing basket first');
+                    assertEqual(basket, 'lift_lifttestrecoveryaudit', 'basket name uses production normalization');
+                    return null;
+                };
+                a.pushToCloud = async () => { cloudCreates++; };
+                a.init = () => {};
+                const oldSave = api.U.s;
+                api.U.s = (key, value) => { if (key === 'lift_user') savedUser = value; };
+                try {
+                    await a.handleLogin();
+                    assertEqual(pantryReads, 1, 'login performs one isolated account lookup');
+                    assertEqual(cloudCreates, 1, 'new account uses the production create path');
+                    assertEqual(a.view, 'dashboard', 'successful login reaches dashboard');
+                    assertEqual(savedUser.username, '__LIFT_TEST__recovery_audit', 'login persists the expected test user');
+                    assertTrue(savedUser.hash.length === 64, 'password is stored as a SHA-256 hash');
+                } finally {
+                    api.U.s = oldSave;
+                }
+            });
+        }
+
         function render() {
             const pass = results.filter(r => r.ok).length;
             const fail = results.filter(r => !r.ok).length;
@@ -595,6 +682,7 @@
                 runPersistence();
                 runTheme();
                 runSmoke();
+                await runLoginFlow();
             } catch (err) {
                 results.push({ group: 'Smoke tests', ok: false, message: 'test runner setup', expected: 'API loaded', actual: err.message, details: err.stack || '' });
             }

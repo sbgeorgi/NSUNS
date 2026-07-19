@@ -6,11 +6,12 @@
 
         const ICONS = { warn: 'M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z', x: 'M6 18L18 6M6 6l12 12', check: 'M5 13l4 4L19 7', trash: 'M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16', edit: 'M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z', save: 'M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4', play: 'M8 5v14l11-7z', prev: 'M15 19l-7-7 7-7', next: 'M9 5l7 7-7 7', warn2: 'M12 8v4m0 4h.01', info: 'M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z', train: 'M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10', hist: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z', set: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z', chev_down: 'M19 9l-7 7-7-7', swap: 'M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4', expand: 'M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4', search: 'M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z', trophy: 'M12 15l-2 5h4l-2-5zm0 0a7 7 0 01-7-7V4h14v4a7 7 0 01-7 7zM5 4H3v2a3 3 0 003 3m10-5h2v2a3 3 0 01-3 3', target: 'M12 2a10 10 0 110 20 10 10 0 010-20zm0 4a6 6 0 100 12 6 6 0 000-12zm0 4a2 2 0 110 4 2 2 0 010-4z', clock: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z', trendUp: 'M13 7h8m0 0v8m0-8l-8 8-4-4-6 6', trendDown: 'M13 17h8m0 0V9m0 8l-8-8-4 4-6-6', copy: 'M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3', bookmark: 'M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z', zap: 'M13 10V3L4 14h7v7l9-11h-7z', bar_chart: 'M9 19V13a1 1 0 00-1-1H5a1 1 0 00-1 1v6m6 0H4m6 0h4m0 0V9a1 1 0 00-1-1h-3a1 1 0 00-1 1v10m6 0V7a1 1 0 00-1-1h-3a1 1 0 00-1 1v12m6 0h-4m4 0h1a1 1 0 001-1V11a1 1 0 00-1-1h-3a1 1 0 00-1 1v8', note: 'M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z', undo: 'M3 10h10a5 5 0 015 5v2M3 10l4-4m-4 4l4 4', zap_filled: 'M13 10V3L4 14h7v7l9-11h-7z', cloud: 'M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z' };
         const DATA = {
-            muscles: { Bench: { chest: 1, upperChest: .4, frontDelt: .7, tri: .7, lats: .15, cns: .35 }, OHP: { frontDelt: 1, tri: .6, upperChest: .4, traps: .3, abs: .3, lowBack: .2, cns: .4 }, Squat: { quads: 1, glutes: .8, lowBack: .65, hams: .3, abs: .4, calves: .12, cns: .8 }, Deadlift: { glutes: 1, hams: .85, lowBack: 1, traps: .7, lats: .5, quads: .4, grip: .8, cns: 1 }, Row: { lats: 1, bi: .7, rearDelt: .7, grip: .6, lowBack: .4, traps: .4, cns: .3 } },
-            halfLife: { chest: 36, upperChest: 36, frontDelt: 28, rearDelt: 24, tri: 28, bi: 28, lats: 36, traps: 30, quads: 48, hams: 44, glutes: 44, calves: 36, lowBack: 48, cns: 60, abs: 24, grip: 24, forearm: 24 },
+            // `cns` is a conservative systemic-fatigue proxy, not a literal nervous-system measurement.
+            muscles: { Bench: { chest: 1, upperChest: .4, frontDelt: .7, tri: .7, lats: .15, cns: .2 }, OHP: { frontDelt: 1, tri: .6, upperChest: .4, traps: .3, abs: .3, lowBack: .2, cns: .25 }, Squat: { quads: 1, glutes: .8, lowBack: .65, hams: .3, abs: .4, calves: .12, cns: .55 }, Deadlift: { glutes: 1, hams: .85, lowBack: 1, traps: .7, lats: .5, quads: .4, grip: .8, cns: .7 }, Row: { lats: 1, bi: .7, rearDelt: .7, grip: .6, lowBack: .4, traps: .4, cns: .2 } },
+            halfLife: { chest: 36, upperChest: 36, frontDelt: 28, rearDelt: 24, tri: 28, bi: 28, lats: 36, traps: 30, quads: 48, hams: 44, glutes: 44, calves: 36, lowBack: 48, cns: 36, abs: 24, grip: 24, forearm: 24 },
             groups: { Push: ['chest', 'frontDelt', 'tri', 'upperChest'], Pull: ['lats', 'bi', 'rearDelt', 'traps'], Legs: ['quads', 'hams', 'glutes', 'calves'], Core: ['lowBack', 'abs'], CNS: ['cns'] },
             isolationDominant: new Set(['calves', 'forearm', 'grip', 'abs', 'bi', 'tri', 'rearDelt']),
-            baseRecoveryCapacity: { chest: 90, upperChest: 90, frontDelt: 75, rearDelt: 60, tri: 80, bi: 80, lats: 100, traps: 90, quads: 120, hams: 110, glutes: 125, calves: 100, lowBack: 110, cns: 120, abs: 100, grip: 100, forearm: 100 },
+            baseRecoveryCapacity: { chest: 90, upperChest: 90, frontDelt: 75, rearDelt: 60, tri: 80, bi: 80, lats: 100, traps: 90, quads: 120, hams: 110, glutes: 125, calves: 100, lowBack: 110, cns: 160, abs: 100, grip: 100, forearm: 100 },
             programCapacityScale: { nsuns: 1.3, ppl: 1.25, phul: 1.15, stronglifts: 1, gzclp: 1.1, '531': 1.1 },
             restGuidelines: {
                 maxEffort: 240,
@@ -166,9 +167,9 @@
             weeklyEffectiveSets: (history, muscle, nowTs) => {
                 const weekAgo = nowTs - 7 * 864e5;
                 let sets = 0;
-                for (let i = history.length - 1; i >= 0; i--) {
-                    const w = history[i];
-                    if (w.timestamp < weekAgo) break;
+                const recent = (history || []).filter(w => w?.timestamp >= weekAgo && w.timestamp <= nowTs);
+                for (let i = recent.length - 1; i >= 0; i--) {
+                    const w = recent[i];
                     const countSets = (name, sArr) => {
                         if (!name || !Array.isArray(sArr)) return 0;
                         const imp = impact(name);
@@ -176,8 +177,8 @@
                         if (contribution < 0.3) return 0;
                         return sArr.filter(s => s.completed && !s.failed).length * contribution;
                     };
-                    sets += countSets(w.details?.t1, w.setDetails?.t1);
-                    sets += countSets(w.setDetails?.t2Name, w.setDetails?.t2);
+                    sets += countSets(w.details?.t1Variant || w.details?.t1, w.setDetails?.t1);
+                    sets += countSets(w.setDetails?.t2Name || w.setDetails?.t2BaseLift, w.setDetails?.t2);
                     (w.setDetails?.accessories || []).forEach(a => {
                         if (!a.name || !a.completed) return;
                         const imp = impact(a.name);
@@ -261,8 +262,13 @@
             '531': c => {
                 if (c.tier !== 't1') return { add: 0, method: '531_t2_no_change' };
                 if (((c.cycleWeek - 1) % 4) + 1 !== 4) return { add: 0, method: '531_in_cycle' };
-                if (c.top?.performed < c.top?.reps) {
-                    const f = c.hist.slice(-16).filter(h => h.details?.t1 === c.lift && c.findTop(h.setDetails?.t1)?.performed < c.findTop(h.setDetails?.t1)?.reps).length;
+                if (!c.all || c.top?.performed < c.top?.reps) {
+                    const failedSession = h => {
+                        const sets = h.setDetails?.t1 || [];
+                        const top = c.findTop(sets);
+                        return top ? top.performed < top.reps : !sets.length || sets.some(s => !s.completed || s.failed);
+                    };
+                    const f = c.hist.slice(-16).filter(h => h.details?.t1 === c.lift && failedSession(h)).length;
                     return f >= 2 ? { add: -(c.tm * .1), method: '531_deload' } : { add: 0, method: '531_hold' };
                 }
                 const baseAdd = ['Bench', 'OHP'].includes(c.lift) ? (c.u === 'kg' ? 2.5 : 5) : (c.u === 'kg' ? 5 : 10);
@@ -332,7 +338,8 @@
             const imp = impact(exercise);
             const compound = !!(exercise && (DATA.compoundAccessories.has(exercise) || Object.keys(imp).some(m => !DATA.isolationDominant.has(m) && (imp[m] || 0) >= .5)));
             const cns = imp.cns || 0;
-            if (compound && (intensity >= .9 || set.amrap || (intensity >= .8 && reps <= 3))) return cns >= .8 ? g.maxTimer : g.maxEffort;
+            const highSystemicCompound = cns >= .5 || /deadlift|(^|\s)dl($|\s)|squat/i.test(exercise || '');
+            if (compound && (intensity >= .9 || set.amrap || (intensity >= .8 && reps <= 3))) return highSystemicCompound ? g.maxTimer : g.maxEffort;
             if (compound && (intensity >= .8 || (intensity >= .7 && reps <= 5))) return cns >= .8 ? g.maxEffort : g.heavyCompound;
             if (compound && (intensity >= .6 || reps >= 6)) return g.hypertrophyCompound;
             return g.accessory;
@@ -382,9 +389,10 @@
                     else if (d < expected) break;
                 }
             }
-            if (consecutiveTrainingDays > threshold) {
-                reasons.push(`${consecutiveTrainingDays} consecutive training days exceeds the ${threshold}-day recovery threshold`);
-            }
+            const cautions = [];
+            const restReasons = [];
+            if (consecutiveTrainingDays > threshold + 1) restReasons.push(`${consecutiveTrainingDays} consecutive training days exceeds a sustainable recovery window`);
+            else if (consecutiveTrainingDays > threshold) cautions.push(`${consecutiveTrainingDays} consecutive training days: keep this session submaximal if warm-ups feel slow`);
 
             const localFatigue = {};
             const highIntensityHits = {};
@@ -421,8 +429,9 @@
                 });
             };
 
-            for (let i = history.length - 1; i >= 0; i--) {
-                const w = history[i];
+            const orderedHistory = [...(history || [])].sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+            for (let i = orderedHistory.length - 1; i >= 0; i--) {
+                const w = orderedHistory[i];
                 if (!w?.timestamp) continue;
                 const ageHours = (now - w.timestamp) / 36e5;
                 if (ageHours < 0) continue;
@@ -442,29 +451,39 @@
                 .sort((a, b) => b.load - a.load)
                 .map(x => ({ muscle: x.muscle, ageHours: M.round(x.ageHours * 10) / 10, recoveryHours: x.recoveryHours, load: M.round(x.load * 10) / 10, recovery: recoveryMap[x.muscle] ?? null }));
             if (overlappingMuscles.length) {
-                reasons.push(`High-intensity overlap inside local recovery window: ${overlappingMuscles.map(x => `${x.muscle} <${x.recoveryHours}h`).join(', ')}`);
+                cautions.push(`Recent high-intensity overlap: ${overlappingMuscles.map(x => `${x.muscle} <${x.recoveryHours}h`).join(', ')}`);
             }
 
             const lowRecoveryTargets = Object.keys(targets)
                 .filter(m => (recoveryMap[m] ?? 100) < 50)
                 .map(m => ({ muscle: m, recovery: recoveryMap[m] }));
             if (lowRecoveryTargets.length) {
-                reasons.push(`Target recovery under 50%: ${lowRecoveryTargets.map(x => `${x.muscle} ${x.recovery}%`).join(', ')}`);
+                cautions.push(`Target recovery under 50%: ${lowRecoveryTargets.map(x => `${x.muscle} ${x.recovery}%`).join(', ')}`);
             }
 
             const cnsRecovery = recoveryMap.cns ?? 100;
-            if (cnsRecovery < 40) reasons.push(`CNS recovery is ${cnsRecovery}%`);
+            if (cnsRecovery < 45) cautions.push(`Systemic readiness is ${cnsRecovery}%`);
 
-            const shouldRest = reasons.length > 0;
+            const severeOverlap = overlappingMuscles.filter(x => x.recovery != null && x.recovery < 35);
+            const severeTargets = lowRecoveryTargets.filter(x => x.recovery < 35);
+            if (severeOverlap.length) restReasons.push(`Severe recent overlap: ${severeOverlap.map(x => x.muscle).join(', ')}`);
+            if (severeTargets.length) restReasons.push(`Target muscles are not recovered: ${severeTargets.map(x => `${x.muscle} ${x.recovery}%`).join(', ')}`);
+            if (cnsRecovery < 25) restReasons.push(`Systemic readiness is critically low at ${cnsRecovery}%`);
+
+            reasons.push(...restReasons, ...cautions);
+            const shouldRest = restReasons.length > 0;
+            const shouldModify = !shouldRest && cautions.length > 0;
             const localHours = overlappingMuscles.length ? M.max(12, M.ceil(M.max(...overlappingMuscles.map(x => x.recoveryHours - x.ageHours)) / 12) * 12) : 0;
-            const suggestedHours = shouldRest ? M.min(72, M.max(24, localHours, cnsRecovery < 40 ? 48 : 0, consecutiveTrainingDays > threshold ? 24 : 0)) : 0;
-            const severity = !shouldRest ? 'none' : (cnsRecovery < 40 || overlappingMuscles.length >= 3 || consecutiveTrainingDays > threshold + 1 ? 'high' : 'moderate');
+            const suggestedHours = shouldRest ? M.min(72, M.max(24, localHours, cnsRecovery < 25 ? 48 : 0, consecutiveTrainingDays > threshold + 1 ? 24 : 0)) : 0;
+            const severity = shouldRest ? 'high' : shouldModify ? 'moderate' : 'none';
             return {
                 shouldRest,
-                action: shouldRest ? 'rest' : 'train',
+                action: shouldRest ? 'rest' : shouldModify ? 'modify' : 'train',
                 severity,
                 reasons,
-                summary: shouldRest ? `Rest ${suggestedHours}h before ${day.t || day.title || 'next session'}` : 'No rest delay needed',
+                restReasons,
+                cautions,
+                summary: shouldRest ? `Rest ${suggestedHours}h before ${day.t || day.title || 'next session'}` : shouldModify ? 'Train, but autoregulate volume or top-set effort' : 'No recovery adjustment needed',
                 suggestedHours,
                 resumeAt: shouldRest ? now + suggestedHours * 36e5 : null,
                 consecutiveTrainingDays,
@@ -797,7 +816,10 @@
                     const allLowReadiness = lastThree.every(h => {
                         return (h.rpe || 7) >= 8.5;
                     });
-                    if (readiness < 45 && allLowReadiness) {
+                    const recoveryValues = Object.values(this.cache.recoveryMap || {});
+                    const criticallyLowAreas = recoveryValues.filter(v => v < 35).length;
+                    const corroboratedSystemicFatigue = (this.cache.recoveryMap?.cns ?? 100) < 30 || criticallyLowAreas >= 3;
+                    if (readiness < 45 && allLowReadiness && corroboratedSystemicFatigue) {
                         return {
                             needed: true,
                             percentage: 10,
@@ -1316,12 +1338,14 @@
                 },
                 updCache() {
                     const f = {}, now = U.now(), mg = { Push: 0, Pull: 0, Legs: 0, Core: 0 }, pS = DATA.programCapacityScale[this.prefs.program] || 1;
-                    const LOOKBACK_HOURS = 504;
+                    const FATIGUE_LOOKBACK_HOURS = 504;
+                    const UTILIZATION_LOOKBACK_HOURS = 720;
                     const MIN_DECAY = 0.005;
                     const lastTrainedAge = {};
-                    const allW = [...this.history]; if (this.session?.start && this.session?.t1) allW.push({ timestamp: this.session.start, rpe: this.sessionRPE, details: { t1: this.session.t1?.baseLift || this.session.t1?.name }, setDetails: { t1: this.session.t1?.sets, t2Name: this.session.t2?.selectedExercise || this.session.t2?.name, t2: this.session.t2?.sets, accessories: this.session.acc?.map(a => ({ name: a.selectedExercise || a.name, originalName: a.originalName, total: a.sets, reps: a.reps, completed: Object.keys(this.session.completedAcc || {}).filter(k => k.startsWith((a.originalName || a.name) + '-')).length })) } });
+                    const allW = [...this.history]; if (this.session?.start && this.session?.t1) allW.push({ timestamp: this.session.start, rpe: this.sessionRPE, details: { t1: this.session.t1?.baseLift || this.session.t1?.name, t1Variant: this.session.t1?.name }, setDetails: { t1: this.session.t1?.sets, t2Name: this.session.t2?.selectedExercise || this.session.t2?.name, t2: this.session.t2?.sets, accessories: this.session.acc?.map(a => ({ name: a.selectedExercise || a.name, originalName: a.originalName, total: a.sets, reps: a.reps, completed: Object.keys(this.session.completedAcc || {}).filter(k => k.startsWith((a.originalName || a.name) + '-')).length })) } });
+                    allW.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
                     for (let i = allW.length - 1; i >= 0; i--) {
-                        const w = allW[i], age = (now - w.timestamp) / 36e5; if (age >= LOOKBACK_HOURS) break;
+                        const w = allW[i], age = (now - w.timestamp) / 36e5; if (age >= UTILIZATION_LOOKBACK_HOURS) break;
                         const wRPE = w.rpe || 7;
                         const procSets = (n, sets) => {
                             if (!n || !Array.isArray(sets)) return;
@@ -1330,14 +1354,14 @@
                                 if (!s.completed) return;
                                 const reps = s.performed != null ? s.performed : (s.reps || 0), wt = s.weight || 0;
                                 if (wt <= 0 || reps <= 0) return;
-                                const setVol = wt * reps;
-                                const gi = ms => setVol * M.min(1, M.max(0, ...ms.map(m => imp_map[m] || 0)));
+                                const effort = 1 + M.max(0, wRPE - 7) * .1 + (s.failed ? .15 : 0);
+                                const gi = ms => effort * M.min(1, M.max(0, ...ms.map(m => imp_map[m] || 0)));
                                 mg.Push += gi(DATA.groups.Push); mg.Pull += gi(DATA.groups.Pull); mg.Legs += gi(DATA.groups.Legs); mg.Core += gi(DATA.groups.Core);
                                 const setFat = U.fatigue(wt, reps, tm, s.failed, wRPE);
                                 Object.entries(imp_map).forEach(([k, v]) => {
                                     const decay = M.pow(.5, age / (DATA.halfLife[k] || 36));
-                                    if (decay >= MIN_DECAY) { f[k] = (f[k] || 0) + setFat * v * decay; }
-                                    if (v >= 0.3 && (lastTrainedAge[k] === undefined || age < lastTrainedAge[k])) {
+                                    if (age < FATIGUE_LOOKBACK_HOURS && decay >= MIN_DECAY) { f[k] = (f[k] || 0) + setFat * v * decay; }
+                                    if (age < FATIGUE_LOOKBACK_HOURS && v >= 0.3 && (lastTrainedAge[k] === undefined || age < lastTrainedAge[k])) {
                                         lastTrainedAge[k] = age;
                                     }
                                 });
@@ -1345,21 +1369,20 @@
                         };
                         const procAcc = (a) => {
                             if (!a || !a.name || !a.completed) return;
-                            const imp_map = impact(a.name), isC = DATA.compoundAccessories.has(a.name), eW = this._estimateAccessoryWeight(a.name), reps = U.prs(a.reps), cc = a.completed || 0;
+                            const imp_map = impact(a.name), isC = DATA.compoundAccessories.has(a.name), reps = U.prs(a.reps), cc = a.completed || 0;
                             if (cc <= 0) return;
-                            const setVol = eW * reps * cc;
-                            const gi = ms => setVol * M.min(1, M.max(0, ...ms.map(m => imp_map[m] || 0)));
+                            const gi = ms => cc * .75 * M.min(1, M.max(0, ...ms.map(m => imp_map[m] || 0)));
                             mg.Push += gi(DATA.groups.Push); mg.Pull += gi(DATA.groups.Pull); mg.Legs += gi(DATA.groups.Legs); mg.Core += gi(DATA.groups.Core);
                             const accFat = cc * reps * (isC ? .4 : .2);
                             Object.entries(imp_map).forEach(([k, v]) => {
                                 const decay = M.pow(.5, age / (DATA.halfLife[k] || 36));
-                                if (decay >= MIN_DECAY) { f[k] = (f[k] || 0) + accFat * v * decay; }
-                                if (v >= 0.3 && (lastTrainedAge[k] === undefined || age < lastTrainedAge[k])) {
+                                if (age < FATIGUE_LOOKBACK_HOURS && decay >= MIN_DECAY) { f[k] = (f[k] || 0) + accFat * v * decay; }
+                                if (age < FATIGUE_LOOKBACK_HOURS && v >= 0.3 && (lastTrainedAge[k] === undefined || age < lastTrainedAge[k])) {
                                     lastTrainedAge[k] = age;
                                 }
                             });
                         };
-                        procSets(w.details?.t1, w.setDetails?.t1); procSets(w.setDetails?.t2Name, w.setDetails?.t2); (w.setDetails?.accessories || []).forEach(procAcc);
+                        procSets(w.details?.t1Variant || w.details?.t1, w.setDetails?.t1); procSets(w.setDetails?.t2Name || w.setDetails?.t2BaseLift, w.setDetails?.t2); (w.setDetails?.accessories || []).forEach(procAcc);
                     }
 
                     const lb = 1 + M.min(.50, this.currentLevel * .02), rm = {};
@@ -1370,9 +1393,9 @@
                             rm[m] = 100;
                             return;
                         }
-                        const midpoint = cap * 0.6;
-                        const steepness = 4.0 / cap;
-                        const baseRecovery = M.round(100 / (1 + M.exp(steepness * (fatigue - midpoint))));
+                        // Zero residual fatigue must converge to 100. The old sigmoid plateaued near 92
+                        // for three weeks after any session, creating chronic false fatigue warnings.
+                        const baseRecovery = M.round(100 * M.exp(-fatigue / cap));
 
                         const sc = DATA.supercompensation[m];
                         const ageHrs = lastTrainedAge[m];
@@ -1476,8 +1499,16 @@
                         if (r > 100) primedMuscles.push(m);
                     });
 
-                    if ((this.cache.recoveryMap?.cns ?? 100) < 40) {
-                        return { muscles: fa, suggestion: 'CNS heavily fatigued â€” consider lighter weights or skip heavy compounds', cnsWarning: true, volumeWarnings: volWarnings, primedMuscles };
+                    const systemic = this.cache.recoveryMap?.cns ?? 100;
+                    if (systemic < 25) {
+                        return { muscles: fa, suggestion: 'Systemic readiness is very low — rest or use a recovery session today', cnsWarning: true, severe: true, volumeWarnings: volWarnings, primedMuscles };
+                    }
+                    const severelyFatiguedTargets = fa.filter(m => (this.cache.recoveryMap?.[m] ?? 100) < 35);
+                    if (severelyFatiguedTargets.length) {
+                        return { muscles: fa, suggestion: 'Target muscles are very under-recovered — postpone heavy work or use a recovery session', severe: true, volumeWarnings: volWarnings, primedMuscles };
+                    }
+                    if (systemic < 45) {
+                        return { muscles: fa, suggestion: 'Systemic readiness is reduced — train, but keep top sets submaximal if warm-ups feel slow', cnsWarning: true, systemicCaution: true, volumeWarnings: volWarnings, primedMuscles };
                     }
                     if (fa.length) {
                         return { muscles: fa, suggestion: 'Reduce volume on fatigued muscles', volumeWarnings: volWarnings, primedMuscles };
