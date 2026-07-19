@@ -118,12 +118,26 @@
             theme: 'dark'
         };
         const THEME_VALUES = ['dark', 'light', 'system'];
+        const PROGRAM_ALIASES = {
+            nsuns: 'nsuns', nsunslp: 'nsuns',
+            ppl: 'ppl', pushpulllegs: 'ppl',
+            phul: 'phul',
+            stronglifts: 'stronglifts', stronglifts5x5: 'stronglifts', sl5x5: 'stronglifts',
+            gzclp: 'gzclp',
+            '531': '531', '531bbb': '531', wendler531: '531', wendler531bbb: '531'
+        };
+        const normalizeProgramKey = value => {
+            const raw = String(value || '').trim();
+            if (DATA.progs[raw]) return raw;
+            const compact = raw.toLowerCase().replace(/[^a-z0-9]/g, '');
+            return PROGRAM_ALIASES[compact] || 'nsuns';
+        };
         const normalizeTheme = t => THEME_VALUES.includes(t) ? t : 'dark';
         const resolveTheme = (theme = 'dark', prefersDark = false) => {
             const pref = normalizeTheme(theme);
             return pref === 'system' ? (prefersDark ? 'dark' : 'light') : pref;
         };
-        const mergePrefs = prefs => ({ ...DEFAULT_PREFS, ...(prefs && typeof prefs === 'object' ? prefs : {}), theme: normalizeTheme(prefs?.theme) });
+        const mergePrefs = prefs => ({ ...DEFAULT_PREFS, ...(prefs && typeof prefs === 'object' ? prefs : {}), program: normalizeProgramKey(prefs?.program), theme: normalizeTheme(prefs?.theme) });
         const applyThemePreference = (theme, mediaMatches = null) => {
             const pref = normalizeTheme(theme);
             const prefersDark = mediaMatches ?? !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
@@ -167,7 +181,10 @@
             weeklyEffectiveSets: (history, muscle, nowTs) => {
                 const weekAgo = nowTs - 7 * 864e5;
                 let sets = 0;
-                const recent = (history || []).filter(w => w?.timestamp >= weekAgo && w.timestamp <= nowTs);
+                const recent = (history || []).filter(w => {
+                    const ts = historyTimestamp(w);
+                    return ts >= weekAgo && ts <= nowTs;
+                });
                 for (let i = recent.length - 1; i >= 0; i--) {
                     const w = recent[i];
                     const countSets = (name, sArr) => {
@@ -193,13 +210,13 @@
         };
 
         const ACHIEVEMENTS = [
-            { id: 'first', title: 'First Steps', icon: 'ðŸŽ¯', check: h => h.length >= 1 }, { id: 'week', title: 'Week Warrior', icon: 'ðŸ”¥', check: h => h.length >= 7 }, { id: 'month', title: 'Monthly Master', icon: 'ðŸ’ª', check: h => h.length >= 30 }, { id: 'century', title: 'Century Club', icon: 'ðŸ†', check: h => h.length >= 100 },
-            { id: 'pr1', title: 'PR Machine', icon: 'ðŸ“ˆ', check: h => h.some(w => w.pr || w.t2PR) }, { id: 'pr5', title: 'Gains Train', icon: 'ðŸš‚', check: h => h.filter(w => w.pr || w.t2PR).length >= 5 }, { id: 'vol', title: 'Volume King', icon: 'ðŸ‘‘', check: h => U.sum(h, 'totalVolume') >= 1e5 },
-            { id: 'back', title: 'Comeback Kid', icon: 'ðŸ’«', check: h => { if (h.length < 3) return false; const s = [...h].sort((a, b) => a.timestamp - b.timestamp); for (let i = 2; i < s.length; i++) if ((s[i].timestamp - s[i - 1].timestamp) > 12096e5) return true; return false } },
-            { id: 'star', title: 'Five Star', icon: 'âœ¨', check: h => h.some(w => w.rating === 5) }, { id: 'streak10', title: 'Consistency', icon: 'ðŸ”—', check: (_, s) => s >= 10 },
-            { id: 'tonnage50k', title: 'Iron Mover', icon: 'ðŸ‹ï¸', check: h => h.some(w => (w.totalVolume || 0) >= 50000) }, { id: 'dawn', title: 'Early Bird', icon: 'ðŸŒ…', check: h => h.some(w => new D(w.timestamp).getHours() >= 4 && new D(w.timestamp).getHours() < 7) },
-            { id: 'supercomp', title: 'Perfect Timing', icon: 'âš¡', check: (h, s, app) => app && app.cache?.recovery?.some(g => g.muscles?.some(m => m.recovery > 100)) },
-            { id: 'balanced', title: 'Balanced Athlete', icon: 'âš–ï¸', check: (h, s, app) => { if (!app?.cache?.mgVol) return false; const v = app.cache.mgVol; const vals = [v.Push, v.Pull, v.Legs].filter(x => x > 0); if (vals.length < 3) return false; const avg = U.avg(vals); return vals.every(x => M.abs(x - avg) / avg < 0.25); } }
+            { id: 'first', title: 'First Steps', icon: '\u{1F3AF}', check: h => h.length >= 1 }, { id: 'week', title: 'Week Warrior', icon: '\u{1F525}', check: h => h.length >= 7 }, { id: 'month', title: 'Monthly Master', icon: '\u{1F4AA}', check: h => h.length >= 30 }, { id: 'century', title: 'Century Club', icon: '\u{1F3C6}', check: h => h.length >= 100 },
+            { id: 'pr1', title: 'PR Machine', icon: '\u{1F4C8}', check: h => h.some(w => w.pr || w.t2PR) }, { id: 'pr5', title: 'Gains Train', icon: '\u{1F682}', check: h => h.filter(w => w.pr || w.t2PR).length >= 5 }, { id: 'vol', title: 'Volume King', icon: '\u{1F451}', check: h => U.sum(h, 'totalVolume') >= 1e5 },
+            { id: 'back', title: 'Comeback Kid', icon: '\u{1F4AB}', check: h => { if (h.length < 3) return false; const s = [...h].sort((a, b) => a.timestamp - b.timestamp); for (let i = 2; i < s.length; i++) if ((s[i].timestamp - s[i - 1].timestamp) > 12096e5) return true; return false } },
+            { id: 'star', title: 'Five Star', icon: '\u2728', check: h => h.some(w => w.rating === 5) }, { id: 'streak10', title: 'Consistency', icon: '\u{1F517}', check: (_, s) => s >= 10 },
+            { id: 'tonnage50k', title: 'Iron Mover', icon: '\u{1F3CB}\uFE0F', check: h => h.some(w => (w.totalVolume || 0) >= 50000) }, { id: 'dawn', title: 'Early Bird', icon: '\u{1F305}', check: h => h.some(w => new D(w.timestamp).getHours() >= 4 && new D(w.timestamp).getHours() < 7) },
+            { id: 'supercomp', title: 'Perfect Timing', icon: '\u26A1', check: (h, s, app) => app && app.cache?.recovery?.some(g => g.muscles?.some(m => m.recovery > 100)) },
+            { id: 'balanced', title: 'Balanced Athlete', icon: '\u2696\uFE0F', check: (h, s, app) => { if (!app?.cache?.mgVol) return false; const v = app.cache.mgVol; const vals = [v.Push, v.Pull, v.Legs].filter(x => x > 0); if (vals.length < 3) return false; const avg = U.avg(vals); return vals.every(x => M.abs(x - avg) / avg < 0.25); } }
         ];
 
         const EX_OPTS = { bench_variants: { base: 'Bench', opt: [['Bench', 1], ['Incline Bench', .85], ['Close Grip Bench', .9], ['DB Bench', .8], ['Paused Bench', .9], ['Spoto Press', .85], ['Floor Press', .9]] }, ohp_variants: { base: 'OHP', opt: [['OHP', 1], ['Seated OHP', .95], ['DB OHP', .85], ['Push Press', 1.1], ['Z Press', .75], ['Arnold Press', .7], ['Behind Neck Press', .8]] }, squat_variants: { base: 'Squat', opt: [['Squat', 1], ['Front Squat', .85], ['Pause Squat', .85], ['Box Squat', .9], ['SSB Squat', .9], ['Goblet Squat', .5], ['Tempo Squat', .8]] }, deadlift_variants: { base: 'Deadlift', opt: [['Deadlift', 1], ['Sumo DL', 1], ['Romanian DL', .7], ['Trap Bar DL', 1.05], ['Deficit DL', .9], ['Paused DL', .85], ['Block Pull', 1.1], ['SLDL', .7]] }, row_variants: { base: 'Row', opt: [['Row', 1], ['Pendlay Row', .95], ['DB Row', .85], ['Cable Row', .9], ['T-Bar Row', 1], ['Seal Row', .8], ['Chest Supported Row', .85], ['Meadows Row', .7]] }, triceps: { opt: [['Tri'], ['Pushdowns'], ['Skull Crushers'], ['Dips'], ['OH Tricep Ext'], ['Close Grip BP'], ['JM Press'], ['Tricep Kickbacks']] }, biceps: { opt: [['Bi'], ['Barbell Curl'], ['DB Curl'], ['Hammer Curl'], ['Preacher Curl'], ['Incline Curl'], ['Cable Curl'], ['Spider Curl']] }, vertical_pull: { opt: [['Pullups'], ['Chin-ups'], ['Lat Pulldown'], ['LatPD'], ['Neutral Pullups'], ['Chins'], ['Wide Grip Pulldown'], ['Close Grip Pulldown']] }, leg_accessories: { opt: [['Legs'], ['Leg Press'], ['Lunges'], ['Leg Curl'], ['Leg Ext'], ['Calf Raises'], ['Bulgarian Split'], ['Hip Thrust'], ['Hack Squat'], ['Nordic Curl']] }, core: { opt: [['Abs'], ['Hanging Leg Raise'], ['Cable Crunch'], ['Ab Wheel'], ['Planks'], ['Russian Twists'], ['Dead Bug'], ['Pallof Press']] }, arms: { opt: [['Arms'], ['Curls + Pushdowns'], ['Hammer + Dips'], ['Arm Circuit'], ['Supersets']] }, dl_accessory: { base: 'Deadlift', opt: [['DL', 1], ['Romanian DL', .7], ['SLDL', .7], ['Good Morning', .5], ['Back Extension', .3]] } };
@@ -595,11 +612,9 @@
                     }
 
                     const d = U.g('nsuns_ultimate', {}), s = U.g('lift_preferences', {});
-                    Object.assign(this, { tms: d.tms || this.tms, history: d.history || [], idx: d.idx || 0, week: d.week || 1, cycleWeek531: d.cycleWeek531 || 1, streak: d.streak || 0, state: d.state || this.state, prefs: mergePrefs({ ...this.prefs, ...s }), bwLog: U.g('lift_bodyweight', []).filter(x => x.date), achievements: U.g('lift_achievements', []), prs: U.g('lift_prs', {}), e1rmHistory: U.g('lift_e1rm_history', {}), templates: U.g('lift_templates', []), exerciseNotes: U.g('lift_exercise_notes', {}), tonnageGoal: U.g('lift_tonnage_goal', 0), restHistory: U.g('lift_rest_history', []), xp: U.g('lift_xp', 0) });
+                    Object.assign(this, { tms: d.tms || this.tms, history: normalizeHistoryRecords(d.history || []), idx: d.idx || 0, week: d.week || 1, cycleWeek531: d.cycleWeek531 || 1, streak: d.streak || 0, state: d.state || this.state, prefs: mergePrefs({ ...this.prefs, ...s }), bwLog: normalizeBodyweightLog(U.g('lift_bodyweight', [])), achievements: U.g('lift_achievements', []), prs: U.g('lift_prs', {}), e1rmHistory: U.g('lift_e1rm_history', {}), templates: U.g('lift_templates', []), exerciseNotes: U.g('lift_exercise_notes', {}), tonnageGoal: U.g('lift_tonnage_goal', 0), restHistory: U.g('lift_rest_history', []), xp: U.g('lift_xp', 0) });
                     this.savedSession = U.g('lift_active_session') || U.g('lift_active_session_backup');
                     this.prefs.barWeight = this.prefs.barWeight || (this.prefs.weightUnit === 'kg' ? 20 : 45); this.applyRM(); this.applyTheme();
-                    this.history.forEach(h => { h.timestamp = h.timestamp || new D(h.date).getTime(); h.isoDate = h.isoDate || U.iso(h.timestamp) });
-
                     this.pIdx = this.idx; this.computeLongestStreak(); this.computeFrequency(); this.computeStreak(); this.updCache();
                     if (Object.keys(this.tms).length) this.chartLift = Object.keys(this.tms)[0];
                     if (this.savedSession?.t1) this.activeModal = 'resume'; else if (!d.tms) this.view = 'setup';
@@ -840,7 +855,7 @@
                         return {
                             needed: true,
                             percentage: 10,
-                            reason: `E1RM declining on ${decliningLifts}/${totalLifts} lifts â€” systemic fatigue likely`,
+                            reason: `E1RM declining on ${decliningLifts}/${totalLifts} lifts — systemic fatigue likely`,
                             protocol: 'Fatigue_Deload'
                         };
                     }
@@ -1325,12 +1340,15 @@
                         l: chartEntries.map(x => x.date),
                         d: chartEntries.map(x => x.details?.tm || 0)
                     }, '#6366f1');
-                    upChrt('bodyWeightChart', 'line', { l: this.bwLog.slice(-30).map(x => U.iso(x.date)), d: this.bwLog.slice(-30).map(x => x.weight) }, '#3b82f6');
+                    const bw = getBodyweightSeries(this.bwLog);
+                    upChrt('bodyWeightChart', 'line', { l: bw.labels, d: bw.values }, '#3b82f6');
                     const v = {}, now = new D(); this.history.slice(-20).forEach(h => { const ts = new D(h.timestamp), ys = new D(ts.getFullYear(), 0, 1), wn = M.ceil((M.floor((ts - ys) / 864e5) + ys.getDay() + 1) / 7), k = ts.getFullYear() === now.getFullYear() ? `W${wn}` : `${ts.getFullYear()}-W${wn}`; v[k] = (v[k] || 0) + (h.totalVolume || 0); });
                     upChrt('volumeChart', 'bar', { l: Object.keys(v), d: Object.values(v) }, '#10b981', false);
                     upChrt('balanceChart', 'radar', { l: ['Push', 'Pull', 'Legs', 'Core'], d: [this.cache.mgVol.Push, this.cache.mgVol.Pull, this.cache.mgVol.Legs, this.cache.mgVol.Core] }, '#6366f1', true);
                 },
                 drawPRCharts() {
+                    const bw = getBodyweightSeries(this.bwLog);
+                    upChrt('bodyWeightChart', 'line', { l: bw.labels, d: bw.values }, '#3b82f6');
                     Object.keys(this.prs).forEach(l => {
                         const e = (this.e1rmHistory[l] || []).slice(-15);
                         if (e.length) upChrt('pr_' + l.replace(/\s+/g, '_'), 'line', { l: e.map(x => x.date), d: e.map(x => x.e1rm) }, '#6366f1');
@@ -1473,9 +1491,9 @@
                     const lm = this.cache.volumeLandmarks || {};
                     Object.entries(lm).forEach(([muscle, data]) => {
                         if (data.status === 'above_mrv') {
-                            warnings.push(`âš ï¸ ${muscle}: ${data.message} â€” reduce volume to recover`);
+                            warnings.push(`Warning: ${muscle}: ${data.message} — reduce volume to recover`);
                         } else if (data.status === 'below_mev' && data.sets > 0) {
-                            warnings.push(`ðŸ“‰ ${muscle}: ${data.message} â€” add sets for growth`);
+                            warnings.push(`${muscle}: ${data.message} — add sets for growth`);
                         }
                     });
                     return warnings;
@@ -1514,7 +1532,7 @@
                         return { muscles: fa, suggestion: 'Reduce volume on fatigued muscles', volumeWarnings: volWarnings, primedMuscles };
                     }
                     if (primedMuscles.length > 0) {
-                        return { muscles: [], suggestion: `Supercompensation window open for: ${primedMuscles.join(', ')} â€” ideal time to train!`, volumeWarnings: volWarnings, primedMuscles, primed: true };
+                        return { muscles: [], suggestion: `Supercompensation window open for: ${primedMuscles.join(', ')} — ideal time to train!`, volumeWarnings: volWarnings, primedMuscles, primed: true };
                     }
                     if (volWarnings.length) {
                         return { muscles: [], suggestion: 'Volume adjustments recommended', volumeWarnings: volWarnings, primedMuscles };
@@ -1526,7 +1544,36 @@
                 saveTemplate() { if (this.templateName.trim()) { this.templates.push({ name: this.templateName.trim(), created: U.now(), t1: this.session.t1?.name, t2: this.session.t2.originalName || this.session.t2.name, t2Selected: this.session.t2.selectedExercise || this.session.t2.name, acc: this.session.acc?.map(a => ({ name: a.originalName || a.name, selectedExercise: a.selectedExercise || a.name, sets: a.sets, reps: a.reps })) }); U.s('lift_templates', this.templates); this.templateName = ''; this.activeModal = null; } },
                 startFromTemplate(t) { this.start({ title: t.name, t1: t.t1, t2: t.t2, s: 'vol', t2s: 't2', acc: t.acc }); }, deleteTemplate(i) { this.templates.splice(i, 1); U.s('lift_templates', this.templates); },
                 openExNote(n) { this.exNoteTarget = n; this.exNoteText = this.exerciseNotes[n] || ''; this.activeModal = 'exNote'; }, saveExNote() { if (this.exNoteText.trim()) this.exerciseNotes[this.exNoteTarget] = this.exNoteText.trim(); else delete this.exerciseNotes[this.exNoteTarget]; U.s('lift_exercise_notes', this.exerciseNotes); this.activeModal = null; }, getExNote(n) { return this.exerciseNotes[n] || null; },
-                calBuild() { const n = new D(); n.setMonth(n.getMonth() + this.cal.offset); this.cal.monthName = n.toLocaleString('default', { month: 'long', year: 'numeric' }); const y = n.getFullYear(), m = n.getMonth(), ld = {}; this.history.forEach(h => { const k = U.iso(h.timestamp); if(!ld[k]) ld[k] = {vol: 0, logs: []}; ld[k].vol += (h.totalVolume || 1); ld[k].logs.push(h); }); const maxV = M.max(1, ...Object.values(ld).map(x => x.vol)); this.cal.days = [...Array(new D(y, m, 1).getDay()).fill({}), ...Array.from({ length: new D(y, m + 1, 0).getDate() }, (_, i) => { const dd = ld[U.iso(new D(y, m, i + 1).getTime())]; const v = dd ? dd.vol : 0; return { num: i + 1, isToday: new D().getDate() === i + 1 && !this.cal.offset, hasLog: v > 0, intensity: v > 0 ? M.ceil((v / maxV) * 3) : 0, logs: dd ? dd.logs : [] }; })]; const w = this.history.filter(h => new D(h.timestamp).getFullYear() === y && new D(h.timestamp).getMonth() === m); this.calSummary = { count: w.length, totalVol: U.sum(w, 'totalVolume'), avgDur: w.length ? M.round(U.avg(w.map(x => x.duration))) : 0, prs: w.filter(h => h.pr || h.t2PR).length }; }, calDayClass(d) { return !d.hasLog ? '' : this.prefs.heatmapCalendar ? (d.intensity >= 3 ? 'cal-hot3' : d.intensity >= 2 ? 'cal-hot2' : 'cal-hot1') : 'cal-active'; },
+                calBuild() {
+                    const n = new D();
+                    n.setMonth(n.getMonth() + this.cal.offset);
+                    this.cal.monthName = n.toLocaleString('default', { month: 'long', year: 'numeric' });
+                    const y = n.getFullYear(), m = n.getMonth(), ld = {};
+                    this.history.forEach(h => {
+                        const timestamp = historyTimestamp(h);
+                        if (!timestamp) return;
+                        const k = U.iso(timestamp);
+                        if (!ld[k]) ld[k] = { vol: 0, logs: [] };
+                        ld[k].vol += (h.totalVolume || 1);
+                        ld[k].logs.push(h);
+                    });
+                    const maxV = M.max(1, ...Object.values(ld).map(x => x.vol));
+                    this.cal.days = [
+                        ...Array(new D(y, m, 1).getDay()).fill({}),
+                        ...Array.from({ length: new D(y, m + 1, 0).getDate() }, (_, i) => {
+                            const dd = ld[U.iso(new D(y, m, i + 1).getTime())];
+                            const v = dd ? dd.vol : 0;
+                            return { num: i + 1, isToday: new D().getDate() === i + 1 && !this.cal.offset, hasLog: v > 0, intensity: v > 0 ? M.ceil((v / maxV) * 3) : 0, logs: dd ? dd.logs : [] };
+                        })
+                    ];
+                    const w = this.history.filter(h => {
+                        const timestamp = historyTimestamp(h);
+                        if (!timestamp) return false;
+                        const date = new D(timestamp);
+                        return date.getFullYear() === y && date.getMonth() === m;
+                    });
+                    this.calSummary = { count: w.length, totalVol: U.sum(w, 'totalVolume'), avgDur: w.length ? M.round(U.avg(w.map(x => x.duration))) : 0, prs: w.filter(h => h.pr || h.t2PR).length };
+                }, calDayClass(d) { return !d.hasLog ? '' : this.prefs.heatmapCalendar ? (d.intensity >= 3 ? 'cal-hot3' : d.intensity >= 2 ? 'cal-hot2' : 'cal-hot1') : 'cal-active'; },
                 chkAch() { ACHIEVEMENTS.forEach(a => { if (!this.achievements.includes(a.id) && a.check(this.history, this.streak, this)) { this.achievements.push(a.id); this.currentAchievement = a; this.activeModal = 'achievement'; U.s('lift_achievements', this.achievements); } }); },
                 _saveSessionOnly() { if (this.session?.start) U.s('lift_active_session', this.session); },
                 saveSess() {
@@ -1589,7 +1636,7 @@
                     }
                 },
                 finSetup() { if (Object.values(this.setup).some(v => v > 0)) { Object.keys(this.setup).forEach(k => this.tms[k] = U.rnd(this.setup[k] * .9, this.prefs.weightUnit)); this.save(); this.savePrefs(); this.view = 'dashboard'; } }, resume() { this.session = this.savedSession; if (!this.session.completedAcc) this.session.completedAcc = {}; if (!this.session.startTMs) this.session.startTMs = { ...this.tms }; if (this.session.t1 && !this.session.t1.baseLift) this.session.t1.baseLift = this.baseTM(this.session.t1.name) || this.session.t1.name; if (this.session.t2 && !this.session.t2.baseLift) this.session.t2.baseLift = this.baseTM(this.session.t2.originalName || this.session.t2.name) || this.session.t2.originalName || this.session.t2.name; this.lastSetCompletedAt = null; this.activeModal = null; this.view = 'workout'; this.reqWake(); },
-                logBW() { if (this.tempBodyWeight) { this.bwLog.push({ date: U.now(), weight: this.tempBodyWeight }); U.s('lift_bodyweight', this.bwLog); } this.activeModal = null; }, getBW(t) { const w = this.bwLog.map(x => x.weight); return !w.length ? '-' : t === 'last' ? w[w.length - 1].toFixed(1) : t === 'min' ? M.min(...w).toFixed(1) : M.max(...w).toFixed(1); }, fmtVolS: v => v ? v > 1e6 ? (v / 1e6).toFixed(1) + 'M' : v > 1e3 ? (v / 1e3).toFixed(0) + 'K' : v : '-',
+                logBW() { if (this.tempBodyWeight) { this.bwLog.push({ date: U.now(), weight: Number(this.tempBodyWeight) }); this.bwLog = normalizeBodyweightLog(this.bwLog); U.s('lift_bodyweight', this.bwLog); } this.activeModal = null; this.$nextTick?.(() => this.drawPRCharts()); }, getBW(t) { const w = normalizeBodyweightLog(this.bwLog).map(x => x.weight); return !w.length ? '-' : t === 'min' ? M.min(...w).toFixed(1) : t === 'max' ? M.max(...w).toFixed(1) : w[w.length - 1].toFixed(1); }, fmtVolS: v => v ? v > 1e6 ? (v / 1e6).toFixed(1) + 'M' : v > 1e3 ? (v / 1e3).toFixed(0) + 'K' : v : '-',
                 togAcc(n, i) { const k = `${n}-${i}`, p = this.session.completedAcc[k]; this.session.completedAcc[k] = !this.session.completedAcc[k]; this._volDirty = true; this.saveSess(); if (this.session.completedAcc[k] && this.prefs.autoStartTimer) this.timerStart(this.prefs.smartRest ? this.getSmartRestDuration('t3') : +this.prefs.restT3); this._setUndo(this.session.completedAcc[k] ? 'Acc done' : 'Acc undone', () => { this.session.completedAcc[k] = p; this._volDirty = true; this.saveSess(); }); }, isAccDone(n, i) { return !!this.session?.completedAcc?.[`${n}-${i}`]; }, addSet(t = 't1') { const s = this.session[t]?.sets; if (!s || !s.length) return; s.push({ ...s[s.length - 1], completed: false, failed: false, completedAt: null, performed: null, rpe: null, setDuration: 0, timeSincePrev: null }); this.saveSess(); },
                 exportJSON() { const d = { version: DATA_VERSION, main: U.g('nsuns_ultimate'), prefs: U.g('lift_preferences'), bw: U.g('lift_bodyweight'), ach: U.g('lift_achievements'), prs: U.g('lift_prs'), e1rm: U.g('lift_e1rm_history'), tmpl: U.g('lift_templates'), notes: U.g('lift_exercise_notes'), ton: U.g('lift_tonnage_goal'), rh: U.g('lift_rest_history'), xp: U.g('lift_xp') }; const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([J.stringify(d)], { type: 'application/json' })); a.download = `lift_backup_${U.iso(U.now())}.json`; a.click(); },
                 exportCSV() { const c = ['Date,Title,Dur,Vol,RPE,PR,T1,TopSet,TM', ...this.history.map(x => [x.date, x.title, x.duration, x.totalVolume, x.rpe, x.pr ? 'Y' : 'N', x.details?.t1, x.details?.actualTopWeight || x.details?.weight, x.details?.tm].join(','))].join('\n'); const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([c], { type: 'text/csv' })); a.download = `lift_export_${U.iso(U.now())}.csv`; a.click(); },
@@ -1613,6 +1660,70 @@
                 return fallback;
             }
         };
+
+        const parseHistoryDateString = value => {
+            const s = String(value || '').trim();
+            if (!s) return 0;
+            if (/^\d+(?:\.\d+)?$/.test(s)) {
+                const n = Number(s);
+                if (Number.isFinite(n) && n > 0) return n < 1e11 ? n * 1000 : n;
+            }
+            const localDate = s.match(/^(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{4})(?:\D.*)?$/);
+            if (localDate) {
+                const a = +localDate[1], b = +localDate[2], y = +localDate[3];
+                const day = a > 12 ? a : b > 12 ? b : b;
+                const month = a > 12 ? b : b > 12 ? a : a;
+                const ts = new D(y, month - 1, day).getTime();
+                if (Number.isFinite(ts)) return ts;
+            }
+            const parsed = D.parse(s);
+            return Number.isFinite(parsed) ? parsed : 0;
+        };
+
+        const historyTimestamp = record => {
+            if (!record || typeof record !== 'object') return 0;
+            const candidates = [record.timestamp, record.completedAt, record.endTime, record.isoDate, record.date];
+            for (const raw of candidates) {
+                if (raw && typeof raw === 'object') {
+                    const seconds = raw.seconds ?? raw._seconds;
+                    if (Number.isFinite(+seconds)) return (+seconds * 1000) + (Number(raw.nanoseconds ?? raw._nanoseconds) || 0) / 1e6;
+                }
+                if (typeof raw === 'number' && Number.isFinite(raw) && raw > 0) return raw < 1e11 ? raw * 1000 : raw;
+                const parsed = parseHistoryDateString(raw);
+                if (parsed > 0) return parsed;
+            }
+            return 0;
+        };
+
+        const normalizeHistoryRecords = history => (Array.isArray(history) ? history : []).map(record => {
+            if (!record || typeof record !== 'object') return record;
+            const timestamp = historyTimestamp(record);
+            if (timestamp > 0) {
+                record.timestamp = timestamp;
+                record.isoDate = U.iso(timestamp);
+            }
+            record.details = record.details && typeof record.details === 'object' ? record.details : {};
+            record.setDetails = record.setDetails && typeof record.setDetails === 'object' ? record.setDetails : {};
+            if (!record.details.t1) record.details.t1 = record.lift || record.exercise || record.setDetails.t1Name || null;
+            if (!record.setDetails.t1 && Array.isArray(record.sets)) record.setDetails.t1 = record.sets;
+            if (!record.setDetails.t2 && Array.isArray(record.secondarySets)) record.setDetails.t2 = record.secondarySets;
+            if (!record.setDetails.t2Name) record.setDetails.t2Name = record.t2 || record.secondaryExercise || null;
+            if (!Array.isArray(record.setDetails.accessories)) record.setDetails.accessories = Array.isArray(record.accessories) ? record.accessories : [];
+            return record;
+        });
+
+        const normalizeBodyweightLog = entries => (Array.isArray(entries) ? entries : []).map(entry => {
+            const record = typeof entry === 'number' ? { weight: entry } : { ...(entry || {}) };
+            const weight = Number(record.weight ?? record.bodyweight ?? record.bodyWeight ?? record.bw ?? record.value);
+            const date = historyTimestamp({ timestamp: record.timestamp ?? record.createdAt, date: record.date ?? record.isoDate });
+            return { ...record, weight, date };
+        }).filter(record => Number.isFinite(record.weight) && record.weight > 0 && record.date > 0)
+            .sort((a, b) => a.date - b.date);
+
+        const getBodyweightSeries = entries => {
+            const normalized = normalizeBodyweightLog(entries).slice(-30);
+            return { labels: normalized.map(x => U.iso(x.date)), values: normalized.map(x => x.weight) };
+        };
         const storageSet = (storage, key, value) => {
             try { storage.setItem(key, J.stringify(value)); return true; } catch { return false; }
         };
@@ -1628,10 +1739,10 @@
             a.prefs = mergePrefs({ ...a.prefs, ...(state.prefs || {}) });
             a.tms = { ...a.tms, ...(state.tms || {}) };
             a.state = clone(state.state || a.state);
-            a.history = clone(state.history || []);
+            a.history = normalizeHistoryRecords(clone(state.history || []));
             a.prs = clone(state.prs || {});
             a.e1rmHistory = clone(state.e1rmHistory || {});
-            a.bwLog = clone(state.bwLog || []);
+            a.bwLog = normalizeBodyweightLog(clone(state.bwLog || []));
             a.restHistory = clone(state.restHistory || []);
             a.xp = state.xp ?? a.xp;
             a.session = clone(state.session || {});
@@ -1753,7 +1864,12 @@
             mergePrefs,
             resolveTheme,
             normalizeTheme,
+            normalizeProgramKey,
             applyThemePreference,
+            historyTimestamp,
+            normalizeHistoryRecords,
+            normalizeBodyweightLog,
+            getBodyweightSeries,
             calculateDeloadSuggestion,
             analyze_fatigue_and_suggest_rest,
             calculateRestSuggestion,
@@ -1774,6 +1890,11 @@
                 calculateVolumeLandmarks,
                 evaluatePR,
                 resolveTheme,
+                normalizeProgramKey,
+                historyTimestamp,
+                normalizeHistoryRecords,
+                normalizeBodyweightLog,
+                getBodyweightSeries,
                 serializeState,
                 hydrateState,
                 calculateRestSuggestion,

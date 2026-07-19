@@ -543,6 +543,51 @@
                 const invalid = api.mergePrefs({ theme: 'sepia' });
                 assertEqual(invalid.theme, 'dark', 'invalid saved theme normalizes to dark');
             });
+            test('Persistence', 'legacy workout history remains calendar and recovery compatible', () => {
+                const legacySets = [completeSet({ weight: 205, reps: 5 })];
+                const legacy = {
+                    timestamp: new Date(NOW).toISOString(),
+                    date: '1/1/2026',
+                    lift: 'Bench',
+                    sets: legacySets,
+                    secondaryExercise: 'OHP',
+                    secondarySets: [completeSet({ weight: 115, reps: 5 })],
+                    accessories: [{ name: 'Tri', reps: '10-15', completed: 3 }],
+                    totalVolume: 1600
+                };
+                const normalized = api.normalizeHistoryRecords([legacy]);
+                assertEqual(normalized[0].timestamp, NOW, 'ISO timestamp becomes numeric milliseconds');
+                assertEqual(normalized[0].details.t1, 'Bench', 'legacy top-level lift maps to T1');
+                assertEqual(normalized[0].setDetails.t1.length, 1, 'legacy top-level sets map to T1 sets');
+                assertEqual(normalized[0].setDetails.t2Name, 'OHP', 'legacy secondary exercise maps to T2');
+                const recovery = api.calculateRecoverySnapshot({ history: [legacy], tms: FIXTURE_TMS, prefs: DEFAULT_PREFS, now: NOW });
+                assertTrue(recovery.mgVol.Push > 0, 'legacy Bench contributes Push utilization');
+                assertTrue(recovery.recoveryMap.chest < 100, 'legacy Bench contributes chest recovery fatigue');
+                const calendarLegacy = { ...legacy, timestamp: new Date(api.U.now()).toISOString(), date: new Date(api.U.now()).toLocaleDateString() };
+                const app = api.createTestApp({ history: [calendarLegacy] });
+                app.calBuild();
+                assertTrue(app.cal.days.some(day => day.hasLog), 'legacy workout appears in calendar');
+                assertEqual(app.calSummary.count, 1, 'legacy workout appears in calendar summary');
+            });
+            test('Persistence', 'legacy timestamp formats normalize safely', () => {
+                assertEqual(api.historyTimestamp({ timestamp: String(NOW) }), NOW, 'millisecond timestamp string');
+                assertEqual(api.historyTimestamp({ timestamp: String(NOW / 1000) }), NOW, 'second timestamp string');
+                assertEqual(api.historyTimestamp({ timestamp: { seconds: NOW / 1000 } }), NOW, 'cloud seconds timestamp');
+                assertTrue(api.historyTimestamp({ date: '18/7/2026' }) > 0, 'day-first locale date parses');
+                assertTrue(api.historyTimestamp({ date: '7/18/2026' }) > 0, 'month-first locale date parses');
+                assertEqual(api.historyTimestamp({ date: 'not-a-date' }), 0, 'corrupt date fails safely');
+            });
+            test('Persistence', 'legacy bodyweight history produces a chart series', () => {
+                const series = api.getBodyweightSeries([
+                    { timestamp: String(NOW - 864e5), bodyweight: '181.5' },
+                    { date: new Date(NOW).toISOString(), weight: 180 }
+                ]);
+                assertEqual(series.labels.length, 2, 'bodyweight chart has two labels');
+                assertDeepEqual(series.values, [181.5, 180], 'bodyweight aliases normalize numerically');
+                const app = api.createTestApp({ bwLog: [{ date: NOW - 864e5, weight: 181.5 }, { date: NOW, weight: 180 }] });
+                assertEqual(app.getBW('current'), '180.0', 'Current bodyweight uses latest entry, not maximum');
+                assertEqual(app.getBW('max'), '181.5', 'Maximum bodyweight remains available');
+            });
             test('Persistence', 'backup roundtrips active session, PR history, and version without sync', () => {
                 let syncCalls = 0;
                 const oldSync = window.requestSync;
@@ -571,6 +616,17 @@
                 const st = fakeStorage();
                 api.hydrateState({ version: api.DATA_VERSION, main: {}, prefs: { theme: 'system' } }, st);
                 assertEqual(api.serializeState(st).prefs.theme, 'system', 'theme survives save/load helpers');
+            });
+            test('Theme / preferences', 'legacy program names resolve to matching descriptions', () => {
+                const aliases = { '5/3/1BBB': '531', '5/3/1 BBB': '531', 'SL 5x5': 'stronglifts', 'nSuns LP': 'nsuns', PHUL: 'phul' };
+                Object.entries(aliases).forEach(([saved, expected]) => assertEqual(api.mergePrefs({ program: saved }).program, expected, `${saved} canonical program key`));
+                assertEqual(api.DATA.progs[api.mergePrefs({ program: '5/3/1BBB' }).program].name, '5/3/1 BBB', '5/3/1 description card matches selector');
+            });
+            test('Theme / preferences', 'achievement icons are valid Unicode', () => {
+                api.createTestApp().ACHIEVEMENTS.forEach(a => {
+                    assertFalse(/[Ãâð]/.test(a.icon), `${a.id} icon has no mojibake`);
+                    assertTrue(Array.from(a.icon).length >= 1, `${a.id} icon is present`);
+                });
             });
         }
 

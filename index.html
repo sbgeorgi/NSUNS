@@ -1543,7 +1543,12 @@
             <div class="glass-card space-y-4 fade-up stagger-1">
                 <h3 class="lbl">Program</h3>
                 <select x-model="prefs.program" class="inp text-sm mb-4" @change="pIdx=0;savePrefs();save()">
-                    <template x-for="(p,k) in PROGRAMS"><option :value="k" x-text="p.name"></option></template>
+                    <option value="nsuns">nSuns LP</option>
+                    <option value="ppl">PPL</option>
+                    <option value="phul">PHUL</option>
+                    <option value="stronglifts">SL 5x5</option>
+                    <option value="gzclp">GZCLP</option>
+                    <option value="531">5/3/1 BBB</option>
                 </select>
                 <div class="text-xs p-4 rounded-2xl leading-relaxed" :style="`background: var(--surface-hi-bg); border: 1px solid var(--border-subtle); color: var(--text-secondary)`">
                     <div class="font-bold mb-2 text-sm" :style="`color: var(--text-primary)`" x-text="PROGRAMS[prefs.program].name"></div>
