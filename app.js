@@ -215,7 +215,7 @@
             { id: 'back', title: 'Comeback Kid', icon: '\u{1F4AB}', check: h => { if (h.length < 3) return false; const s = [...h].sort((a, b) => a.timestamp - b.timestamp); for (let i = 2; i < s.length; i++) if ((s[i].timestamp - s[i - 1].timestamp) > 12096e5) return true; return false } },
             { id: 'star', title: 'Five Star', icon: '\u2728', check: h => h.some(w => w.rating === 5) }, { id: 'streak10', title: 'Consistency', icon: '\u{1F517}', check: (_, s) => s >= 10 },
             { id: 'tonnage50k', title: 'Iron Mover', icon: '\u{1F3CB}\uFE0F', check: h => h.some(w => (w.totalVolume || 0) >= 50000) }, { id: 'dawn', title: 'Early Bird', icon: '\u{1F305}', check: h => h.some(w => new D(w.timestamp).getHours() >= 4 && new D(w.timestamp).getHours() < 7) },
-            { id: 'supercomp', title: 'Perfect Timing', icon: '\u26A1', check: (h, s, app) => app && app.cache?.recovery?.some(g => g.muscles?.some(m => m.recovery > 100)) },
+            { id: 'supercomp', title: 'Perfect Timing', icon: '\u26A1', check: (h, s, app) => app && app.cache?.recovery?.some(g => g.muscles?.some(m => m.supercompensating)) },
             { id: 'balanced', title: 'Balanced Athlete', icon: '\u2696\uFE0F', check: (h, s, app) => { if (!app?.cache?.mgVol) return false; const v = app.cache.mgVol; const vals = [v.Push, v.Pull, v.Legs].filter(x => x > 0); if (vals.length < 3) return false; const avg = U.avg(vals); return vals.every(x => M.abs(x - avg) / avg < 0.25); } }
         ];
 
@@ -237,6 +237,20 @@
             _imp[lc] = m ? m[1] : {};
             if (Object.keys(_imp).length > MAX_IMP_CACHE) delete _imp[Object.keys(_imp)[0]];
             return _imp[lc];
+        };
+        const normalizeExerciseName = value => {
+            const raw = String(value || '').trim();
+            if (!raw) return null;
+            if (/^dl$/i.test(raw)) return 'Deadlift';
+            const exact = Object.keys(DATA.muscles).find(name => name.toLowerCase() === raw.toLowerCase())
+                || Object.keys(EX_INDEX).find(name => name.toLowerCase() === raw.toLowerCase());
+            if (exact) return exact;
+            if (/\b(deadlift|dl)\b/i.test(raw)) return 'Deadlift';
+            if (/\bsquat\b/i.test(raw)) return 'Squat';
+            if (/\bbench\b/i.test(raw)) return 'Bench';
+            if (/\b(ohp|overhead\s+press)\b/i.test(raw)) return 'OHP';
+            if (/\brow\b/i.test(raw)) return 'Row';
+            return Object.keys(impact(raw)).length ? raw : null;
         };
         const plateInventory = unit => unit === 'kg' ? [25, 20, 10, 5, 2.5, 1.25] : (DATA.ui.plates[unit] || DATA.ui.plates.lbs);
         const plateLoadForSide = (sideWeight, unit) => {
@@ -1359,22 +1373,27 @@
                     const FATIGUE_LOOKBACK_HOURS = 504;
                     const UTILIZATION_LOOKBACK_HOURS = 720;
                     const MIN_DECAY = 0.005;
-                    const lastTrainedAge = {};
+                    const lastTrainedAge = {}, primedMap = {};
                     const allW = [...this.history]; if (this.session?.start && this.session?.t1) allW.push({ timestamp: this.session.start, rpe: this.sessionRPE, details: { t1: this.session.t1?.baseLift || this.session.t1?.name, t1Variant: this.session.t1?.name }, setDetails: { t1: this.session.t1?.sets, t2Name: this.session.t2?.selectedExercise || this.session.t2?.name, t2: this.session.t2?.sets, accessories: this.session.acc?.map(a => ({ name: a.selectedExercise || a.name, originalName: a.originalName, total: a.sets, reps: a.reps, completed: Object.keys(this.session.completedAcc || {}).filter(k => k.startsWith((a.originalName || a.name) + '-')).length })) } });
-                    allW.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+                    allW.sort((a, b) => historyTimestamp(a) - historyTimestamp(b));
                     for (let i = allW.length - 1; i >= 0; i--) {
-                        const w = allW[i], age = (now - w.timestamp) / 36e5; if (age >= UTILIZATION_LOOKBACK_HOURS) break;
+                        const w = allW[i], timestamp = historyTimestamp(w);
+                        if (!timestamp || timestamp > now + 36e5) continue;
+                        const age = M.max(0, (now - timestamp) / 36e5); if (age >= UTILIZATION_LOOKBACK_HOURS) break;
                         const wRPE = w.rpe || 7;
                         const procSets = (n, sets) => {
-                            if (!n || !Array.isArray(sets)) return;
-                            const imp_map = impact(n), bLift = this.baseTM(n) || n, tm = this.tms[bLift] || 0;
+                            if (!n || !Array.isArray(sets)) return 0;
+                            const normalizedName = normalizeExerciseName(n) || n;
+                            const imp_map = impact(normalizedName), bLift = this.baseTM(normalizedName) || normalizedName, tm = this.tms[bLift] || 0;
+                            let completed = 0;
                             sets.forEach(s => {
                                 if (!s.completed) return;
+                                completed++;
                                 const reps = s.performed != null ? s.performed : (s.reps || 0), wt = s.weight || 0;
-                                if (wt <= 0 || reps <= 0) return;
                                 const effort = 1 + M.max(0, wRPE - 7) * .1 + (s.failed ? .15 : 0);
-                                const gi = ms => effort * M.min(1, M.max(0, ...ms.map(m => imp_map[m] || 0)));
+                                const gi = ms => { const load = M.max(0, ...ms.map(m => imp_map[m] || 0)); return load >= .3 ? effort * M.min(1, load) : 0; };
                                 mg.Push += gi(DATA.groups.Push); mg.Pull += gi(DATA.groups.Pull); mg.Legs += gi(DATA.groups.Legs); mg.Core += gi(DATA.groups.Core);
+                                if (wt <= 0 || reps <= 0) return;
                                 const setFat = U.fatigue(wt, reps, tm, s.failed, wRPE);
                                 Object.entries(imp_map).forEach(([k, v]) => {
                                     const decay = M.pow(.5, age / (DATA.halfLife[k] || 36));
@@ -1384,12 +1403,13 @@
                                     }
                                 });
                             });
+                            return completed;
                         };
                         const procAcc = (a) => {
                             if (!a || !a.name || !a.completed) return;
                             const imp_map = impact(a.name), isC = DATA.compoundAccessories.has(a.name), reps = U.prs(a.reps), cc = a.completed || 0;
                             if (cc <= 0) return;
-                            const gi = ms => cc * .75 * M.min(1, M.max(0, ...ms.map(m => imp_map[m] || 0)));
+                            const gi = ms => { const load = M.max(0, ...ms.map(m => imp_map[m] || 0)); return load >= .3 ? cc * .75 * M.min(1, load) : 0; };
                             mg.Push += gi(DATA.groups.Push); mg.Pull += gi(DATA.groups.Pull); mg.Legs += gi(DATA.groups.Legs); mg.Core += gi(DATA.groups.Core);
                             const accFat = cc * reps * (isC ? .4 : .2);
                             Object.entries(imp_map).forEach(([k, v]) => {
@@ -1400,7 +1420,30 @@
                                 }
                             });
                         };
-                        procSets(w.details?.t1Variant || w.details?.t1, w.setDetails?.t1); procSets(w.setDetails?.t2Name || w.setDetails?.t2BaseLift, w.setDetails?.t2); (w.setDetails?.accessories || []).forEach(procAcc);
+                        const t1Name = w.details?.t1Variant || w.details?.t1 || normalizeExerciseName(w.lift || w.exercise || w.title);
+                        const t1Completed = procSets(t1Name, w.setDetails?.t1);
+                        const t2Completed = procSets(w.setDetails?.t2Name || w.setDetails?.t2BaseLift, w.setDetails?.t2);
+                        (w.setDetails?.accessories || []).forEach(procAcc);
+
+                        // Older synced logs can contain only the history-card summary. Keep those sessions
+                        // visible in utilization/recovery without fabricating exact set rows.
+                        if (!t1Completed && !t2Completed && t1Name) {
+                            const imp_map = impact(t1Name);
+                            const tm = this.tms[this.baseTM(t1Name) || t1Name] || Number(w.details?.tm) || 0;
+                            const storedSets = Number(w.completedSets || w.totalSets);
+                            const volumeEstimate = tm > 0 && Number(w.totalVolume) > 0 ? Number(w.totalVolume) / (tm * .75 * 5) : 0;
+                            const setCount = M.max(1, M.min(20, M.round(storedSets > 0 ? storedSets : volumeEstimate > 0 ? volumeEstimate : 1)));
+                            const gi = ms => { const load = M.max(0, ...ms.map(m => imp_map[m] || 0)); return load >= .3 ? setCount * M.min(1, load) : 0; };
+                            mg.Push += gi(DATA.groups.Push); mg.Pull += gi(DATA.groups.Pull); mg.Legs += gi(DATA.groups.Legs); mg.Core += gi(DATA.groups.Core);
+                            if (age < FATIGUE_LOOKBACK_HOURS) {
+                                const estimatedSetFatigue = U.fatigue(tm > 0 ? tm * .75 : 1, 5, tm, false, wRPE);
+                                Object.entries(imp_map).forEach(([k, v]) => {
+                                    const decay = M.pow(.5, age / (DATA.halfLife[k] || 36));
+                                    if (decay >= MIN_DECAY) f[k] = (f[k] || 0) + estimatedSetFatigue * setCount * v * decay;
+                                    if (v >= .3 && (lastTrainedAge[k] === undefined || age < lastTrainedAge[k])) lastTrainedAge[k] = age;
+                                });
+                            }
+                        }
                     }
 
                     const lb = 1 + M.min(.50, this.currentLevel * .02), rm = {};
@@ -1420,8 +1463,8 @@
                         if (sc && ageHrs !== undefined && baseRecovery >= 85) {
                             const distFromPeak = M.abs(ageHrs - sc.peakHours);
                             if (distFromPeak <= sc.windowHours) {
-                                const bonus = 10 * M.exp(-M.pow(distFromPeak / (sc.windowHours * 0.6), 2));
-                                rm[m] = M.min(110, M.round(baseRecovery + bonus));
+                                primedMap[m] = true;
+                                rm[m] = M.min(100, baseRecovery);
                             } else {
                                 rm[m] = M.max(0, M.min(100, baseRecovery));
                             }
@@ -1435,11 +1478,11 @@
                         const vs = ms.map(m => {
                             let r = rm[m] ?? 100;
                             if (n !== 'CNS' && !DATA.isolationDominant.has(m)) r = M.round(r * cM);
-                            return M.max(0, M.min(110, r));
+                            return M.max(0, M.min(100, r));
                         });
                         const min = M.min(...vs);
                         const avg = M.round(U.avg(vs));
-                        const hasSupercomp = vs.some(v => v > 100);
+                        const hasSupercomp = ms.some(m => primedMap[m]);
                         return {
                             name: n,
                             recovery: avg,
@@ -1447,13 +1490,13 @@
                             status: hasSupercomp ? 'Primed' : min >= 80 ? 'Ready' : min >= 40 ? 'Recovering' : 'Fatigued',
                             muscles: ms.map(m => ({
                                 name: m,
-                                recovery: n === 'CNS' ? (rm[m] ?? 100) : (DATA.isolationDominant.has(m) ? (rm[m] ?? 100) : M.max(0, M.min(110, M.round((rm[m] ?? 100) * cM)))),
-                                supercompensating: (rm[m] ?? 100) > 100
+                                recovery: n === 'CNS' ? (rm[m] ?? 100) : (DATA.isolationDominant.has(m) ? (rm[m] ?? 100) : M.max(0, M.min(100, M.round((rm[m] ?? 100) * cM)))),
+                                supercompensating: !!primedMap[m]
                             }))
                         };
                     });
                     this.cache.recoveryMap = {}; Object.keys(DATA.halfLife).forEach(m => {
-                        this.cache.recoveryMap[m] = m === 'cns' ? (rm[m] ?? 100) : (DATA.isolationDominant.has(m) ? (rm[m] ?? 100) : M.max(0, M.min(110, M.round((rm[m] ?? 100) * cM))));
+                        this.cache.recoveryMap[m] = m === 'cns' ? (rm[m] ?? 100) : (DATA.isolationDominant.has(m) ? (rm[m] ?? 100) : M.max(0, M.min(100, M.round((rm[m] ?? 100) * cM))));
                     });
                     this.cache.mgVol = mg;
 
@@ -1513,9 +1556,9 @@
                     const volWarnings = this.getVolumeLandmarkWarnings();
 
                     const primedMuscles = [];
-                    Object.entries(this.cache.recoveryMap || {}).forEach(([m, r]) => {
-                        if (r > 100) primedMuscles.push(m);
-                    });
+                    (this.cache.recovery || []).forEach(group => (group.muscles || []).forEach(m => {
+                        if (m.supercompensating && !primedMuscles.includes(m.name)) primedMuscles.push(m.name);
+                    }));
 
                     const systemic = this.cache.recoveryMap?.cns ?? 100;
                     if (systemic < 25) {
@@ -1583,7 +1626,7 @@
                         this._cacheDebounce = setTimeout(() => this.updCache(), 200);
                     }
                 },
-                save() { U.s('nsuns_ultimate', { tms: this.tms, history: this.history, idx: this.idx, week: this.week, cycleWeek531: this.cycleWeek531, streak: this.streak, state: this.state }); if (this._cacheDebounce) clearTimeout(this._cacheDebounce); this._cacheDebounce = setTimeout(() => this.updCache(), 200); }, savePrefs() { this.prefs = mergePrefs(this.prefs); this.applyTheme(); U.s('lift_preferences', this.prefs); },
+                save() { U.s('nsuns_ultimate', { tms: this.tms, history: this.history, idx: this.idx, week: this.week, cycleWeek531: this.cycleWeek531, streak: this.streak, state: this.state }); if (this._cacheDebounce) clearTimeout(this._cacheDebounce); this._cacheDebounce = setTimeout(() => { this.updCache(); if (this.view === 'dashboard') this.$nextTick?.(() => this.draw()); }, 200); }, savePrefs() { this.prefs = mergePrefs(this.prefs); this.applyTheme(); U.s('lift_preferences', this.prefs); },
                 togUnit(u) {
                     if (u !== this.prefs.weightUnit && confirm(`Convert all weights to ${u}?`)) {
                         const f = this.prefs.weightUnit;
@@ -1704,7 +1747,7 @@
             }
             record.details = record.details && typeof record.details === 'object' ? record.details : {};
             record.setDetails = record.setDetails && typeof record.setDetails === 'object' ? record.setDetails : {};
-            if (!record.details.t1) record.details.t1 = record.lift || record.exercise || record.setDetails.t1Name || null;
+            if (!record.details.t1) record.details.t1 = normalizeExerciseName(record.lift || record.exercise || record.setDetails.t1Name || record.title);
             if (!record.setDetails.t1 && Array.isArray(record.sets)) record.setDetails.t1 = record.sets;
             if (!record.setDetails.t2 && Array.isArray(record.secondarySets)) record.setDetails.t2 = record.secondarySets;
             if (!record.setDetails.t2Name) record.setDetails.t2Name = record.t2 || record.secondaryExercise || null;

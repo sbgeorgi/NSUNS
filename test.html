@@ -432,6 +432,25 @@
                 assertTrue(r.mgVol.Push > 0, '25-day-old Bench remains in 30-day utilization');
                 assertEqual(r.recoveryMap.chest, 100, '25-day-old Bench no longer creates recovery fatigue');
             });
+            test('Recovery', 'history-card summary logs drive all utilization axes', () => {
+                const summaries = [
+                    { timestamp: NOW - 2 * 864e5, title: 'OHP', totalVolume: 10000, rating: 5 },
+                    { timestamp: NOW - 4 * 864e5, title: 'Squat', totalVolume: 13000, rating: 5 },
+                    { timestamp: NOW - 5 * 864e5, title: 'Bench', totalVolume: 16000, rating: 5 },
+                    { timestamp: NOW - 8 * 864e5, title: 'DL', totalVolume: 17000, rating: 5 }
+                ];
+                const r = api.calculateRecoverySnapshot({ history: summaries, tms: FIXTURE_TMS, prefs: DEFAULT_PREFS, now: NOW });
+                ['Push', 'Pull', 'Legs', 'Core'].forEach(group => assertTrue(r.mgVol[group] > 0, `${group} reflects compact History logs`));
+                assertEqual(api.normalizeHistoryRecords([{ title: 'DL', timestamp: NOW }])[0].details.t1, 'Deadlift', 'DL history title maps to Deadlift');
+                assertTrue(r.recoveryMap.chest < 100, 'recent compact Bench log affects chest recovery');
+                assertTrue(r.recoveryMap.quads < 100, 'recent compact Squat log affects quad recovery');
+            });
+            test('Recovery', 'completed legacy sets without load still count utilization', () => {
+                const history = [{ timestamp: NOW, title: 'Bench', details: { t1: 'Bench' }, setDetails: { t1: [{ completed: true }, { completed: true }], t2: [], accessories: [] } }];
+                const r = api.calculateRecoverySnapshot({ history, tms: FIXTURE_TMS, prefs: DEFAULT_PREFS, now: NOW });
+                assertEqual(r.mgVol.Push, 2, 'two completed Bench rows count as two Push sets');
+                assertEqual(r.recoveryMap.chest, 100, 'missing load does not fabricate detailed-set fatigue');
+            });
             test('Recovery', 'generic accessories have muscle impact', () => {
                 const imp = api.impact('Legs');
                 assertApprox(imp.quads, 0.75, 0.001, 'Legs accessory maps to quads');
@@ -456,12 +475,12 @@
                 assertEqual(a.getSmartRestDuration('t2', { weight: 225, reps: 5 }, 'Bench'), 240, 'StrongLifts heavy secondary gets strength rest');
                 assertEqual(a.getSmartRestDuration('t2', { weight: 160, reps: 10 }, 'Bench'), 120, 'hypertrophy secondary gets compound hypertrophy rest');
             });
-            test('Recovery', 'supercompensation and group statuses', () => {
+            test('Recovery', 'recovery stays percent-bounded while primed status remains available', () => {
                 const bench = [{ timestamp: NOW - 72 * 36e5, rpe: 7, details: { t1: 'Bench' }, setDetails: { t1: [{ weight: 100, reps: 5, completed: true, failed: false }], t2: [], accessories: [] } }];
                 const primed = api.calculateRecoverySnapshot({ history: bench, tms: FIXTURE_TMS, prefs: DEFAULT_PREFS, now: NOW });
-                assertTrue(primed.recoveryMap.chest > 100, 'supercompensation can exceed 100');
-                assertTrue(primed.recoveryMap.chest <= 110, 'supercompensation caps at 110');
+                assertTrue(Object.values(primed.recoveryMap).every(value => value >= 0 && value <= 100), 'every displayed recovery percentage is between 0 and 100');
                 assertEqual(primed.recovery.find(g => g.name === 'Push').status, 'Primed', 'group status can be Primed');
+                assertTrue(primed.recovery.find(g => g.name === 'Push').muscles.some(m => m.name === 'chest' && m.supercompensating), 'primed metadata is separate from recovery percentage');
                 assertEqual(api.calculateRecoverySnapshot({ history: [], tms: FIXTURE_TMS, now: NOW }).recovery.find(g => g.name === 'Push').status, 'Ready', 'group status can be Ready');
                 assertEqual(api.calculateRecoverySnapshot({ history: heavyDeadlift(5), tms: FIXTURE_TMS, prefs: DEFAULT_PREFS, now: NOW }).recovery.find(g => g.name === 'Pull').status, 'Recovering', 'group status can be Recovering');
                 assertEqual(api.calculateRecoverySnapshot({ history: heavyDeadlift(45), tms: FIXTURE_TMS, prefs: DEFAULT_PREFS, now: NOW }).recovery.find(g => g.name === 'CNS').status, 'Fatigued', 'group status can be Fatigued');
