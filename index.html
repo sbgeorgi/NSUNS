@@ -1244,11 +1244,22 @@
                 <div class="f-cb mb-4">
                     <div class="flex items-center gap-3">
                         <div class="w-9 h-9 rounded-xl f-c font-bold text-sm" :style="`background: var(--accent-soft); color: var(--accent-hi); border: 1px solid var(--accent-border)`">T1</div>
-                        <div>
-                            <h3 class="text-base font-bold leading-none" x-text="session.t1?.name"></h3>
+                        <div class="relative">
+                            <div @click="swapState.t1=!swapState.t1;swapState.q=''" class="cursor-pointer f-g2">
+                                <h3 class="text-base font-bold leading-none" x-text="session.t1?.selectedExercise||session.t1?.name"></h3>
+                                <svg class="w-4 h-4 shrink-0" :style="`color: var(--text-faint)`" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="icons.swap"/></svg>
+                            </div>
                             <div class="text-xs mt-1 f-g2" :style="`color: var(--text-tertiary)`">
-                                <span x-text="'TM: '+tms[session.t1?.name]"></span>
+                                <span x-text="'TM: '+(tms[session.t1?.baseLift]||0)"></span>
                                 <button @click="openExNote(session.t1?.name)" class="hover:opacity-100 opacity-60">📝</button>
+                            </div>
+                            <div x-show="swapState.t1" @click.outside="swapState.t1=false" class="ex-dropdown" x-transition>
+                                <input type="text" x-model="swapState.q" class="w-full bg-transparent p-3.5 text-sm outline-none" :style="`border-bottom: 1px solid var(--border-subtle); color: var(--text-primary)`" placeholder="Search..." autofocus>
+                                <div class="max-h-48 overflow-y-auto no-scrollbar">
+                                    <template x-for="alt in getT1Alts()">
+                                        <div class="ex-opt f-cb" @click="swapT1(alt.id)"><span x-text="alt.name"></span><span class="text-xs px-1.5 py-0.5 rounded font-bold" :style="`background: var(--surface-hi-bg); color: var(--text-tertiary)`" x-text="'x'+(alt.mult||1)"></span></div>
+                                    </template>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -1298,7 +1309,7 @@
                 <button @click="addSet('t1')" class="w-full mt-3 py-2.5 text-xs font-bold transition rounded-xl" :style="`color: var(--text-faint); border: 1px dashed var(--border-strong)`" @mouseover="$el.style.color='var(--text-primary)'" @mouseout="$el.style.color='var(--text-faint)'">+ Add Set</button>
             </div>
             <!-- T2 -->
-            <div class="glass-card" x-data="{swapping:false}">
+            <div class="glass-card" x-data="{swapping:false}" x-show="session.t2?.name">
                 <div class="f-cb mb-4">
                     <div class="flex items-center gap-3 w-full">
                         <div class="w-9 h-9 rounded-xl f-c font-bold text-sm shrink-0" :style="`background: rgba(59,130,246,0.14); color: #60A5FA; border: 1px solid rgba(59,130,246,0.3)`">T2</div>
@@ -1344,6 +1355,7 @@
                     <h3 class="lbl mb-0">Accessories</h3>
                     <div class="text-[10px]" :style="`color: var(--text-faint)`">Tap 🔗 to link supersets</div>
                 </div>
+                <p x-show="getWk()?.accessoryFocus?.length" class="text-[11px] leading-relaxed mb-4" :style="`color: var(--text-secondary)`" x-text="'Suggested focus, not fixed exercises: ' + getWk().accessoryFocus.join(' · ')"></p>
                 <div class="space-y-4">
                     <template x-for="(a,i) in session.acc">
                         <div class="relative" :class="a.supersetId ? 'border-l-2 pl-3 -ml-3' : ''" :style="a.supersetId ? `border-color: var(--accent)` : ''">
@@ -1543,12 +1555,7 @@
             <div class="glass-card space-y-4 fade-up stagger-1">
                 <h3 class="lbl">Program</h3>
                 <select x-model="prefs.program" class="inp text-sm mb-4" @change="pIdx=0;savePrefs();save()">
-                    <option value="nsuns">nSuns LP</option>
-                    <option value="ppl">PPL</option>
-                    <option value="phul">PHUL</option>
-                    <option value="stronglifts">SL 5x5</option>
-                    <option value="gzclp">GZCLP</option>
-                    <option value="531">5/3/1 BBB</option>
+                    <template x-for="key in ['nsuns','ppl','phul','stronglifts','gzclp','531','candito6','texas4']" :key="key"><option :value="key" x-text="PROGRAMS[key].name"></option></template>
                 </select>
                 <div class="text-xs p-4 rounded-2xl leading-relaxed" :style="`background: var(--surface-hi-bg); border: 1px solid var(--border-subtle); color: var(--text-secondary)`">
                     <div class="font-bold mb-2 text-sm" :style="`color: var(--text-primary)`" x-text="PROGRAMS[prefs.program].name"></div>
@@ -1557,6 +1564,7 @@
                         <span class="text-[10px] uppercase" :style="`color: var(--text-faint)`">Progression</span>
                         <span class="text-xs font-bold" :style="`color: var(--accent-hi)`" x-text="PROGRAMS[prefs.program].progressionDesc"></span>
                     </div>
+                    <a x-show="PROGRAMS[prefs.program].sourceUrl" :href="PROGRAMS[prefs.program].sourceUrl" target="_blank" rel="noopener noreferrer" class="inline-block mt-3 text-xs font-bold" :style="`color: var(--accent-hi)`">Program reference ↗</a>
                 </div>
             </div>
             <!-- Appearance -->

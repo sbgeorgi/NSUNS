@@ -96,8 +96,8 @@
             }
         }
 
-        function completeSet({ reps = 5, performed = reps, weight = 100, amrap = false, failed = false, completed = true } = {}) {
-            return { weight, originalWeight: weight, reps, performed, amrap, completed, failed };
+        function completeSet({ reps = 5, performed = reps, weight = 100, amrap = false, failed = false, completed = true, schemeKey = null, setType = null } = {}) {
+            return { weight, originalWeight: weight, reps, performed, amrap, completed, failed, schemeKey, setType };
         }
         function completeSets(n = 3, reps = 5) {
             return Array.from({ length: n }, () => completeSet({ reps, performed: reps }));
@@ -235,6 +235,10 @@
                 assertDeepEqual(snapshot(gen('531', '531', 'Bench', 't1', { cycleWeek531: 4 })), ['90x5','115x5','135x5'], '5/3/1 deload snapshot');
                 assertDeepEqual(snapshot(gen('531', 'bbb', 'Bench', 't2')), ['115x10','115x10','115x10','115x10','115x10'], '5/3/1 BBB snapshot');
                 assertDeepEqual(snapshot(gen('stronglifts', 'std')), ['225x5','225x5','225x5','225x5','225x5+'], 'StrongLifts std snapshot');
+                assertDeepEqual(snapshot(gen('candito6', 'w1_bench')), ['125x10','170x10','185x8','195x6'], 'Candito week 1 bench conditioning snapshot');
+                assertDeepEqual(snapshot(gen('candito6', 'w5_sq_peak', 'Squat')), ['340x1+'], 'Candito week 5 squat rep-max snapshot');
+                assertDeepEqual(snapshot(gen('texas4', 'volume')), ['205x5','205x5','205x5','205x5','205x5'], 'Texas Method volume snapshot');
+                assertDeepEqual(snapshot(gen('texas4', 'intensity_1')), ['250x1'], 'Texas Method peak single snapshot');
             });
             test('Workout generation', 'all program days and scheme groups produce sets', () => {
                 Object.entries(api.DATA.progs).forEach(([program, p]) => p.days.forEach((day, idx) => {
@@ -242,9 +246,10 @@
                     const a = api.createTestApp({ tms: FIXTURE_TMS, prefs });
                     a.pIdx = idx;
                     const t1 = a.getSets(program === 'gzclp' ? 't1' : program === 'stronglifts' ? 'std' : day.s, day.t1, FIXTURE_TMS[day.t1] || 225, 't1');
-                    const t2 = a.getSets(program === 'gzclp' ? 't2' : program === 'stronglifts' ? 'std' : day.t2s, day.t2, FIXTURE_TMS[day.t2] || 225, 't2', day.t2);
+                    const t2 = day.t2 ? a.getSets(program === 'gzclp' ? 't2' : program === 'stronglifts' ? 'std' : day.t2s, day.t2, FIXTURE_TMS[day.t2] || 225, 't2', day.t2) : [];
                     assertTrue(t1.length > 0, `${program} day ${idx + 1} T1 generates sets`);
-                    assertTrue(t2.length > 0, `${program} day ${idx + 1} T2 generates sets`);
+                    if (day.t2) assertTrue(t2.length > 0, `${program} day ${idx + 1} T2 generates sets`);
+                    else assertEqual(t2.length, 0, `${program} day ${idx + 1} supports a single primary lift`);
                 }));
                 Object.entries(api.DATA.schemes).forEach(([group, schemes]) => Object.entries(schemes).forEach(([key, value]) => assertTrue(Array.isArray(value) && value.length > 0, `${group}.${key} has set rows`)));
             });
@@ -256,6 +261,21 @@
                 assertEqual(gen('531', '531', 'Bench', 't1', { cycleWeek531: 4 })[0].weight, 90, '5/3/1 cycle week selects deload');
                 assertEqual(gen('gzclp', 't1', 'Bench', 't1', { state: { Bench: { t1Stage: 2 } } }).length, 6, 'GZCLP stage 2 selects six doubles');
                 assertEqual(gen('stronglifts', 'std', 'Bench', 't1', { state: { Bench: { slScheme: '3x3' } } })[0].reps, 3, 'StrongLifts scheme state selects 3x3');
+                const canditoOffset = gen('candito6', 'w2_sq_volume', 'Squat');
+                assertEqual(canditoOffset.length, 6, 'Candito fixed extra-volume prescription creates variable six-set session');
+                assertEqual(canditoOffset[1].weight - canditoOffset[0].weight, 5, 'Candito lb offset is exact');
+                assertEqual(gen('candito6', 'w2_sq_volume', 'Squat', 't1', { prefs: { weightUnit: 'kg' } })[1].weight - gen('candito6', 'w2_sq_volume', 'Squat', 't1', { prefs: { weightUnit: 'kg' } })[0].weight, 2.5, 'Candito kg offset is exact');
+            });
+            test('Workout generation', 'program-aware substitutions preserve base loading and completion state', () => {
+                const a = api.createTestApp({ tms: FIXTURE_TMS, prefs: { ...DEFAULT_PREFS, program: 'phul' } });
+                a.start(api.DATA.progs.phul.days[0], 0);
+                a.session.t1.sets[0].completed = true;
+                a.swapT1('Incline Bench');
+                assertEqual(a.session.t1.baseLift, 'Bench', 'T1 variation remains attached to Bench progression');
+                assertEqual(a.session.t1.name, 'Incline Bench', 'selected T1 variation is stored');
+                assertTrue(a.session.t1.sets[0].completed, 'completed-set state survives substitution');
+                assertEqual(a.session.t1.sets[0].weight, 165, 'variant multiplier regenerates the prescription');
+                assertTrue(a.getT1Alts().some(x => x.id === 'Spoto Press'), 'same-pattern T1 alternatives are available');
             });
         }
 
@@ -315,6 +335,34 @@
                 assertEqual(prog({ program: 'stronglifts', lift: 'Bench', sets: [completeSet({ completed: false })], state: { Bench: { cf: 2, dc: 2, slScheme: '3x3' } } }).state.Bench.slScheme, '1x3', 'StrongLifts repeated deload 3x3 to 1x3');
                 assertEqual(prog({ program: 'stronglifts', lift: 'Deadlift', sets: [completeSet({ completed: false })], state: { Deadlift: { cf: 2, dc: 2, slScheme: 'dl' } } }).state.Deadlift.slScheme, '3x5', 'StrongLifts deadlift dl transitions to 3x5');
             });
+            test('Progression', 'Candito six-week block branches', () => {
+                assertEqual(prog({ program: 'candito6', sets: completeSets(4).map(s => ({ ...s, schemeKey: 'w1_sq' })) }).add, 0, 'Candito in-cycle completion holds the training max');
+                assertApprox(prog({ program: 'candito6', sets: [completeSet({ completed: false, schemeKey: 'w3_bench' })] }).add, -5.625, 0.001, 'Candito missed required rep reduces that lift 2.5%');
+                assertEqual(prog({ program: 'candito6', sets: [completeSet({ weight: 245, reps: 1, performed: 1, amrap: true, schemeKey: 'w5_bench_peak' })] }).add, 0, 'Candito one rep on cycle max holds');
+                const projected = prog({ program: 'candito6', sets: [completeSet({ weight: 245, reps: 1, performed: 4, amrap: true, schemeKey: 'w5_bench_peak' })] });
+                assertApprox(projected.add, 15.345, 0.001, 'Candito four-rep projection updates next-cycle TM');
+                assertEqual(projected.afterTM, 240, 'Candito projected TM respects plate rounding');
+            });
+            test('Progression', 'Texas Method 3/2/1 wave branches', () => {
+                assertEqual(prog({ program: 'texas4', sets: [completeSet({ reps: 3, schemeKey: 'intensity_3' })] }).add, 0, 'Texas triple is an in-wave hold');
+                assertEqual(prog({ program: 'texas4', sets: completeSets(5).map(s => ({ ...s, schemeKey: 'volume' })) }).add, 0, 'Texas volume work does not independently change TM');
+                assertEqual(prog({ program: 'texas4', lift: 'Bench', sets: [completeSet({ reps: 1, schemeKey: 'intensity_1' })] }).add, 5, 'Texas upper peak completion adds 5 lb');
+                assertEqual(prog({ program: 'texas4', lift: 'Squat', sets: [completeSet({ reps: 1, schemeKey: 'intensity_1' })] }).add, 10, 'Texas lower peak completion adds 10 lb');
+                assertEqual(prog({ program: 'texas4', lift: 'Bench', prefs: { weightUnit: 'kg' }, sets: [completeSet({ reps: 1, schemeKey: 'intensity_1' })] }).add, 2.5, 'Texas upper peak completion adds 2.5 kg');
+                const first = prog({ program: 'texas4', lift: 'Bench', sets: [completeSet({ completed: false, schemeKey: 'intensity_1' })] });
+                const second = prog({ program: 'texas4', lift: 'Bench', sets: [completeSet({ completed: false, schemeKey: 'intensity_1' })], state: first.state });
+                assertApprox(second.add, -11.25, 0.001, 'two failed peak waves deload the lift 5%');
+            });
+            test('Progression', 'Candito conditional MR10 back-off branches', () => {
+                const counts = [[10, 10], [8, 8], [7, 5], [6, 0]];
+                counts.forEach(([reps, expected]) => {
+                    const a = api.createTestApp({ tms: FIXTURE_TMS, prefs: { ...DEFAULT_PREFS, program: 'candito6' } });
+                    const set = { weight: 255, schemeKey: 'w2_sq_mr10', conditionalBackoff: true };
+                    a.session = { t1: { sets: [set] } };
+                    a._applyConditionalBackoffs('t1', set, reps);
+                    assertEqual(a.session.t1.sets.filter(s => s.setType === 'conditional_backoff').length, expected, `MR10 ${reps} reps creates ${expected} back-offs`);
+                });
+            });
         }
 
         function runRecovery() {
@@ -323,7 +371,7 @@
                 const complete = sets => sets.map(s => ({ ...s, completed: true, failed: false, performed: s.reps, rpe }));
                 const a = api.createTestApp({ tms: FIXTURE_TMS, prefs: { ...DEFAULT_PREFS, program } });
                 const t1 = complete(a.getSets(day.s, day.t1, FIXTURE_TMS[day.t1] || 225, 't1'));
-                const t2 = complete(a.getSets(day.t2s, day.t2, FIXTURE_TMS[day.t2] || 225, 't2', day.t2));
+                const t2 = day.t2 ? complete(a.getSets(day.t2s, day.t2, FIXTURE_TMS[day.t2] || 225, 't2', day.t2)) : [];
                 return {
                     timestamp, rpe, details: { t1: day.t1, preTM: FIXTURE_TMS[day.t1] || 225, tm: FIXTURE_TMS[day.t1] || 225 },
                     setDetails: { t1, t2Name: day.t2, t2BaseLift: day.t2, t2, accessories: (day.acc || []).map(x => ({ ...x, completed: x.sets })) }
@@ -637,9 +685,10 @@
                 assertEqual(api.serializeState(st).prefs.theme, 'system', 'theme survives save/load helpers');
             });
             test('Theme / preferences', 'legacy program names resolve to matching descriptions', () => {
-                const aliases = { '5/3/1BBB': '531', '5/3/1 BBB': '531', 'SL 5x5': 'stronglifts', 'nSuns LP': 'nsuns', PHUL: 'phul' };
+                const aliases = { '5/3/1BBB': '531', '5/3/1 BBB': '531', 'SL 5x5': 'stronglifts', 'nSuns LP': 'nsuns', PHUL: 'phul', 'Candito 6 Week': 'candito6', 'Texas Method 4 Day': 'texas4' };
                 Object.entries(aliases).forEach(([saved, expected]) => assertEqual(api.mergePrefs({ program: saved }).program, expected, `${saved} canonical program key`));
                 assertEqual(api.DATA.progs[api.mergePrefs({ program: '5/3/1BBB' }).program].name, '5/3/1 BBB', '5/3/1 description card matches selector');
+                assertEqual(api.DATA.progs[api.mergePrefs({ program: 'Candito 6 Week' }).program].name, 'Candito 6 Week', 'Candito description card matches selector');
             });
             test('Theme / preferences', 'achievement icons are valid Unicode', () => {
                 api.createTestApp().ACHIEVEMENTS.forEach(a => {
@@ -659,6 +708,10 @@
                     assertFalse(a.status === 'fail', `${a.program} progression validator has source data`);
                     assertEqual(a.dayAudit.length, api.DATA.progs[a.program].days.length, `${a.program} audits every day`);
                     assertTrue(a.schemeAudit.length > 0, `${a.program} audits scheme rows`);
+                });
+                Object.entries(api.DATA.progs).forEach(([key, program]) => {
+                    assertTrue(/^https:/.test(program.sourceUrl), `${key} exposes a research/reference link`);
+                    program.days.forEach((day, i) => assertTrue(Array.isArray(day.accessoryFocus), `${key} day ${i + 1} has flexible accessory guidance`));
                 });
                 assertEqual(api.validateProgramProgressionContext('nsuns').status, 'adjust', 'nSuns high-frequency risk is identified and mitigated');
                 assertEqual(api.validateProgramProgressionContext('ppl').status, 'adjust', 'PPL six-day risk is identified and mitigated');
