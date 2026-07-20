@@ -222,23 +222,31 @@
             test('Workout generation', 'required scheme snapshots', () => {
                 assertDeepEqual(snapshot(gen('nsuns', 'vol')), ['145x8','170x6','190x4','190x4','190x4','180x5','170x6','160x7','145x8+'], 'nSuns vol snapshot');
                 assertDeepEqual(snapshot(gen('nsuns', 'heavy')), ['170x5','190x3','215x1+','205x3','190x3','180x3','170x5','160x5','145x5+'], 'nSuns heavy snapshot');
-                assertDeepEqual(snapshot(gen('nsuns', 'dl')), ['170x5','190x3','215x1+','205x3','190x3','180x3','170x3','160x3','145x3'], 'nSuns dl snapshot');
-                assertDeepEqual(snapshot(gen('nsuns', 't2', 'Bench', 't2')), ['115x5','135x6','160x7','160x4','160x4','160x4','160x4','160x4'], 'nSuns t2 snapshot');
+                assertDeepEqual(snapshot(gen('nsuns', 'dl')), ['170x5','190x3','215x1+','205x3','190x3','180x3','170x3','160x3','145x3+'], 'nSuns deadlift source sequence');
+                assertDeepEqual(snapshot(gen('nsuns', 'bench_heavy')), ['170x5','190x3','215x1+','205x3','190x5','180x3','170x5','160x3','145x5+'], 'nSuns day-five bench source sequence');
+                assertDeepEqual(snapshot(gen('nsuns', 't2_upper', 'Bench', 't2')), ['115x6','135x5','160x3','160x5','160x7','160x4','160x6','160x8'], 'nSuns upper T2 source sequence');
+                assertDeepEqual(snapshot(gen('nsuns', 't2_lower', 'Deadlift', 't2')), ['205x5','245x5','285x3','285x5','285x7','285x4','285x6','285x8'], 'nSuns lower T2 source sequence');
                 assertDeepEqual(snapshot(gen('ppl', 'm5')), ['190x5','190x5','190x5','190x5','190x5+'], 'PPL m5 snapshot');
                 assertDeepEqual(snapshot(gen('ppl', 'm1')), ['205x5+'], 'PPL m1 snapshot');
-                assertDeepEqual(snapshot(gen('phul', 'pow')), ['190x5','190x5','190x5'], 'PHUL pow snapshot');
-                assertDeepEqual(snapshot(gen('phul', 'hyp')), ['145x10','145x10','145x10'], 'PHUL hyp snapshot');
+                assertDeepEqual(snapshot(gen('ppl', 'squat3', 'Squat')), ['270x5','270x5','270x5+'], 'PPL squat is 2x5 plus 1x5+');
+                assertDeepEqual(snapshot(gen('phul', 'pow')), ['190x4','190x4','190x4','190x4'], 'PHUL power uses four sets in the published 3-4x3-5 range');
+                assertDeepEqual(snapshot(gen('phul', 'hyp')), ['145x10','145x10','145x10','145x10'], 'PHUL hypertrophy uses four sets in the published 8-12 range');
                 assertDeepEqual(snapshot(gen('gzclp', 't1')), ['190x3','190x3','190x3','190x3','190x3+'], 'GZCLP t1 stage 1 snapshot');
                 assertDeepEqual(snapshot(gen('531', '531', 'Bench', 't1', { cycleWeek531: 1 })), ['145x5','170x5','190x5+'], '5/3/1 week 1 snapshot');
                 assertDeepEqual(snapshot(gen('531', '531', 'Bench', 't1', { cycleWeek531: 2 })), ['160x3','180x3','205x3+'], '5/3/1 week 2 snapshot');
                 assertDeepEqual(snapshot(gen('531', '531', 'Bench', 't1', { cycleWeek531: 3 })), ['170x5','190x3','215x1+'], '5/3/1 week 3 snapshot');
                 assertDeepEqual(snapshot(gen('531', '531', 'Bench', 't1', { cycleWeek531: 4 })), ['90x5','115x5','135x5'], '5/3/1 deload snapshot');
                 assertDeepEqual(snapshot(gen('531', 'bbb', 'Bench', 't2')), ['115x10','115x10','115x10','115x10','115x10'], '5/3/1 BBB snapshot');
-                assertDeepEqual(snapshot(gen('stronglifts', 'std')), ['225x5','225x5','225x5','225x5','225x5+'], 'StrongLifts std snapshot');
+                assertDeepEqual(snapshot(gen('stronglifts', 'std')), ['225x5','225x5','225x5','225x5','225x5'], 'StrongLifts uses five straight sets, not an AMRAP');
                 assertDeepEqual(snapshot(gen('candito6', 'w1_bench')), ['125x10','170x10','185x8','195x6'], 'Candito week 1 bench conditioning snapshot');
                 assertDeepEqual(snapshot(gen('candito6', 'w5_sq_peak', 'Squat')), ['340x1+'], 'Candito week 5 squat rep-max snapshot');
-                assertDeepEqual(snapshot(gen('texas4', 'volume')), ['205x5','205x5','205x5','205x5','205x5'], 'Texas Method volume snapshot');
-                assertDeepEqual(snapshot(gen('texas4', 'intensity_1')), ['250x1'], 'Texas Method peak single snapshot');
+                assertDeepEqual(snapshot(gen('texas4', 'volume_5')), ['190x5','190x5','190x5','190x5','190x5'], 'Texas Method week-one volume is 5x5 at 75% 1RM');
+                assertDeepEqual(snapshot(gen('texas4', 'volume_4')), ['200x4','200x4','200x4','200x4','200x4'], 'Texas Method week-two volume is 5x4 at 80% 1RM');
+                assertDeepEqual(snapshot(gen('texas4', 'volume_3')), ['215x3','215x3','215x3','215x3','215x3'], 'Texas Method week-three volume is 5x3 at 85% 1RM');
+                assertDeepEqual(snapshot(gen('texas4', 'intensity_3')), ['215x3','215x3'], 'Texas Method triple week uses two triples');
+                assertDeepEqual(snapshot(gen('texas4', 'intensity_2')), ['225x2','225x2','225x2'], 'Texas Method double week uses three doubles');
+                assertDeepEqual(snapshot(gen('texas4', 'intensity_1')), ['240x1','240x1','240x1','240x1','240x1'], 'Texas Method single week uses five singles');
+                assertDeepEqual(snapshot(gen('texas4', 'intensity_dl_3', 'Deadlift')), ['385x3','340x5'], 'Texas Method deadlift intensity includes its back-off set');
             });
             test('Workout generation', 'all program days and scheme groups produce sets', () => {
                 Object.entries(api.DATA.progs).forEach(([program, p]) => p.days.forEach((day, idx) => {
@@ -248,7 +256,9 @@
                     const t1 = a.getSets(program === 'gzclp' ? 't1' : program === 'stronglifts' ? 'std' : day.s, day.t1, FIXTURE_TMS[day.t1] || 225, 't1');
                     const t2 = day.t2 ? a.getSets(program === 'gzclp' ? 't2' : program === 'stronglifts' ? 'std' : day.t2s, day.t2, FIXTURE_TMS[day.t2] || 225, 't2', day.t2) : [];
                     assertTrue(t1.length > 0, `${program} day ${idx + 1} T1 generates sets`);
+                    assertTrue(t1.every(s => s.weight > 0), `${program} day ${idx + 1} T1 resolves a valid base lift and load`);
                     if (day.t2) assertTrue(t2.length > 0, `${program} day ${idx + 1} T2 generates sets`);
+                    if (day.t2) assertTrue(t2.every(s => s.weight > 0), `${program} day ${idx + 1} T2 resolves a valid base lift and load`);
                     else assertEqual(t2.length, 0, `${program} day ${idx + 1} supports a single primary lift`);
                 }));
                 Object.entries(api.DATA.schemes).forEach(([group, schemes]) => Object.entries(schemes).forEach(([key, value]) => assertTrue(Array.isArray(value) && value.length > 0, `${group}.${key} has set rows`)));
@@ -277,6 +287,35 @@
                 assertEqual(a.session.t1.sets[0].weight, 165, 'variant multiplier regenerates the prescription');
                 assertTrue(a.getT1Alts().some(x => x.id === 'Spoto Press'), 'same-pattern T1 alternatives are available');
             });
+            test('Workout generation', 'source audit locks each routine defining structure', () => {
+                assertDeepEqual(api.DATA.progs.nsuns.days.map(d => d.t2s), ['t2_upper','t2_lower','t2_upper','t2_lower','t2_upper'], 'nSuns alternates source-correct upper and lower T2 sequences');
+                assertEqual(api.DATA.progs.nsuns.days[4].s, 'bench_heavy', 'nSuns fifth day uses its distinct bench sequence');
+                assertDeepEqual(api.DATA.progs.nsuns.days.map(d => d.t2), ['OHP','Sumo DL','Incline Bench','Front Squat','Close Grip Bench'], 'nSuns default T2 variations match the five-day template');
+                assertEqual(api.DATA.progs.ppl.days[2].s, 'squat3', 'PPL leg day uses 2x5 and 1x5+ squat prescription');
+                assertEqual(api.DATA.progs.phul.days[2].t1, 'Incline Bench', 'PHUL upper hypertrophy starts with incline bench');
+                assertEqual(api.DATA.progs.phul.days[3].t1, 'Front Squat', 'PHUL lower hypertrophy starts with front squat');
+                assertFalse(gen('stronglifts', 'std').some(s => s.amrap), 'StrongLifts straight sets contain no AMRAP');
+                assertEqual(gen('gzclp', 't1').slice(-1)[0].repCap, 10, 'GZCLP caps T1 AMRAP at ten reps');
+                assertEqual(api.DATA.progs.gzclp.days[0].acc[0].reps, '15', 'GZCLP T3 starts at three sets of fifteen');
+                assertIncludes(api.DATA.progs.gzclp.days[0].acc[0].note, 'Last set AMRAP', 'GZCLP T3 last-set effort is visible');
+                assertEqual(gen('531', 'bbb', 'Bench', 't2').length, 5, '5/3/1 BBB retains five supplemental sets');
+                assertEqual(gen('candito6', 'w3_sq', 'Squat')[0].repDisplay, '4–6', 'Candito variable rep range remains visible');
+                assertEqual(api.DATA.progs.texas4.days[2].t2, null, 'Texas Thursday upper-volume day does not invent a second primary lift');
+                assertEqual(api.DATA.progs.texas4.days[1].t2s, 'intensity_dl_3', 'Texas deadlift uses its top-set and back-off scheme');
+            });
+            test('Workout generation', 'prescription UI summarizes variable routines safely', () => {
+                const a = api.createTestApp({ tms: FIXTURE_TMS, prefs: { ...DEFAULT_PREFS, program: 'texas4' } });
+                a.start(api.DATA.progs.texas4.days[0], 0);
+                assertEqual(a.getBlockSummary(a.session.t1), '2 × 3', 'Texas triple summary exposes two work sets');
+                assertEqual(a.getCycleLabel(), 'Session 1 of 12', 'multi-week cycle position is visible');
+                assertEqual(a.getSetLabel(a.session.t1.sets[0], 0), 'INTENSITY', 'intensity set receives a UI label');
+                const c = api.createTestApp({ tms: FIXTURE_TMS, prefs: { ...DEFAULT_PREFS, program: 'candito6' } });
+                c.start(api.DATA.progs.candito6.days[20], 20);
+                assertEqual(c.setRepLabel(c.session.t1.sets[0]), '1–4', 'rep range is shown instead of a misleading single target');
+                assertEqual(c.getSetLabel(c.session.t1.sets[0], 0), 'CYCLE MAX', 'cycle-max set receives a UI label');
+                const custom = api.createTestApp({ tms: FIXTURE_TMS, prefs: { ...DEFAULT_PREFS, program: 'texas4' } });
+                assertTrue(custom.getSets('vol', 'Bench', 225, 't1').length > 0, 'custom workout safely falls back to a compatible scheme under any selected program');
+            });
         }
 
         function runProgression() {
@@ -297,8 +336,12 @@
             });
             test('Progression', 'linear, PPL, and PHUL branches', () => {
                 assertEqual(prog({ program: 'ppl', sets: [completeSet({ reps: 5, performed: 4, amrap: true })] }).add, 0, 'PPL T1 missed AMRAP holds');
-                assertEqual(prog({ program: 'ppl', sets: [completeSet({ reps: 5, performed: 7, amrap: true })] }).add, 5, 'PPL T1 delta 0-2 adds step');
-                assertEqual(prog({ program: 'ppl', sets: [completeSet({ reps: 5, performed: 8, amrap: true })] }).add, 10, 'PPL T1 delta >2 adds two steps');
+                assertEqual(prog({ program: 'ppl', sets: [completeSet({ reps: 5, performed: 7, amrap: true })] }).add, 5, 'PPL completed upper main lift adds 5 lb');
+                assertEqual(prog({ program: 'ppl', sets: [completeSet({ reps: 5, performed: 8, amrap: true })] }).add, 5, 'PPL AMRAP surplus does not invent a double increment');
+                assertEqual(prog({ program: 'ppl', lift: 'Deadlift', sets: [completeSet({ reps: 5, performed: 5, amrap: true })] }).add, 10, 'PPL completed deadlift adds 10 lb');
+                const pplFail1 = prog({ program: 'ppl', sets: [completeSet({ completed: false })] });
+                const pplFail2 = prog({ program: 'ppl', sets: [completeSet({ completed: false })], state: pplFail1.state });
+                assertApprox(prog({ program: 'ppl', sets: [completeSet({ completed: false })], state: pplFail2.state }).add, -22.5, 0.001, 'PPL third true failure resets 10%');
                 assertEqual(prog({ program: 'phul', tier: 't2', sets: completeSets(3) }).add, 5, 'PHUL T2 complete adds step');
                 assertEqual(prog({ program: 'phul', tier: 't2', sets: [completeSet(), completeSet({ completed: false })] }).add, 0, 'PHUL T2 incomplete holds');
             });
@@ -322,6 +365,7 @@
                 assertApprox(gzReset.add, -33.75, 0.001, 'GZCLP T1 stage 3 reset deloads 15%');
                 assertEqual(gzReset.state.Bench.t1Stage, 1, 'GZCLP T1 reset returns to stage 1');
                 assertEqual(prog({ program: 'gzclp', tier: 't2', lift: 'Bench', sets: completeSets(3) }).add, 5, 'GZCLP T2 pass +5');
+                assertEqual(prog({ program: 'gzclp', lift: 'Squat', sets: [completeSet({ reps: 3, performed: 3, amrap: true })] }).add, 10, 'GZCLP lower-body T1 pass +10 lb');
                 assertEqual(prog({ program: 'gzclp', tier: 't2', lift: 'Bench', sets: [completeSet({ completed: false })], state: { Bench: { t2Stage: 1 } } }).state.Bench.t2Stage, 2, 'GZCLP T2 fail advances');
                 assertEqual(prog({ program: 'gzclp', tier: 't2', lift: 'Bench', sets: [completeSet({ completed: false })], state: { Bench: { t2Stage: 3 } } }).state.Bench.t2Stage, 1, 'GZCLP T2 stage 3 fail resets');
                 assertEqual(prog({ program: 'stronglifts', lift: 'Bench', sets: completeSets(5) }).add, 5, 'StrongLifts non-deadlift complete +5');
@@ -345,9 +389,10 @@
             });
             test('Progression', 'Texas Method 3/2/1 wave branches', () => {
                 assertEqual(prog({ program: 'texas4', sets: [completeSet({ reps: 3, schemeKey: 'intensity_3' })] }).add, 0, 'Texas triple is an in-wave hold');
-                assertEqual(prog({ program: 'texas4', sets: completeSets(5).map(s => ({ ...s, schemeKey: 'volume' })) }).add, 0, 'Texas volume work does not independently change TM');
+                assertEqual(prog({ program: 'texas4', sets: completeSets(5).map(s => ({ ...s, schemeKey: 'volume_5' })) }).add, 0, 'Texas volume work does not independently change TM');
                 assertEqual(prog({ program: 'texas4', lift: 'Bench', sets: [completeSet({ reps: 1, schemeKey: 'intensity_1' })] }).add, 5, 'Texas upper peak completion adds 5 lb');
-                assertEqual(prog({ program: 'texas4', lift: 'Squat', sets: [completeSet({ reps: 1, schemeKey: 'intensity_1' })] }).add, 10, 'Texas lower peak completion adds 10 lb');
+                assertEqual(prog({ program: 'texas4', lift: 'Squat', sets: [completeSet({ reps: 1, schemeKey: 'intensity_1' })] }).add, 5, 'Texas lower peak completion uses the source-conservative 5 lb cycle increment');
+                assertEqual(prog({ program: 'texas4', lift: 'Deadlift', sets: [completeSet({ reps: 1, schemeKey: 'intensity_dl_1' }), completeSet({ reps: 5, schemeKey: 'intensity_dl_1' })] }).add, 5, 'Texas deadlift peak plus back-off completes the wave');
                 assertEqual(prog({ program: 'texas4', lift: 'Bench', prefs: { weightUnit: 'kg' }, sets: [completeSet({ reps: 1, schemeKey: 'intensity_1' })] }).add, 2.5, 'Texas upper peak completion adds 2.5 kg');
                 const first = prog({ program: 'texas4', lift: 'Bench', sets: [completeSet({ completed: false, schemeKey: 'intensity_1' })] });
                 const second = prog({ program: 'texas4', lift: 'Bench', sets: [completeSet({ completed: false, schemeKey: 'intensity_1' })], state: first.state });

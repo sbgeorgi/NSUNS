@@ -70,11 +70,30 @@
                 forearm: { peakHours: 48, windowHours: 18 }
             },
             schemes: {
-                nsuns: { vol: [[.65, 8], [.75, 6], [.85, 4], [.85, 4], [.85, 4], [.8, 5], [.75, 6], [.7, 7], [.65, 8, '+']], heavy: [[.75, 5], [.85, 3], [.95, 1, '+'], [.9, 3], [.85, 3], [.8, 3], [.75, 5], [.7, 5], [.65, 5, '+']], dl: [[.75, 5], [.85, 3], [.95, 1, '+'], [.9, 3], [.85, 3], [.8, 3], [.75, 3], [.7, 3], [.65, 3]], t2: [[.5, 5], [.6, 6], [.7, 7], [.7, 4], [.7, 4], [.7, 4], [.7, 4], [.7, 4]] },
-                stronglifts: { std: [[1, 5], [1, 5], [1, 5], [1, 5], [1, 5, '+']], dl: [[1, 5, '+']], '3x5': [[1, 5], [1, 5], [1, 5, '+']], '3x3': [[1, 3], [1, 3], [1, 3, '+']], '1x3': [[1, 3, '+']] },
-                phul: { pow: [[.85, 5], [.85, 5], [.85, 5]], hyp: [[.65, 10], [.65, 10], [.65, 10]], vol: [[.6, 12], [.6, 12], [.6, 12]] },
-                ppl: { m5: [[.85, 5], [.85, 5], [.85, 5], [.85, 5], [.85, 5, '+']], m1: [[.9, 5, '+']], sec: [[.7, 10], [.7, 10], [.7, 10]] },
-                gzclp: { t1: [[.85, 3], [.85, 3], [.85, 3], [.85, 3], [.85, 3, '+']], t2: [[.65, 10], [.65, 10], [.65, 10]], t1_s2: [[.85, 2], [.85, 2], [.85, 2], [.85, 2], [.85, 2], [.85, 2, '+']], t1_s3: [[.85, 1], [.85, 1], [.85, 1], [.85, 1], [.85, 1], [.85, 1], [.85, 1], [.85, 1], [.85, 1], [.85, 1, '+']], t2_s2: [[.65, 8], [.65, 8], [.65, 8]], t2_s3: [[.65, 6], [.65, 6], [.65, 6]], f1: [[5, 3], [6, 2], [10, 1]], f2: [[3, 10], [3, 8], [3, 6]] },
+                nsuns: {
+                    vol: [[.65, 8], [.75, 6], [.85, 4], [.85, 4], [.85, 4], [.8, 5], [.75, 6], [.7, 7], [.65, 8, '+']],
+                    heavy: [[.75, 5], [.85, 3], [.95, 1, '+'], [.9, 3], [.85, 3], [.8, 3], [.75, 5], [.7, 5], [.65, 5, '+']],
+                    dl: [[.75, 5], [.85, 3], [.95, 1, '+'], [.9, 3], [.85, 3], [.8, 3], [.75, 3], [.7, 3], [.65, 3, '+']],
+                    bench_heavy: [[.75, 5], [.85, 3], [.95, 1, '+'], [.9, 3], [.85, 5], [.8, 3], [.75, 5], [.7, 3], [.65, 5, '+']],
+                    t2_upper: [[.5, 6], [.6, 5], [.7, 3], [.7, 5], [.7, 7], [.7, 4], [.7, 6], [.7, 8]],
+                    t2_lower: [[.5, 5], [.6, 5], [.7, 3], [.7, 5], [.7, 7], [.7, 4], [.7, 6], [.7, 8]],
+                    // Legacy key retained for old active sessions; new days use the source-correct upper/lower keys.
+                    t2: [[.5, 6], [.6, 5], [.7, 3], [.7, 5], [.7, 7], [.7, 4], [.7, 6], [.7, 8]]
+                },
+                stronglifts: { std: Array(5).fill([1, 5]), dl: [[1, 5]], '3x5': Array(3).fill([1, 5]), '3x3': Array(3).fill([1, 3]), '1x3': [[1, 3]] },
+                phul: {
+                    pow: Array(4).fill({ pct: .85, reps: 4, repDisplay: '3–5' }),
+                    hyp: Array(4).fill({ pct: .65, reps: 10, repDisplay: '8–12' }),
+                    vol: Array(4).fill({ pct: .6, reps: 12, repDisplay: '10–15' })
+                },
+                ppl: { m5: [[.85, 5], [.85, 5], [.85, 5], [.85, 5], [.85, 5, '+']], squat3: [[.85, 5], [.85, 5], [.85, 5, '+']], m1: [[.9, 5, '+']], sec: [[.7, 10], [.7, 10], [.7, 10]] },
+                gzclp: {
+                    t1: [[.85, 3], [.85, 3], [.85, 3], [.85, 3], { pct: .85, reps: 3, amrap: true, cap: 10 }],
+                    t2: [[.65, 10], [.65, 10], [.65, 10]],
+                    t1_s2: [[.85, 2], [.85, 2], [.85, 2], [.85, 2], [.85, 2], { pct: .85, reps: 2, amrap: true, cap: 10 }],
+                    t1_s3: [[.85, 1], [.85, 1], [.85, 1], [.85, 1], [.85, 1], [.85, 1], [.85, 1], [.85, 1], [.85, 1], { pct: .85, reps: 1, amrap: true, cap: 10 }],
+                    t2_s2: Array(3).fill([.65, 8]), t2_s3: Array(3).fill([.65, 6]), f1: [[5, 3], [6, 2], [10, 1]], f2: [[3, 10], [3, 8], [3, 6]]
+                },
                 '531': { w1: [[.65, 5], [.75, 5], [.85, 5, '+']], w2: [[.7, 3], [.8, 3], [.9, 3, '+']], w3: [[.75, 5], [.85, 3], [.95, 1, '+']], del: [[.4, 5], [.5, 5], [.6, 5]], bbb: Array(5).fill([.5, 10]) },
                 // Candito percentages are converted from 1RM to this app's 90%-of-1RM training max.
                 // Object rows add exact load offsets and conditional back-off metadata without changing legacy rows.
@@ -83,45 +102,48 @@
                     w1_bench: [[.5556, 10], [.75, 10], [.8333, 8], [.8611, 6]],
                     w1_row: [[.65, 10], [.7, 10], [.75, 8], [.8, 6]],
                     w1_sq_hyp: Array(4).fill([.7778, 8]), w1_dl_hyp: Array(2).fill([.7778, 8]),
-                    w1_bench_mr: [[.8889, 1, '+']],
+                    w1_bench_mr: [{ pct: .8889, reps: 1, repDisplay: 'MR', amrap: true, setType: 'rep_max' }],
                     w2_sq_volume: [
-                        { pct: .8889, reps: 8, amrap: true, cap: 10, setType: 'rep_max_10' },
+                        { pct: .8889, reps: 8, repDisplay: 'MR10', amrap: true, cap: 10, setType: 'rep_max_10' },
                         ...Array(5).fill({ pct: .8889, reps: 3, offsetLbs: 5, offsetKg: 2.5, setType: 'extra_volume' })
                     ],
                     w2_paused_dl: Array(3).fill([.915, 8]),
-                    w2_bench: [[.8056, 10], [.8611, 8], { pct: .8889, reps: 6, offsetLbs: 5, offsetKg: 2.5 }],
+                    w2_bench: [[.8056, 10], [.8611, 8], { pct: .8889, reps: 6, repDisplay: '6–8', offsetLbs: 5, offsetKg: 2.5 }],
                     w2_row: [[.68, 10], [.74, 8], [.78, 8]],
-                    w2_sq_mr10: [{ pct: .8889, reps: 7, amrap: true, cap: 10, offsetLbs: 5, offsetKg: 2.5, conditionalBackoff: true }],
-                    w2_bench_mr: [{ pct: .8889, reps: 1, amrap: true, offsetLbs: -5, offsetKg: -2.5 }],
-                    w3_sq: Array(3).fill({ pct: .9444, reps: 4, offsetLbs: 5, offsetKg: 2.5 }),
-                    w3_dl: Array(2).fill([.9722, 3]), w3_bench: Array(3).fill([.9444, 4]),
-                    w3_sq_single: [{ pct: .9444, reps: 4, offsetLbs: 10, offsetKg: 5 }],
-                    w3_paused_dl: [[.85, 8]], w3_bench_plus: Array(3).fill({ pct: .9444, reps: 4, offsetLbs: 5, offsetKg: 2.5 }),
+                    w2_sq_mr10: [{ pct: .8889, reps: 7, repDisplay: 'MR10', amrap: true, cap: 10, offsetLbs: 5, offsetKg: 2.5, conditionalBackoff: true }],
+                    w2_bench_mr: [{ pct: .8889, reps: 1, repDisplay: 'MR', amrap: true, offsetLbs: -5, offsetKg: -2.5, setType: 'rep_max' }],
+                    w3_sq: Array(3).fill({ pct: .9444, reps: 5, repDisplay: '4–6', offsetLbs: 5, offsetKg: 2.5 }),
+                    w3_dl: Array(2).fill({ pct: .9722, reps: 4, repDisplay: '3–6' }), w3_bench: Array(3).fill({ pct: .9444, reps: 5, repDisplay: '4–6' }),
+                    w3_sq_single: [{ pct: .9444, reps: 5, repDisplay: '4–6', offsetLbs: 10, offsetKg: 5 }],
+                    w3_paused_dl: [[.85, 8]], w3_bench_plus: Array(3).fill({ pct: .9444, reps: 5, repDisplay: '4–6', offsetLbs: 5, offsetKg: 2.5 }),
                     w3_row: Array(3).fill([.8, 6]),
                     w4_sq: [{ pct: 1, reps: 3, offsetLbs: -5, offsetKg: -2.5 }, [1, 3], { pct: 1, reps: 3, offsetLbs: 5, offsetKg: 2.5 }],
                     w4_paused_dl: Array(2).fill([.82, 6]),
                     w4_bench: [{ pct: .9722, reps: 3, offsetLbs: -5, offsetKg: -2.5 }, { pct: 1, reps: 3, offsetLbs: -5, offsetKg: -2.5 }, [1, 3]],
-                    w4_sq_peak: [{ pct: 1, reps: 3, offsetLbs: 5, offsetKg: 2.5 }, [1.0556, 1, '+']],
-                    w4_dl_peak: [{ pct: 1, reps: 3, offsetLbs: 5, offsetKg: 2.5 }, [1.0556, 1, '+']],
-                    w4_bench_peak: [[.9722, 3], [1, 2], [1.0556, 1, '+']],
+                    w4_sq_peak: [{ pct: 1, reps: 3, offsetLbs: 5, offsetKg: 2.5 }, { pct: 1.0556, reps: 1, repDisplay: '1–2' }],
+                    w4_dl_peak: [{ pct: 1, reps: 3, offsetLbs: 5, offsetKg: 2.5 }, { pct: 1.0556, reps: 1, repDisplay: '1–2' }],
+                    w4_bench_peak: [[.9722, 3], { pct: 1, reps: 3, repDisplay: '2–4' }, { pct: 1.0556, reps: 1, repDisplay: '1–2' }],
                     w4_row: [[.68, 10], [.72, 10], [.76, 8], [.8, 6]],
-                    w5_sq_peak: [{ pct: 1.0833, reps: 1, amrap: true, cap: 4, setType: 'cycle_max' }],
-                    w5_bench_peak: [{ pct: 1.0833, reps: 1, amrap: true, cap: 4, setType: 'cycle_max' }],
-                    w5_dl_peak: [{ pct: 1.0833, reps: 1, amrap: true, cap: 4, setType: 'cycle_max' }],
+                    w5_sq_peak: [{ pct: 1.0833, reps: 1, repDisplay: '1–4', amrap: true, cap: 4, setType: 'cycle_max' }],
+                    w5_bench_peak: [{ pct: 1.0833, reps: 1, repDisplay: '1–4', amrap: true, cap: 4, setType: 'cycle_max' }],
+                    w5_dl_peak: [{ pct: 1.0833, reps: 1, repDisplay: '1–4', amrap: true, cap: 4, setType: 'cycle_max' }],
                     w5_dl_light: [[.75, 4], [.7778, 4], [.8056, 2]], w5_row: [[.72, 8], [.78, 6], [.82, 6]]
                 },
                 texas4: {
-                    intensity_3: [[1, 3]], intensity_2: [[1.05, 2]], intensity_1: [[1.1, 1]],
-                    volume: Array(5).fill([.9, 5]), press_volume: Array(3).fill([.82, 8]),
-                    stiff_leg: Array(3).fill([.72, 8])
+                    // Baker's established 3/2/1 intensity rotation: 2 triples, 3 doubles, 5 singles.
+                    intensity_3: Array(2).fill([17 / 18, 3]), intensity_2: Array(3).fill([1, 2]), intensity_1: Array(5).fill([19 / 18, 1]),
+                    intensity_dl_3: [[17 / 18, 3], [5 / 6, 5]], intensity_dl_2: [[1, 2], [5 / 6, 5]], intensity_dl_1: [[19 / 18, 1], [5 / 6, 5]],
+                    // KSC volume cycling: 5x5 @75%, 5x4 @80%, 5x3 @85% of 1RM (converted to the app's TM).
+                    volume_5: Array(5).fill([5 / 6, 5]), volume_4: Array(5).fill([8 / 9, 4]), volume_3: Array(5).fill([17 / 18, 3]),
+                    stiff_leg: Array(5).fill([2 / 3, 5])
                 }
             },
             progs: {
-                nsuns: { name: 'nSuns LP', daysPerWeek: 5, progressionDesc: 'Linear + AMRAP', desc: "A high-volume linear progression program inspired by Jim Wendler's 5/3/1.", days: [{ t: 'Bench Vol', t1: 'Bench', t2: 'OHP', s: 'vol', t2s: 't2', acc: [{ name: 'Row', sets: 4, reps: '10-12' }] }, { t: 'Squat Heavy', t1: 'Squat', t2: 'Deadlift', s: 'heavy', t2s: 't2', acc: [{ name: 'Legs', sets: 4, reps: '10-12' }] }, { t: 'OHP Heavy', t1: 'OHP', t2: 'Bench', s: 'heavy', t2s: 't2', acc: [{ name: 'Pullups', sets: 4, reps: 'AMRAP' }] }, { t: 'Deadlift Heavy', t1: 'Deadlift', t2: 'Squat', s: 'dl', t2s: 't2', acc: [{ name: 'Abs', sets: 4, reps: '10-15' }] }, { t: 'Bench Heavy', t1: 'Bench', t2: 'Bench', s: 'heavy', t2s: 't2', acc: [{ name: 'Arms', sets: 4, reps: '10-15' }] }] },
-                ppl: { name: 'PPL', prog: 'amrap_linear', daysPerWeek: 6, progressionDesc: 'Linear + AMRAP', desc: "Push/Pull/Legs split. 6 days a week frequency.", days: [{ t: 'Push A', t1: 'Bench', t2: 'OHP', s: 'm5', t2s: 'sec', acc: [{ name: 'Tri', sets: 3, reps: '10-15' }] }, { t: 'Pull A', t1: 'Deadlift', t2: 'Row', s: 'm1', t2s: 'sec', acc: [{ name: 'Bi', sets: 3, reps: '10-15' }] }, { t: 'Legs A', t1: 'Squat', t2: 'Leg Press', s: 'm5', t2s: 'sec', acc: [{ name: 'Legs', sets: 3, reps: '10-15' }] }, { t: 'Push B', t1: 'OHP', t2: 'Bench', s: 'm5', t2s: 'sec', acc: [{ name: 'Tri', sets: 3, reps: '10-15' }] }, { t: 'Pull B', t1: 'Row', t2: 'Lat Pulldown', s: 'm5', t2s: 'sec', acc: [{ name: 'Bi', sets: 3, reps: '10-15' }] }, { t: 'Legs B', t1: 'Squat', t2: 'Romanian DL', s: 'm5', t2s: 'sec', acc: [{ name: 'Legs', sets: 3, reps: '10-15' }] }] },
-                phul: { name: 'PHUL', prog: 'lin', daysPerWeek: 4, progressionDesc: 'Linear', desc: "Power Hypertrophy Upper Lower.", days: [{ t: 'Up Pwr', t1: 'Bench', t2: 'Row', s: 'pow', t2s: 'pow', acc: [{ name: 'OHP', sets: 3, reps: '6-10' }] }, { t: 'Lo Pwr', t1: 'Squat', t2: 'Deadlift', s: 'pow', t2s: 'pow', acc: [{ name: 'Legs', sets: 3, reps: '8-12' }] }, { t: 'Up Hyp', t1: 'OHP', t2: 'Bench', s: 'hyp', t2s: 'hyp', acc: [{ name: 'Row', sets: 3, reps: '10-12' }] }, { t: 'Lo Hyp', t1: 'Deadlift', t2: 'Squat', s: 'hyp', t2s: 'hyp', acc: [{ name: 'Legs', sets: 3, reps: '10-15' }] }] },
+                nsuns: { name: 'nSuns LP', daysPerWeek: 5, progressionDesc: 'Linear + AMRAP', desc: "A high-volume linear progression program inspired by Jim Wendler's 5/3/1.", days: [{ t: 'Bench Vol', t1: 'Bench', t2: 'OHP', s: 'vol', t2s: 't2_upper', acc: [{ name: 'Row', sets: 4, reps: '10-12' }] }, { t: 'Squat Heavy', t1: 'Squat', t2: 'Sumo DL', s: 'heavy', t2s: 't2_lower', acc: [{ name: 'Legs', sets: 4, reps: '10-12' }] }, { t: 'OHP Heavy', t1: 'OHP', t2: 'Incline Bench', s: 'heavy', t2s: 't2_upper', acc: [{ name: 'Pullups', sets: 4, reps: 'AMRAP' }] }, { t: 'Deadlift Heavy', t1: 'Deadlift', t2: 'Front Squat', s: 'dl', t2s: 't2_lower', acc: [{ name: 'Abs', sets: 4, reps: '10-15' }] }, { t: 'Bench Heavy', t1: 'Bench', t2: 'Close Grip Bench', s: 'bench_heavy', t2s: 't2_upper', acc: [{ name: 'Arms', sets: 4, reps: '10-15' }] }] },
+                ppl: { name: 'PPL', prog: 'ppl', daysPerWeek: 6, progressionDesc: 'Linear + AMRAP + 10% Reset', desc: "The Metallicadpa Push/Pull/Legs linear progression, run six days per week.", days: [{ t: 'Push A', t1: 'Bench', t2: 'OHP', s: 'm5', t2s: 'sec', acc: [{ name: 'Tri', sets: 3, reps: '10-15' }] }, { t: 'Pull A', t1: 'Deadlift', t2: 'Row', s: 'm1', t2s: 'sec', acc: [{ name: 'Bi', sets: 3, reps: '10-15' }] }, { t: 'Legs A', t1: 'Squat', t2: 'Romanian DL', s: 'squat3', t2s: 'sec', acc: [{ name: 'Leg Press', sets: 3, reps: '8-12' }] }, { t: 'Push B', t1: 'OHP', t2: 'Bench', s: 'm5', t2s: 'sec', acc: [{ name: 'Tri', sets: 3, reps: '10-15' }] }, { t: 'Pull B', t1: 'Row', t2: 'Lat Pulldown', s: 'm5', t2s: 'sec', acc: [{ name: 'Bi', sets: 3, reps: '10-15' }] }, { t: 'Legs B', t1: 'Squat', t2: 'Romanian DL', s: 'squat3', t2s: 'sec', acc: [{ name: 'Leg Press', sets: 3, reps: '8-12' }] }] },
+                phul: { name: 'PHUL', prog: 'lin', daysPerWeek: 4, progressionDesc: 'Double Progression', desc: "Brandon Campbell's intermediate Power Hypertrophy Upper Lower template.", days: [{ t: 'Up Pwr', t1: 'Bench', t2: 'Row', s: 'pow', t2s: 'pow', acc: [{ name: 'OHP', sets: 3, reps: '5-8' }] }, { t: 'Lo Pwr', t1: 'Squat', t2: 'Deadlift', s: 'pow', t2s: 'pow', acc: [{ name: 'Leg Press', sets: 3, reps: '10-15' }] }, { t: 'Up Hyp', t1: 'Incline Bench', t2: 'Cable Row', s: 'hyp', t2s: 'hyp', acc: [{ name: 'DB Row', sets: 3, reps: '8-12' }] }, { t: 'Lo Hyp', t1: 'Front Squat', t2: 'Lunges', s: 'hyp', t2s: 'hyp', acc: [{ name: 'Leg Curl', sets: 3, reps: '10-15' }] }] },
                 stronglifts: { name: 'SL 5x5', prog: 'sl', pW: true, daysPerWeek: 3, progressionDesc: 'Linear + Deload', desc: "The classic 5x5 beginner program.", days: [{ t: 'A', t1: 'Squat', t2: 'Bench', s: 'std', t2s: 'std', acc: [{ name: 'Row', sets: 5, reps: '5' }] }, { t: 'B', t1: 'Squat', t2: 'OHP', s: 'std', t2s: 'std', acc: [{ name: 'DL', sets: 1, reps: '5+' }] }] },
-                gzclp: { name: 'GZCLP', prog: 'gz', daysPerWeek: 4, progressionDesc: 'Stage Failure', desc: "A flexible linear progression program using the Tier system.", days: [{ t: 'D1', t1: 'Squat', t2: 'Bench', s: 't1', t2s: 't2', acc: [{ name: 'LatPD', sets: 3, reps: '10-12' }] }, { t: 'D2', t1: 'OHP', t2: 'Deadlift', s: 't1', t2s: 't2', acc: [{ name: 'Row', sets: 3, reps: '10-12' }] }, { t: 'D3', t1: 'Bench', t2: 'Squat', s: 't1', t2s: 't2', acc: [{ name: 'Tri', sets: 3, reps: '10-15' }] }, { t: 'D4', t1: 'Deadlift', t2: 'OHP', s: 't1', t2s: 't2', acc: [{ name: 'Bi', sets: 3, reps: '10-15' }] }] },
+                gzclp: { name: 'GZCLP', prog: 'gz', daysPerWeek: 4, progressionDesc: 'Stage Failure', desc: "Cody Lefever's flexible linear progression using T1, T2, and T3 tiers.", days: [{ t: 'D1', t1: 'Squat', t2: 'Bench', s: 't1', t2s: 't2', acc: [{ name: 'LatPD', sets: 3, reps: '15', note: 'Last set AMRAP · leave 1–2 reps in reserve' }] }, { t: 'D2', t1: 'OHP', t2: 'Deadlift', s: 't1', t2s: 't2', acc: [{ name: 'Row', sets: 3, reps: '15', note: 'Last set AMRAP · leave 1–2 reps in reserve' }] }, { t: 'D3', t1: 'Bench', t2: 'Squat', s: 't1', t2s: 't2', acc: [{ name: 'LatPD', sets: 3, reps: '15', note: 'Last set AMRAP · leave 1–2 reps in reserve' }] }, { t: 'D4', t1: 'Deadlift', t2: 'OHP', s: 't1', t2s: 't2', acc: [{ name: 'Row', sets: 3, reps: '15', note: 'Last set AMRAP · leave 1–2 reps in reserve' }] }] },
                 '531': { name: '5/3/1 BBB', prog: '531', daysPerWeek: 4, progressionDesc: 'Monthly Wave', desc: "Jim Wendler's Boring But Big.", days: [{ t: 'OHP', t1: 'OHP', t2: 'OHP', s: '531', t2s: 'bbb', acc: [{ name: 'Chins', sets: 5, reps: 'AMRAP' }] }, { t: 'DL', t1: 'Deadlift', t2: 'Deadlift', s: '531', t2s: 'bbb', acc: [{ name: 'Abs', sets: 5, reps: '10-15' }] }, { t: 'Bench', t1: 'Bench', t2: 'Bench', s: '531', t2s: 'bbb', acc: [{ name: 'Row', sets: 5, reps: '10-12' }] }, { t: 'Squat', t1: 'Squat', t2: 'Squat', s: '531', t2s: 'bbb', acc: [{ name: 'Legs', sets: 5, reps: '10-15' }] }] }
             },
             ui: {
@@ -136,14 +158,14 @@
 
         // Program sources and substitution boundaries are metadata only: existing defaults remain unchanged.
         const PROGRAM_SOURCES = {
-            nsuns: 'https://www.reddit.com/r/nSuns/wiki/official_form_check_threads/',
+            nsuns: 'https://fitnesswiki.github.io/routines/nsuns-lp/',
             ppl: 'https://thefitness.wiki/reddit-archive/a-linear-progression-based-ppl-program-for-beginners/',
             phul: 'https://www.muscleandstrength.com/workouts/phul-workout',
             stronglifts: 'https://stronglifts.com/stronglifts-5x5/workout-program/',
             gzclp: 'https://swoleateveryheight.blogspot.com/2016/02/gzcl-applications-adaptations.html',
             '531': 'https://www.jimwendler.com/blogs/jimwendler-com/101077382-boring-but-big',
             candito6: 'https://web.archive.org/web/20170606161821/http://www.canditotraininghq.com/free-programs/',
-            texas4: 'https://startingstrength.com/article/the_texas_method'
+            texas4: 'https://www.andybaker.com/programs/ksc-texas-method/'
         };
         Object.entries(DATA.progs).forEach(([key, program]) => { program.sourceUrl = PROGRAM_SOURCES[key]; });
 
@@ -193,17 +215,17 @@
         };
         DATA.progs.candito6.days.forEach((d, i) => addDayFlex('candito6', i, null, null, i >= 10 ? ['optional low-impact weak points'] : ['optional isolation, 8-12 reps']));
 
-        const texasWeek = (wave, label) => [
-            { t: `${label} Upper I/V`, t1: 'Bench', t2: 'OHP', s: `intensity_${wave}`, t2s: 'press_volume', acc: [{ name: 'Pullups', sets: 3, reps: '8-12' }] },
-            { t: `${label} Lower Intensity`, t1: 'Squat', t2: 'Deadlift', s: `intensity_${wave}`, t2s: `intensity_${wave}`, acc: [{ name: 'Abs', sets: 3, reps: '8-12' }] },
-            { t: `${label} Upper V/I`, t1: 'OHP', t2: 'Bench', s: `intensity_${wave}`, t2s: 'volume', acc: [{ name: 'Dips', sets: 3, reps: '8-12' }, { name: 'Chin-ups', sets: 3, reps: 'AMRAP' }] },
-            { t: `${label} Lower Volume`, t1: 'Squat', t2: 'SLDL', s: 'volume', t2s: 'stiff_leg', acc: [{ name: 'Back Extension', sets: 3, reps: '10' }] }
+        const texasWeek = (wave, label, volumeReps) => [
+            { t: `${label} Upper I/V`, t1: 'Bench', t2: 'OHP', s: `intensity_${wave}`, t2s: `volume_${volumeReps}`, prescription: 'Bench intensity · Press volume', acc: [{ name: 'Pullups', sets: 3, reps: '8-12' }] },
+            { t: `${label} Lower Intensity`, t1: 'Squat', t2: 'Deadlift', s: `intensity_${wave}`, t2s: `intensity_dl_${wave}`, prescription: 'Squat intensity · Deadlift top set + back-off', acc: [{ name: 'Abs', sets: 3, reps: '8-12' }] },
+            { t: `${label} Upper Volume`, t1: 'Bench', t2: null, s: `volume_${volumeReps}`, t2s: null, prescription: 'Bench volume · Dips and chins', acc: [{ name: 'Dips', sets: 3, reps: '8-12' }, { name: 'Chin-ups', sets: 3, reps: 'AMRAP' }] },
+            { t: `${label} Lower Volume`, t1: 'Squat', t2: 'SLDL', s: `volume_${volumeReps}`, t2s: 'stiff_leg', prescription: 'Squat volume · Stiff-leg deadlift', acc: [{ name: 'Back Extension', sets: 3, reps: '10' }] }
         ];
         DATA.progs.texas4 = {
             name: 'Texas Method 4-Day', prog: 'texas4', daysPerWeek: 4, progressionDesc: '3/2/1 Weekly Intensity Wave',
             desc: 'Intermediate/advanced upper-lower Texas Method split: intensity and volume are separated, then waved through triples, doubles, and singles.',
             sourceUrl: PROGRAM_SOURCES.texas4,
-            days: [...texasWeek(3, 'W1'), ...texasWeek(2, 'W2'), ...texasWeek(1, 'W3')]
+            days: [...texasWeek(3, 'W1', 5), ...texasWeek(2, 'W2', 4), ...texasWeek(1, 'W3', 3)]
         };
         DATA.progs.texas4.days.forEach((d, i) => addDayFlex('texas4', i, null, null, /Upper/.test(d.t) ? ['lats', 'arms'] : ['core', 'posterior chain']));
 
@@ -333,10 +355,10 @@
             { id: 'balanced', title: 'Balanced Athlete', icon: '\u2696\uFE0F', check: (h, s, app) => { if (!app?.cache?.mgVol) return false; const v = app.cache.mgVol; const vals = [v.Push, v.Pull, v.Legs].filter(x => x > 0); if (vals.length < 3) return false; const avg = U.avg(vals); return vals.every(x => M.abs(x - avg) / avg < 0.25); } }
         ];
 
-        const EX_OPTS = { bench_variants: { base: 'Bench', opt: [['Bench', 1], ['Incline Bench', .85], ['Close Grip Bench', .9], ['DB Bench', .8], ['Paused Bench', .9], ['Spoto Press', .85], ['Floor Press', .9]] }, ohp_variants: { base: 'OHP', opt: [['OHP', 1], ['Seated OHP', .95], ['DB OHP', .85], ['Push Press', 1.1], ['Z Press', .75], ['Arnold Press', .7], ['Behind Neck Press', .8]] }, squat_variants: { base: 'Squat', opt: [['Squat', 1], ['Front Squat', .85], ['Pause Squat', .85], ['Box Squat', .9], ['SSB Squat', .9], ['Goblet Squat', .5], ['Tempo Squat', .8]] }, deadlift_variants: { base: 'Deadlift', opt: [['Deadlift', 1], ['Sumo DL', 1], ['Romanian DL', .7], ['Trap Bar DL', 1.05], ['Deficit DL', .9], ['Paused DL', .85], ['Block Pull', 1.1], ['SLDL', .7]] }, row_variants: { base: 'Row', opt: [['Row', 1], ['Pendlay Row', .95], ['DB Row', .85], ['Cable Row', .9], ['T-Bar Row', 1], ['Seal Row', .8], ['Chest Supported Row', .85], ['Meadows Row', .7]] }, triceps: { opt: [['Tri'], ['Pushdowns'], ['Skull Crushers'], ['Dips'], ['OH Tricep Ext'], ['Close Grip BP'], ['JM Press'], ['Tricep Kickbacks']] }, biceps: { opt: [['Bi'], ['Barbell Curl'], ['DB Curl'], ['Hammer Curl'], ['Preacher Curl'], ['Incline Curl'], ['Cable Curl'], ['Spider Curl']] }, vertical_pull: { opt: [['Pullups'], ['Chin-ups'], ['Lat Pulldown'], ['LatPD'], ['Neutral Pullups'], ['Chins'], ['Wide Grip Pulldown'], ['Close Grip Pulldown']] }, leg_accessories: { opt: [['Legs'], ['Leg Press'], ['Lunges'], ['Leg Curl'], ['Leg Ext'], ['Calf Raises'], ['Bulgarian Split'], ['Hip Thrust'], ['Hack Squat'], ['Nordic Curl']] }, core: { opt: [['Abs'], ['Hanging Leg Raise'], ['Cable Crunch'], ['Ab Wheel'], ['Planks'], ['Russian Twists'], ['Dead Bug'], ['Pallof Press']] }, arms: { opt: [['Arms'], ['Curls + Pushdowns'], ['Hammer + Dips'], ['Arm Circuit'], ['Supersets']] }, dl_accessory: { base: 'Deadlift', opt: [['DL', 1], ['Romanian DL', .7], ['SLDL', .7], ['Good Morning', .5], ['Back Extension', .3]] } };
+        const EX_OPTS = { bench_variants: { base: 'Bench', opt: [['Bench', 1], ['Incline Bench', .85], ['Close Grip Bench', .9], ['DB Bench', .8], ['Paused Bench', .9], ['Spoto Press', .85], ['Floor Press', .9]] }, ohp_variants: { base: 'OHP', opt: [['OHP', 1], ['Seated OHP', .95], ['DB OHP', .85], ['Push Press', 1.1], ['Z Press', .75], ['Arnold Press', .7], ['Behind Neck Press', .8]] }, squat_variants: { base: 'Squat', opt: [['Squat', 1], ['Front Squat', .85], ['Pause Squat', .85], ['Box Squat', .9], ['SSB Squat', .9], ['Goblet Squat', .5], ['Tempo Squat', .8], ['Lunges', .55], ['Leg Press', .75]] }, deadlift_variants: { base: 'Deadlift', opt: [['Deadlift', 1], ['Sumo DL', 1], ['Romanian DL', .7], ['Trap Bar DL', 1.05], ['Deficit DL', .9], ['Paused DL', .85], ['Block Pull', 1.1], ['SLDL', .7]] }, row_variants: { base: 'Row', opt: [['Row', 1], ['Pendlay Row', .95], ['DB Row', .85], ['Cable Row', .9], ['T-Bar Row', 1], ['Seal Row', .8], ['Chest Supported Row', .85], ['Meadows Row', .7]] }, triceps: { opt: [['Tri'], ['Pushdowns'], ['Skull Crushers'], ['Dips'], ['OH Tricep Ext'], ['Close Grip BP'], ['JM Press'], ['Tricep Kickbacks']] }, biceps: { opt: [['Bi'], ['Barbell Curl'], ['DB Curl'], ['Hammer Curl'], ['Preacher Curl'], ['Incline Curl'], ['Cable Curl'], ['Spider Curl']] }, vertical_pull: { opt: [['Pullups'], ['Chin-ups'], ['Lat Pulldown'], ['LatPD'], ['Neutral Pullups'], ['Chins'], ['Wide Grip Pulldown'], ['Close Grip Pulldown']] }, leg_accessories: { opt: [['Legs'], ['Leg Press'], ['Lunges'], ['Leg Curl'], ['Leg Ext'], ['Calf Raises'], ['Bulgarian Split'], ['Hip Thrust'], ['Hack Squat'], ['Nordic Curl']] }, core: { opt: [['Abs'], ['Hanging Leg Raise'], ['Cable Crunch'], ['Ab Wheel'], ['Planks'], ['Russian Twists'], ['Dead Bug'], ['Pallof Press']] }, arms: { opt: [['Arms'], ['Curls + Pushdowns'], ['Hammer + Dips'], ['Arm Circuit'], ['Supersets']] }, dl_accessory: { base: 'Deadlift', opt: [['DL', 1], ['Romanian DL', .7], ['SLDL', .7], ['Good Morning', .5], ['Back Extension', .3]] } };
 
         const EX_INDEX = {}, MATCHERS = [[/(curl|bi|spider|preacher)/i, { bi: 1, forearm: .3, grip: .2 }], [/(pushdown|extension|skull|tri|dip|kickback)/i, { tri: 1, frontDelt: .2 }], [/(pullup|chin|lat|pulldown)/i, { lats: 1, bi: .5, rearDelt: .3, grip: .4, traps: .2 }], [/(row|t-bar|seal)/i, { lats: .8, bi: .5, rearDelt: .5, traps: .4, grip: .6, lowBack: .3 }], [/(leg press|lunge|split|hack squat)/i, { quads: .7, hams: .4, glutes: .6 }], [/(ham|rdl|stiff|good morning|nordic)/i, { hams: 1, glutes: .5, lowBack: .6 }], [/(calf|raise)/i, { calves: 1 }], [/(ab|core|plank|crunch|hanging|russian|dead bug|pallof)/i, { abs: 1, lowBack: .2 }], [/(arm|superset)/i, { tri: .5, bi: .5, forearm: .2 }], [/(shrug|trap|face)/i, { traps: 1, rearDelt: .5 }], [/(rear|reverse|fly)/i, { rearDelt: 1, traps: .3 }], [/(chest|fly|cable|pec)/i, { chest: .8, frontDelt: .2 }]];
-        Object.entries(EX_OPTS).forEach(([k, g]) => g.opt.forEach(([id, m = 1]) => EX_INDEX[id] = { id, name: id, mult: m, groupKey: k, base: g.base }));
+        Object.entries(EX_OPTS).forEach(([k, g]) => g.opt.forEach(([id, m = 1]) => { if (!EX_INDEX[id] || g.base) EX_INDEX[id] = { id, name: id, mult: m, groupKey: k, base: g.base }; }));
         const _imp = {};
         const MAX_IMP_CACHE = 300;
         const impact = id => {
@@ -368,13 +390,13 @@
         };
         const plateInventory = unit => unit === 'kg' ? [25, 20, 10, 5, 2.5, 1.25] : (DATA.ui.plates[unit] || DATA.ui.plates.lbs);
         const normalizeSchemeRow = row => {
-            if (Array.isArray(row)) return { pct: +row[0], reps: +row[1], amrap: row[2] === '+', cap: null, offsetLbs: 0, offsetKg: 0, setType: null, conditionalBackoff: false };
+            if (Array.isArray(row)) return { pct: +row[0], reps: +row[1], repDisplay: null, amrap: row[2] === '+', cap: null, offsetLbs: 0, offsetKg: 0, setType: null, conditionalBackoff: false };
             if (row && typeof row === 'object') return {
                 pct: U.safe(row.pct, 0), reps: M.max(0, M.round(U.safe(row.reps, 0))), amrap: !!row.amrap,
                 cap: row.cap == null ? null : M.max(1, M.round(U.safe(row.cap, 1))), offsetLbs: U.safe(row.offsetLbs, 0),
-                offsetKg: U.safe(row.offsetKg, 0), setType: row.setType || null, conditionalBackoff: !!row.conditionalBackoff
+                offsetKg: U.safe(row.offsetKg, 0), repDisplay: row.repDisplay || null, setType: row.setType || null, conditionalBackoff: !!row.conditionalBackoff
             };
-            return { pct: 0, reps: 0, amrap: false, cap: null, offsetLbs: 0, offsetKg: 0, setType: null, conditionalBackoff: false };
+            return { pct: 0, reps: 0, repDisplay: null, amrap: false, cap: null, offsetLbs: 0, offsetKg: 0, setType: null, conditionalBackoff: false };
         };
         const plateLoadForSide = (sideWeight, unit) => {
             const plates = [];
@@ -413,6 +435,19 @@
                 add = add > 0 ? M.max(step / 2, add) : add < 0 ? M.min(-step / 2, add) : 0;
                 return { add, method: add > 0 ? 'nsuns_increase' : add < 0 ? 'nsuns_decrease' : 'nsuns_hold' };
             },
+            ppl: c => {
+                const state = c.state[c.lift] = c.state[c.lift] || {};
+                const missedMinimum = c.sets.some(s => !s.completed || s.failed || (s.amrap && s.performed != null && s.performed < s.reps));
+                if (c.tier !== 't1') return !missedMinimum ? { add: c.u === 'kg' ? 2.5 : 5, method: 'ppl_secondary_progress' } : { add: 0, method: 'ppl_secondary_hold' };
+                if (missedMinimum) {
+                    state.pplFailures = (state.pplFailures || 0) + 1;
+                    if (state.pplFailures >= 3) { state.pplFailures = 0; return { add: -(c.tm * .1), method: 'ppl_deload' }; }
+                    return { add: 0, method: 'ppl_retry' };
+                }
+                state.pplFailures = 0;
+                const add = c.lift === 'Deadlift' ? (c.u === 'kg' ? 5 : 10) : (c.u === 'kg' ? 2.5 : 5);
+                return { add, method: 'ppl_linear' };
+            },
             '531': c => {
                 if (c.tier !== 't1') return { add: 0, method: '531_t2_no_change' };
                 if (((c.cycleWeek - 1) % 4) + 1 !== 4) return { add: 0, method: '531_in_cycle' };
@@ -435,7 +470,8 @@
                     if (st >= 3) { s[k] = 1; return { add: -(c.tm * .15), method: `gz_${c.tier}_stage_reset` }; }
                     s[k] = st + 1; return { add: 0, method: `gz_${c.tier}_stage_advance` };
                 }
-                const baseStep = c.u === 'kg' ? 2.5 : 5;
+                const lower = ['Squat', 'Deadlift'].includes(c.lift);
+                const baseStep = lower ? (c.u === 'kg' ? 5 : 10) : (c.u === 'kg' ? 2.5 : 5);
                 return { add: baseStep, method: `gz_${c.tier}_linear` };
             },
             linear: c => {
@@ -471,7 +507,8 @@
             },
             candito6: c => {
                 const scheme = c.scheme || '';
-                if (!c.all) return { add: -(c.tm * .025), method: 'candito_required_rep_reset' };
+                const missedRequired = c.sets.some(s => !s.completed || s.failed || (s.amrap && s.performed != null && s.performed < s.reps));
+                if (missedRequired) return { add: -(c.tm * .025), method: 'candito_required_rep_reset' };
                 if (!/w5_(sq|bench|dl)_peak/.test(scheme)) return { add: 0, method: 'candito_in_cycle' };
                 const reps = M.max(1, M.min(4, c.top?.performed || 1));
                 if (reps === 1) return { add: 0, method: 'candito_cycle_hold' };
@@ -485,13 +522,13 @@
                 if (!/^intensity_/.test(scheme)) return { add: 0, method: c.all ? 'texas_volume_complete' : 'texas_volume_hold' };
                 const s = c.state[c.lift] = c.state[c.lift] || {};
                 if (!c.all) {
-                    s.texasPeakFailures = (s.texasPeakFailures || 0) + (scheme === 'intensity_1' ? 1 : 0);
+                    s.texasPeakFailures = (s.texasPeakFailures || 0) + (/_1$/.test(scheme) ? 1 : 0);
                     if (s.texasPeakFailures >= 2) { s.texasPeakFailures = 0; return { add: -(c.tm * .05), method: 'texas_wave_deload' }; }
                     return { add: 0, method: 'texas_intensity_hold' };
                 }
-                if (scheme !== 'intensity_1') return { add: 0, method: 'texas_wave_in_cycle' };
+                if (!/_1$/.test(scheme)) return { add: 0, method: 'texas_wave_in_cycle' };
                 s.texasPeakFailures = 0;
-                const lower = ['Squat', 'Deadlift'].includes(c.lift), add = lower ? (c.u === 'kg' ? 5 : 10) : (c.u === 'kg' ? 2.5 : 5);
+                const add = c.u === 'kg' ? 2.5 : 5;
                 return { add, method: 'texas_wave_complete' };
             }
         };
@@ -908,7 +945,27 @@
                 setTheme(t) { this.prefs.theme = normalizeTheme(t); this.applyTheme(); this.savePrefs(); this.$nextTick?.(() => { this.draw?.(); this.drawPRCharts?.(); }); },
                 unlockAudio() { try { if (!window.ac) window.ac = new (window.AudioContext || window.webkitAudioContext); if (ac.state === 'suspended') ac.resume(); } catch { } },
                 nav(v) { destroyCharts(); this.view = v; if (v === 'calendar') this.calBuild(); if (v === 'dashboard') { this.$nextTick(() => { this.draw(); this.scrollToActive(); }); } if (v === 'records') this.$nextTick(() => this.drawPRCharts()); if (v !== 'workout') this.relWake(); },
-                lifts: () => Object.keys(DATA.muscles), getWk() { const r = DATA.progs[this.prefs.program].days[this.pIdx % DATA.progs[this.prefs.program].days.length]; return { ...r, title: r.title || r.t, focus: r.focus || [r.t1, r.t2].filter(Boolean).join(' + ') }; }, prevSim() { return this.history.slice().reverse().find(h => h.details?.t1 === this.getWk().t1); }, repLast() { const l = this.prevSim(); if (l) this.start(DATA.progs[this.prefs.program].days.find(d => d.t1 === l.details.t1)); },
+                lifts: () => Object.keys(DATA.muscles), getWk() { const r = DATA.progs[this.prefs.program].days[this.pIdx % DATA.progs[this.prefs.program].days.length]; return { ...r, title: r.title || r.t, focus: r.focus || [r.t1, r.t2].filter(Boolean).join(' + ') }; },
+                setRepLabel(s) { if (!s) return ''; if (s.performed !== null && s.performed !== undefined) return s.performed; if (s.repDisplay) return s.repDisplay; return `${s.reps}${s.amrap ? '+' : ''}`; },
+                getBlockSummary(block) {
+                    const sets = block?.sets || []; if (!sets.length) return 'No prescribed sets';
+                    const labels = sets.map(s => this.setRepLabel({ ...s, performed: null }));
+                    const unique = [...new Set(labels)];
+                    return unique.length === 1 ? `${sets.length} × ${unique[0]}` : `${sets.length} sets · ${labels.join('/')}`;
+                },
+                getCycleLabel() { const p = DATA.progs[this.prefs.program], i = this.session?.dayIdx ?? this.pIdx; return p ? `Session ${(i % p.days.length) + 1} of ${p.days.length}` : ''; },
+                getSetLabel(s, i = 0) {
+                    if (!s) return '';
+                    if (s.setType === 'cycle_max') return 'CYCLE MAX';
+                    if (s.setType === 'rep_max_10') return 'MR10';
+                    if (s.setType === 'rep_max') return 'REP MAX';
+                    if (s.setType === 'conditional_backoff' || /^intensity_dl_/.test(s.schemeKey || '') && i === 1) return 'BACK-OFF';
+                    if (s.setType === 'extra_volume') return '60S REST';
+                    if (/^intensity_/.test(s.schemeKey || '')) return 'INTENSITY';
+                    if (/^volume_/.test(s.schemeKey || '')) return 'VOLUME';
+                    return '';
+                },
+                prevSim() { return this.history.slice().reverse().find(h => h.details?.t1 === this.getWk().t1); }, repLast() { const l = this.prevSim(); if (l) this.start(DATA.progs[this.prefs.program].days.find(d => d.t1 === l.details.t1)); },
                 startCust() { this.start({ title: 'Custom Workout', t1: 'Bench', t2: 'Row', s: 'vol', t2s: 't2', acc: [] }); }, chgDay(d) { const l = DATA.progs[this.prefs.program].days.length; this.pIdx = (this.pIdx + d + l) % l; },
                 fmt: U.fmt, fmtSet: ts => new D(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), daysOff() { return M.floor((U.now() - (this.history[this.history.length - 1]?.timestamp || U.now())) / 864e5); },
                 exInfo: id => EX_INDEX[id] ? { ...EX_INDEX[id], group: EX_OPTS[EX_INDEX[id].groupKey] } : null, exAlts: id => EX_INDEX[id] ? EX_OPTS[EX_INDEX[id].groupKey].opt.map(o => ({ id: o[0], name: o[0], mult: o[1] || 1 })) : [{ id, name: id, mult: 1 }],
@@ -959,11 +1016,11 @@
                     if (p === 'gzclp') { const st = this.state[l]?.[t === 't1' ? 't1Stage' : 't2Stage'] || 1; rs = DATA.schemes.gzclp[t === 't1' ? (st === 1 ? 't1' : st === 2 ? 't1_s2' : 't1_s3') : (st === 1 ? 't2' : st === 2 ? 't2_s2' : 't2_s3')] || DATA.schemes.gzclp.t1; }
                     else if (p === 'stronglifts') rs = DATA.schemes.stronglifts[this.state[l]?.slScheme || (l === 'Deadlift' ? 'dl' : 'std')] || DATA.schemes.stronglifts.std;
                     else if (p === '531' && t === 't1') { const cw = ((this.cycleWeek531 - 1) % 4) + 1; rs = DATA.schemes['531'][cw === 4 ? 'del' : `w${cw}`]; }
-                    else rs = (DATA.schemes[p] || DATA.schemes.nsuns)[sk] || (DATA.schemes[p] || DATA.schemes.nsuns).vol;
+                    else { const group = DATA.schemes[p] || DATA.schemes.nsuns; rs = group[sk] || group.vol || DATA.schemes.nsuns[sk] || DATA.schemes.nsuns.vol; }
                     return rs.map(raw => {
                         const x = normalizeSchemeRow(raw), offset = u === 'kg' ? x.offsetKg : x.offsetLbs;
                         const weight = U.rnd(effTM * x.pct + offset, u, m);
-                        return { weight, originalWeight: weight, reps: x.reps, amrap: x.amrap, repCap: x.cap, schemeKey: sk, setType: x.setType, conditionalBackoff: x.conditionalBackoff, completed: false, failed: false, performed: null, completedAt: null, rpe: null, timeSincePrev: null, setDuration: 0 };
+                        return { weight, originalWeight: weight, reps: x.reps, repDisplay: x.repDisplay, amrap: x.amrap, repCap: x.cap, schemeKey: sk, setType: x.setType, conditionalBackoff: x.conditionalBackoff, completed: false, failed: false, performed: null, completedAt: null, rpe: null, timeSincePrev: null, setDuration: 0 };
                     });
                 },
                 chkDeload() {
@@ -1868,7 +1925,7 @@
                 exportCSV() { const c = ['Date,Title,Dur,Vol,RPE,PR,T1,TopSet,TM', ...this.history.map(x => [x.date, x.title, x.duration, x.totalVolume, x.rpe, x.pr ? 'Y' : 'N', x.details?.t1, x.details?.actualTopWeight || x.details?.weight, x.details?.tm].join(','))].join('\n'); const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([c], { type: 'text/csv' })); a.download = `lift_export_${U.iso(U.now())}.csv`; a.click(); },
                 importData(e) { const r = new FileReader(); r.onload = ev => { try { const d = J.parse(ev.target.result); if (!d || !d.version || !d.main) return alert('Invalid or corrupted backup file'); U.s('nsuns_ultimate', d.main); U.s('lift_preferences', d.prefs); U.s('lift_bodyweight', d.bw); U.s('lift_achievements', d.ach); U.s('lift_prs', d.prs); U.s('lift_e1rm_history', d.e1rm); U.s('lift_templates', d.tmpl); U.s('lift_exercise_notes', d.notes); U.s('lift_tonnage_goal', d.ton); U.s('lift_rest_history', d.rh); U.s('lift_xp', d.xp); location.reload(); } catch { alert('Error parsing backup file'); } }; r.readAsText(e.target.files[0]); },
                 reset() { if (confirm('Reset ALL?')) { LS.clear(); location.reload(); } }, histFilt() { const l = this.history.slice().reverse(); return this.historyFilter !== 'all' ? l.filter(h => h.details?.t1 === this.historyFilter).slice(0, 50) : l.slice(0, 50); }, showDay(d) { if (d.logs && d.logs.length) this.openLog(d.logs[d.logs.length - 1]); }, openLog(l) { this.selectedLog = l; this.isEditingLog = false; this.activeModal = 'detail'; }, delLog() { if (confirm('Delete?')) { this.history = this.history.filter(h => h.timestamp !== this.selectedLog.timestamp); this.save(); this.computeStreak(); this.activeModal = null; this.calBuild(); this.$nextTick(() => this.draw()); } }, saveLog() { const i = this.history.findIndex(h => h.timestamp === this.selectedLog.timestamp); if (i !== -1) { Object.assign(this.history[i], { notes: this.selectedLog.notes, duration: parseInt(this.selectedLog.duration) || 0, rating: parseInt(this.selectedLog.rating) || 0 }); this.save(); this.isEditingLog = false; this.$nextTick(() => this.draw()); } },
-                beep() { try { if (!window.ac) window.ac = new (window.AudioContext || window.webkitAudioContext); const o = ac.createOscillator(), g = ac.createGain(); o.connect(g); g.connect(ac.destination); o.frequency.value = 800; g.gain.setValueAtTime(0.5, ac.currentTime); g.gain.exponentialRampToValueAtTime(1e-5, ac.currentTime + .5); o.start(); o.stop(ac.currentTime + .5); } catch(e){} }, toggleZen() { this.zenMode = !this.zenMode; document.body.style.overflow = this.zenMode ? 'hidden' : ''; }, getZen() { if (!this.session) return null; const f = (t, k) => { const s = this.session[t]?.sets?.find(x => !x.completed); return s ? { t, n: k === 'n' ? this.session[t].name : (this.session[t].selectedExercise || this.session[t].name), w: s.weight, r: s.reps, amrap: s.amrap, s, i: this.session[t].sets.indexOf(s) } : null; }; let z = f('t1', 'n') || f('t2', 'e'); if (z) return z; for (const a of (this.session.acc || [])) { const o = a.originalName || a.name; for (let i = 1; i <= a.sets; i++) { if (!this.isAccDone(o, i)) return { t: 'acc', n: a.selectedExercise || a.name, w: '-', r: (a.reps || '10-12'), amrap: false, on: o, i }; } } return null; }, doZen() { const z = this.getZen(); if (!z) return; if (z.t === 'acc') this.togAcc(z.on, z.i); else { if (z.s.amrap) { if (this.zenAmrap === null || this.zenAmrap === '') return alert('Enter reps'); const raw = parseInt(this.zenAmrap); z.s.performed = z.s.repCap ? M.min(raw, z.s.repCap) : raw; this._applyConditionalBackoffs(z.t, z.s, z.s.performed); this.zenAmrap = null; } this.toggleSet(z.s, z.t); } }, cancel() { if (confirm('Cancel?')) { this.session = {}; this.savedSession = null; U.d('lift_active_session'); U.d('lift_active_session_backup'); this.timer.active = false; this.view = 'dashboard'; this.relWake(); this.$nextTick(() => { this.draw(); this.scrollToActive(); }); } }, getProgressionLabel(m) { return { 'nsuns_increase': 'ðŸ“ˆ nSuns +', 'nsuns_decrease': 'â¬‡ï¸ nSuns âˆ’', 'nsuns_hold': 'â¸ï¸ nSuns Hold', 'nsuns_hold_no_amrap': 'â¸ï¸ nSuns Hold', 'nsuns_hold_incomplete': 'â¸ï¸ nSuns Hold', 'nsuns_t2_increase': 'ðŸ“ˆ nSuns T2 +', 'nsuns_t2_hold': 'â¸ï¸ nSuns T2 Hold', 'ppl_amrap_linear': 'ðŸ“ˆ PPL AMRAP', 'amrap_linear': 'ðŸ“ˆ AMRAP +', 'linear': 'ðŸ“ Linear +', 't2_linear': 'ðŸ“ˆ T2 +', 't2_hold': 'â¸ï¸ T2 Hold', '531_cycle': 'ðŸ”„ 531 Cycle +', '531_deload': 'â¬‡ï¸ 531 Deload', '531_in_cycle': 'ðŸ”„ 531 In Cycle', '531_hold': 'â¸ï¸ 531 Hold', '531_t2_no_change': 'â¸ï¸ 531 BBB Hold', 'sl_linear': 'ðŸ“ SL Linear', 'sl_retry': 'ðŸ” SL Retry', 'sl_deload': 'â¬‡ï¸ SL Deload', 'sl_to_3x5': 'ðŸ“‰ SLâ†’3Ã—5', 'sl_to_3x3': 'ðŸ“‰ SLâ†’3Ã—3', 'sl_to_1x3': 'ðŸ“‰ SLâ†’1Ã—3', 'gz_t1_linear': 'ðŸ“ˆ GZ T1 +', 'gz_t2_linear': 'ðŸ“ˆ GZ T2 +', 'gz_t1_stage_advance': 'â¬†ï¸ GZ T1 Stage', 'gz_t2_stage_advance': 'â¬†ï¸ GZ T2 Stage', 'gz_t1_stage_reset': 'ðŸ”„ GZ T1 Reset', 'gz_t2_stage_reset': 'ðŸ”„ GZ T2 Reset', 'candito_required_rep_reset': 'Candito −2.5%', 'candito_in_cycle': 'Candito In Cycle', 'candito_cycle_hold': 'Candito Hold', 'candito_projected_max': 'Candito Projected Max', 'texas_volume_complete': 'Texas Volume Complete', 'texas_volume_hold': 'Texas Volume Hold', 'texas_intensity_hold': 'Texas Intensity Hold', 'texas_wave_in_cycle': 'Texas In Wave', 'texas_wave_complete': 'Texas Wave +', 'texas_wave_deload': 'Texas −5%', 'hold_missed': 'â¸ï¸ Hold (Missed)', 'hold': 'â¸ï¸ Hold' }[m] || 'â€”' },
+                beep() { try { if (!window.ac) window.ac = new (window.AudioContext || window.webkitAudioContext); const o = ac.createOscillator(), g = ac.createGain(); o.connect(g); g.connect(ac.destination); o.frequency.value = 800; g.gain.setValueAtTime(0.5, ac.currentTime); g.gain.exponentialRampToValueAtTime(1e-5, ac.currentTime + .5); o.start(); o.stop(ac.currentTime + .5); } catch(e){} }, toggleZen() { this.zenMode = !this.zenMode; document.body.style.overflow = this.zenMode ? 'hidden' : ''; }, getZen() { if (!this.session) return null; const f = (t, k) => { const s = this.session[t]?.sets?.find(x => !x.completed); return s ? { t, n: k === 'n' ? this.session[t].name : (this.session[t].selectedExercise || this.session[t].name), w: s.weight, r: this.setRepLabel(s), amrap: s.amrap, s, i: this.session[t].sets.indexOf(s) } : null; }; let z = f('t1', 'n') || f('t2', 'e'); if (z) return z; for (const a of (this.session.acc || [])) { const o = a.originalName || a.name; for (let i = 1; i <= a.sets; i++) { if (!this.isAccDone(o, i)) return { t: 'acc', n: a.selectedExercise || a.name, w: '-', r: (a.reps || '10-12'), amrap: false, on: o, i }; } } return null; }, doZen() { const z = this.getZen(); if (!z) return; if (z.t === 'acc') this.togAcc(z.on, z.i); else { if (z.s.amrap) { if (this.zenAmrap === null || this.zenAmrap === '') return alert('Enter reps'); const raw = parseInt(this.zenAmrap); z.s.performed = z.s.repCap ? M.min(raw, z.s.repCap) : raw; this._applyConditionalBackoffs(z.t, z.s, z.s.performed); this.zenAmrap = null; } this.toggleSet(z.s, z.t); } }, cancel() { if (confirm('Cancel?')) { this.session = {}; this.savedSession = null; U.d('lift_active_session'); U.d('lift_active_session_backup'); this.timer.active = false; this.view = 'dashboard'; this.relWake(); this.$nextTick(() => { this.draw(); this.scrollToActive(); }); } }, getProgressionLabel(m) { return { 'nsuns_increase': 'ðŸ“ˆ nSuns +', 'nsuns_decrease': 'â¬‡ï¸ nSuns âˆ’', 'nsuns_hold': 'â¸ï¸ nSuns Hold', 'nsuns_hold_no_amrap': 'â¸ï¸ nSuns Hold', 'nsuns_hold_incomplete': 'â¸ï¸ nSuns Hold', 'nsuns_t2_increase': 'ðŸ“ˆ nSuns T2 +', 'nsuns_t2_hold': 'â¸ï¸ nSuns T2 Hold', 'ppl_linear': 'PPL Linear +', 'ppl_retry': 'PPL Retry', 'ppl_deload': 'PPL −10%', 'ppl_secondary_progress': 'PPL Secondary +', 'ppl_secondary_hold': 'PPL Secondary Hold', 'ppl_amrap_linear': 'ðŸ“ˆ PPL AMRAP', 'amrap_linear': 'ðŸ“ˆ AMRAP +', 'linear': 'ðŸ“ Linear +', 't2_linear': 'ðŸ“ˆ T2 +', 't2_hold': 'â¸ï¸ T2 Hold', '531_cycle': 'ðŸ”„ 531 Cycle +', '531_deload': 'â¬‡ï¸ 531 Deload', '531_in_cycle': 'ðŸ”„ 531 In Cycle', '531_hold': 'â¸ï¸ 531 Hold', '531_t2_no_change': 'â¸ï¸ 531 BBB Hold', 'sl_linear': 'ðŸ“ SL Linear', 'sl_retry': 'ðŸ” SL Retry', 'sl_deload': 'â¬‡ï¸ SL Deload', 'sl_to_3x5': 'ðŸ“‰ SLâ†’3Ã—5', 'sl_to_3x3': 'ðŸ“‰ SLâ†’3Ã—3', 'sl_to_1x3': 'ðŸ“‰ SLâ†’1Ã—3', 'gz_t1_linear': 'ðŸ“ˆ GZ T1 +', 'gz_t2_linear': 'ðŸ“ˆ GZ T2 +', 'gz_t1_stage_advance': 'â¬†ï¸ GZ T1 Stage', 'gz_t2_stage_advance': 'â¬†ï¸ GZ T2 Stage', 'gz_t1_stage_reset': 'ðŸ”„ GZ T1 Reset', 'gz_t2_stage_reset': 'ðŸ”„ GZ T2 Reset', 'candito_required_rep_reset': 'Candito −2.5%', 'candito_in_cycle': 'Candito In Cycle', 'candito_cycle_hold': 'Candito Hold', 'candito_projected_max': 'Candito Projected Max', 'texas_volume_complete': 'Texas Volume Complete', 'texas_volume_hold': 'Texas Volume Hold', 'texas_intensity_hold': 'Texas Intensity Hold', 'texas_wave_in_cycle': 'Texas In Wave', 'texas_wave_complete': 'Texas Wave +', 'texas_wave_deload': 'Texas −5%', 'hold_missed': 'â¸ï¸ Hold (Missed)', 'hold': 'â¸ï¸ Hold' }[m] || 'â€”' },
                 getE1RMTrend(l) { const e = (this.e1rmHistory[l] || []).slice(-5); if (e.length < 2) return { direction: 'flat', change: 0 }; const c = e[e.length - 1].e1rm - e[0].e1rm; return { direction: c > 0 ? 'up' : c < 0 ? 'down' : 'flat', change: c } },
                 _getTotalWeights() { const b = this.bwLog.slice(-1)[0]?.weight, t = ((this.tms.Bench || 0) + (this.tms.Squat || 0) + (this.tms.Deadlift || 0)) / .9; if (!b || !t) return null; const k = this.prefs.weightUnit === 'kg'; return { w: k ? b : b * .453592, tk: k ? t : t * .453592 } },
                 getWilksEstimate() { const d = this._getTotalWeights(); if (!d || d.w <= 0) return null; const x = d.w, denom = -216.0475144 + 16.2606339 * x - 0.002388645 * M.pow(x, 2) - 0.00113732 * M.pow(x, 3) + 7.01863e-6 * M.pow(x, 4) - 1.291e-8 * M.pow(x, 5); return denom <= 0 ? null : M.round(d.tk * (500 / denom)) },
